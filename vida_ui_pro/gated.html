@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VIDA · Zona restringida</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{min-height:100vh;display:grid;place-items:center;padding:26px;color:#eef8ff;font-family:Inter,system-ui,sans-serif;
+  background:radial-gradient(circle at top,rgba(46,139,255,.16),transparent 32%),linear-gradient(180deg,#06111d,#03080f)}
+.card{width:min(520px,100%);padding:44px;border:1px solid var(--line);border-radius:24px;text-align:center;
+  border-color:#1b3d56;background:linear-gradient(180deg,#0b1b2a,#060f19);box-shadow:0 35px 100px rgba(0,0,0,.5)}
+.lock{font-size:52px}
+h1{margin-top:16px;font-size:23px;font-weight:800}
+p{color:#8aa8ba;font-size:13.5px;line-height:1.65;margin-top:12px}
+code{background:#071522;border:1px solid #1b3d56;padding:2px 6px;border-radius:6px;font-size:12px;color:#8cc7db}
+a{display:inline-block;margin-top:22px;color:#45e6ff;text-decoration:none;border:1px solid rgba(69,230,255,.35);
+  padding:10px 18px;border-radius:99px;font-size:13px}
+form{margin-top:20px;display:flex;gap:10px}
+input{flex:1;background:#071522;border:1px solid #1b3d56;color:#eef8ff;border-radius:11px;padding:11px 14px;font-size:14px}
+button{background:linear-gradient(135deg,#2e8bff,#45e6ff);color:#021018;border:0;border-radius:11px;padding:11px 18px;font-weight:700;cursor:pointer}
+.err{color:#fb7185;font-size:12.5px;margin-top:10px}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="lock">🔐</div>
+  <h1>Zona protegida del certificado</h1>
+  <p>El certificado se emite <b>una sola vez</b> y esta sección solo se abre con
+     permiso del sistema (clave del aprendiz). Si eres un instructor del SENA
+     y necesitas verificar esta evidencia, el aprendiz puede compartir el enlace con su clave.</p>
+  <form id="unlock" method="get" action="/certificado">
+    <input type="password" name="clave" placeholder="Clave de acceso VIDA" autocomplete="off">
+    <button type="submit">Abrir</button>
+  </form>
+  <div class="err" id="err"></div>
+  <a href="/">← Volver al panel VIDA</a>
+</div>
+<script>
+(function(){
+  var err=document.getElementById('err');
+  var p=new URLSearchParams(location.search);
+  if(p.get('clave')){err.textContent='Clave incorrecta. Acceso denegado.';}
+})();
+</script>
+</body>
+</html>

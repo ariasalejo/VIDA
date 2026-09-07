@@ -5,7 +5,9 @@ import argparse
 import json
 import sqlite3
 import webbrowser
+from datetime import datetime, timezone
 from pathlib import Path
+from secrets import compare_digest, token_hex
 
 from flask import Flask, jsonify, render_template, request, send_from_directory
 from rich.console import Console
@@ -30,6 +32,11 @@ COURSE = DATA / "course.json"
 PROFILE = DATA / "profiles" / "sena_ciberseguridad.json"
 CERT_DIR = ROOT / "certificates"
 CERT_HTML = ROOT / "certificate.html"
+
+DEFAULT_COURSE_ID = "sena_ciberseguridad"
+REGISTRY = DATA / "registry.json"
+COURSES_DIR = DATA / "courses"
+PROFILES_DIR = DATA / "profiles"
 
 console = Console()
 
@@ -118,12 +125,177 @@ def ensure_dirs() -> None:
     DATA.mkdir(parents=True, exist_ok=True)
     (MEDIA / "videos").mkdir(parents=True, exist_ok=True)
     (MEDIA / "materials").mkdir(parents=True, exist_ok=True)
+    (DATA / "courses").mkdir(parents=True, exist_ok=True)
+    (DATA / "profiles").mkdir(parents=True, exist_ok=True)
 
     if not COURSE.exists():
         COURSE.write_text(
             json.dumps(DEFAULT_COURSE, indent=2, ensure_ascii=False),
             encoding="utf-8",
         )
+
+
+def _load_registry() -> dict:
+    (DATA / "courses").mkdir(parents=True, exist_ok=True)
+    if not REGISTRY.exists():
+        return {"active": DEFAULT_COURSE_ID, "courses": []}
+    try:
+        data = json.loads(REGISTRY.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        data = {}
+    data.setdefault("active", DEFAULT_COURSE_ID)
+    data.setdefault("courses", [])
+    return data
+
+
+def _save_registry(data: dict) -> None:
+    REGISTRY.write_text(
+        json.dumps(data, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+
+
+def _discover_course_ids() -> list[str]:
+    (DATA / "courses").mkdir(parents=True, exist_ok=True)
+    ids: list[str] = []
+    for path in sorted((DATA / "courses").glob("*.json")):
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            continue
+        cid = str(data.get("id") or path.stem)
+        if cid not in ids:
+            ids.append(cid)
+    return ids
+
+
+def migrate_registry() -> None:
+    (DATA / "courses").mkdir(parents=True, exist_ok=True)
+    known = _discover_course_ids()
+
+    if COURSE.exists() and DEFAULT_COURSE_ID not in known:
+        try:
+            legacy = json.loads(COURSE.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            legacy = DEFAULT_COURSE
+        legacy = dict(legacy)
+        legacy.setdefault("id", DEFAULT_COURSE_ID)
+        (DATA / "courses").mkdir(parents=True, exist_ok=True)
+        (DATA / "courses" / f"{DEFAULT_COURSE_ID}.json").write_text(
+            json.dumps(legacy, indent=2, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
+        known = _discover_course_ids()
+
+    registry = _load_registry()
+    changed = False
+    for cid in known:
+        if cid not in registry["courses"]:
+            registry["courses"].append(cid)
+            changed = True
+    if registry["active"] not in registry["courses"]:
+        registry["active"] = (
+            registry["courses"][0] if registry["courses"] else DEFAULT_COURSE_ID
+        )
+        changed = True
+    if changed:
+        _save_registry(registry)
+
+
+def active_course_id() -> str:
+    migrate_registry()
+    registry = _load_registry()
+    if registry["active"] in _discover_course_ids():
+        return registry["active"]
+    return DEFAULT_COURSE_ID
+
+
+def set_active_course_id(course_id: str) -> bool:
+    course_id = str(course_id)
+    if course_id not in _discover_course_ids():
+        return False
+    registry = _load_registry()
+    registry["active"] = course_id
+    if course_id not in registry["courses"]:
+        registry["courses"].append(course_id)
+    _save_registry(registry)
+    return True
+
+
+def course(course_id: str | None = None) -> dict:
+    (DATA / "courses").mkdir(parents=True, exist_ok=True)
+    cid = course_id or active_course_id()
+    manifest = DATA / "courses" / f"{cid}.json"
+    if not manifest.exists():
+        if course_id is None and COURSE.exists():
+            return json.loads(COURSE.read_text(encoding="utf-8"))
+        if cid == DEFAULT_COURSE_ID:
+            return dict(DEFAULT_COURSE)
+        return dict(DEFAULT_COURSE)
+    try:
+        data = json.loads(manifest.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        data = dict(DEFAULT_COURSE)
+    data.setdefault("id", cid)
+    data.setdefault("videos", [])
+    return data
+
+
+def _profile_template(course_id: str, course_title: str) -> dict:
+    return {
+        "course_id": course_id,
+        "name": str(course_title or course_id).title(),
+        "version": "1.0",
+        "components": {
+            "video": {"enabled": True},
+            "activity": {"enabled": True},
+            "mastery": {"enabled": True},
+            "evidence": {"enabled": True},
+        },
+        "weights": {
+            "video": 0.20,
+            "activity": 0.40,
+            "mastery": 0.25,
+            "evidence": 0.15,
+        },
+        "metadata": {
+            "description": (
+                f"Perfil base de {course_id}. Se puede ajustar "
+                "en data/profiles/ sin tocar el código."
+            ),
+        },
+    }
+
+
+def profile_path(course_id: str | None = None) -> Path:
+    cid = course_id or active_course_id()
+    path = PROFILES_DIR / f"{cid}.json"
+    if not path.exists():
+        course_data = course(cid)
+        template = _profile_template(cid, str(course_data.get("title", cid)))
+        path.write_text(
+            json.dumps(template, indent=2, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
+    return path
+
+
+def register_course(manifest: dict, activate: bool = True) -> str:
+    (DATA / "courses").mkdir(parents=True, exist_ok=True)
+    manifest = dict(manifest)
+    cid = str(manifest.get("id") or "").strip()
+    if not cid:
+        raise ValueError("El curso debe tener un campo 'id'.")
+    (DATA / "courses").mkdir(parents=True, exist_ok=True)
+    (DATA / "courses" / f"{cid}.json").write_text(
+        json.dumps(manifest, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    profile_path(cid)
+    migrate_registry()
+    if activate:
+        set_active_course_id(cid)
+    return cid
 
 
 def conn() -> sqlite3.Connection:
@@ -135,21 +307,26 @@ def conn() -> sqlite3.Connection:
     connection.executescript(
         """
         CREATE TABLE IF NOT EXISTS video_progress (
-            video_id TEXT PRIMARY KEY,
+            video_id TEXT NOT NULL,
+            course_id TEXT NOT NULL DEFAULT 'sena_ciberseguridad',
             position REAL NOT NULL DEFAULT 0,
             duration REAL NOT NULL DEFAULT 0,
             completed INTEGER NOT NULL DEFAULT 0,
-            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (video_id, course_id)
         );
 
         CREATE TABLE IF NOT EXISTS item_progress (
-            item_id TEXT PRIMARY KEY,
+            item_id TEXT NOT NULL,
+            course_id TEXT NOT NULL DEFAULT 'sena_ciberseguridad',
             completed INTEGER NOT NULL DEFAULT 0,
-            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (item_id, course_id)
         );
 
         CREATE TABLE IF NOT EXISTS study_log (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            course_id TEXT NOT NULL DEFAULT 'sena_ciberseguridad',
             kind TEXT NOT NULL,
             ref_id TEXT,
             minutes REAL NOT NULL DEFAULT 0,
@@ -159,37 +336,108 @@ def conn() -> sqlite3.Connection:
         """
     )
 
+    _migrate_existing_db(connection)
+
     connection.commit()
     return connection
 
 
-def course() -> dict:
-    ensure_dirs()
-    return json.loads(COURSE.read_text(encoding="utf-8"))
+def _migrate_existing_db(connection: sqlite3.Connection) -> None:
+    """Convierte bases anteriores (sin course_id) al esquema multi-curso."""
+    tables = {
+        row["name"]
+        for row in connection.execute(
+            "SELECT name FROM sqlite_master WHERE type='table'"
+        )
+    }
+
+    if "study_log" in tables:
+        cols = {
+            row["name"]
+            for row in connection.execute("PRAGMA table_info(study_log)")
+        }
+        if "course_id" not in cols:
+            connection.execute(
+                "ALTER TABLE study_log ADD COLUMN "
+                "course_id TEXT NOT NULL DEFAULT 'sena_ciberseguridad'"
+            )
+
+    for table, old_cols, new_ddl in [
+        (
+            "video_progress",
+            "video_id, position, duration, completed, updated_at",
+            """
+            CREATE TABLE video_progress__mig (
+                video_id TEXT NOT NULL,
+                course_id TEXT NOT NULL DEFAULT 'sena_ciberseguridad',
+                position REAL NOT NULL DEFAULT 0,
+                duration REAL NOT NULL DEFAULT 0,
+                completed INTEGER NOT NULL DEFAULT 0,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (video_id, course_id)
+            )
+            """,
+        ),
+        (
+            "item_progress",
+            "item_id, completed, updated_at",
+            """
+            CREATE TABLE item_progress__mig (
+                item_id TEXT NOT NULL,
+                course_id TEXT NOT NULL DEFAULT 'sena_ciberseguridad',
+                completed INTEGER NOT NULL DEFAULT 0,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (item_id, course_id)
+            )
+            """,
+        ),
+    ]:
+        if table not in tables:
+            continue
+        cols = {
+            row["name"]
+            for row in connection.execute(f"PRAGMA table_info({table})")
+        }
+        if "course_id" in cols:
+            continue
+        connection.execute(new_ddl)
+        connection.execute(
+            f"INSERT INTO {table}__mig ({old_cols.replace(',', ',')}, course_id) "
+            f"SELECT {old_cols}, 'sena_ciberseguridad' FROM {table}"
+        )
+        connection.execute(f"DROP TABLE {table}")
+        connection.execute(f"ALTER TABLE {table}__mig RENAME TO {table}")
 
 
-def engine_state() -> dict:
+def engine_state(course_id: str | None = None) -> dict:
+    cid = course_id or active_course_id()
     connection = conn()
 
     items = connection.execute(
-        "SELECT item_id, completed FROM item_progress"
+        "SELECT item_id, completed, course_id FROM item_progress "
+        "WHERE course_id = ?",
+        (cid,),
     ).fetchall()
 
     videos = connection.execute(
         """
         SELECT video_id, position, duration, completed
         FROM video_progress
-        """
+        WHERE course_id = ?
+        """,
+        (cid,),
     ).fetchall()
 
     log = connection.execute(
-        "SELECT COALESCE(SUM(minutes), 0) AS minutes FROM study_log"
+        "SELECT COALESCE(SUM(minutes), 0) AS minutes FROM study_log "
+        "WHERE course_id = ?",
+        (cid,),
     ).fetchone()
 
     connection.close()
 
-    course_data = course()
-    profile = ProfileEngine(PROFILE).load()
+    course_data = course(cid)
+    profile = ProfileEngine(profile_path(cid)).load()
 
     videos_cfg = course_data.get("videos", [])
     activities_cfg = [
@@ -198,19 +446,24 @@ def engine_state() -> dict:
         if item.get("kind") == "activity"
     ]
     concepts_cfg = course_data.get("concepts", [])
+    activity_ids_cfg = {str(item["id"]) for item in activities_cfg}
 
-    completed_video_ids = {
-        row["video_id"] for row in videos if row["completed"]
+    completed_any = {
+        row["item_id"] for row in items if row["completed"]
     }
     completed_activity_ids = {
-        row["item_id"] for row in items if row["completed"]
+        item_id
+        for item_id in completed_any
+        if item_id in activity_ids_cfg
+    }
+    completed_video_ids = {
+        row["video_id"] for row in videos if row["completed"]
     }
 
     verified_concepts = set()
     for concept in concepts_cfg:
         concept_id = str(concept["id"])
-        activity_id = f"concept:{concept_id}"
-        if activity_id in completed_activity_ids:
+        if f"concept:{concept_id}" in completed_any:
             verified_concepts.add(concept_id)
 
     progress_engine = ProgressEngine()
@@ -321,12 +574,70 @@ def _evidence_count() -> int:
     return total
 
 
+def _evidence_for(activity_id: str) -> list[dict]:
+    path = DATA / "evidence" / "evidence.json"
+    if not path.exists():
+        return []
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return []
+    if not isinstance(data, list):
+        return []
+    return [
+        record
+        for record in data
+        if record.get("context", {}).get("activity_id")
+        == activity_id
+    ]
+
+
+def _uploaded_files(activity_id: str) -> list[dict]:
+    activity_dir = DATA / "evidence" / activity_id
+    if not activity_dir.exists():
+        return []
+    files = []
+    for path in sorted(activity_dir.iterdir()):
+        if path.is_file():
+            files.append(
+                {
+                    "name": path.name,
+                    "size": path.stat().st_size,
+                    "url": (
+                        f"/media/evidence/{activity_id}/{path.name}"
+                    ),
+                }
+            )
+    return files
+
+
 def _load_issued(certificate_engine: CertificateEngine, course_id: str) -> dict | None:
     record = certificate_engine._course_record(course_id)
     if not record.exists():
         return None
     import json as _json
     return _json.loads(record.read_text(encoding="utf-8"))
+
+
+def _cert_token() -> str:
+    token_file = DATA / ".cert_token"
+    if not token_file.exists():
+        token_file.parent.mkdir(parents=True, exist_ok=True)
+        token_file.write_text(token_hex(16), encoding="utf-8")
+        token_file.chmod(0o600)
+    return token_file.read_text(encoding="utf-8").strip()
+
+
+def _cert_allowed(req: request) -> bool:
+    supplied = (
+        req.headers.get("X-Vida-Key")
+        or req.headers.get("X-Cert-Key")
+        or req.args.get("clave")
+        or req.args.get("token")
+    )
+    if not supplied:
+        return False
+    return compare_digest(str(supplied).strip(), _cert_token())
 
 
 def api_snapshot() -> dict:
@@ -352,9 +663,165 @@ def create_app() -> Flask:
     def dashboard():
         return jsonify(api_snapshot())
 
+    @app.get("/api/courses")
+    def courses_index():
+        ids = _discover_course_ids()
+        active = active_course_id()
+        items = []
+        for cid in ids:
+            data = course(cid)
+            items.append(
+                {
+                    "id": cid,
+                    "active": cid == active,
+                    "title": data.get("title", cid),
+                    "provider": data.get("provider", ""),
+                    "platform": data.get("platform", ""),
+                    "hours": data.get("hours", 0),
+                    "learner": data.get("learner", ""),
+                }
+            )
+        items.sort(key=lambda item: 0 if item["active"] else 1)
+        return jsonify({"active": active, "courses": items})
+
+    @app.post("/api/courses/<course_id>/activate")
+    def activate_course(course_id: str):
+        if not _cert_allowed(request):
+            return jsonify(
+                {
+                    "ok": False,
+                    "error": "Acceso denegado. Se requiere permiso del sistema.",
+                }
+            ), 403
+        if not set_active_course_id(course_id):
+            return jsonify(
+                {"ok": False, "error": "Curso desconocido."}
+            ), 404
+        return jsonify(
+            {
+                "ok": True,
+                "active": active_course_id(),
+                "state": engine_state(),
+                "course": course(),
+            }
+        )
+
+    @app.post("/api/courses")
+    def create_course():
+        if not _cert_allowed(request):
+            return jsonify(
+                {
+                    "ok": False,
+                    "error": "Acceso denegado. Se requiere permiso del sistema.",
+                }
+            ), 403
+        payload = request.get_json(silent=True) or {}
+        try:
+            cid = register_course(payload, activate=True)
+        except ValueError as exc:
+            return jsonify({"ok": False, "error": str(exc)}), 400
+        return jsonify(
+            {
+                "ok": True,
+                "active": active_course_id(),
+                "course_id": cid,
+                "courses": courses_index()[0].get_json(),
+                "state": engine_state(),
+            }
+        ), 201
+
     @app.get("/api/course")
     def get_course():
         return jsonify(course())
+
+    @app.get("/api/rules")
+    def rules_info():
+        rules_file = DATA / "rules.json"
+        rules_data = {}
+        if rules_file.exists():
+            rules_data = json.loads(
+                rules_file.read_text(encoding="utf-8")
+            )
+
+        state = api_snapshot()
+        course_data = course()
+
+        required_videos = len(course_data.get("videos", []))
+        required_activities = len(
+            [
+                item
+                for item in course_data.get("items", [])
+                if item.get("kind") == "activity"
+            ]
+        )
+        required_concepts = len(course_data.get("concepts", []))
+
+        engine = CertificateEngine(CERT_DIR)
+        checks = engine.eligibility_report(
+            operational=state["operational"],
+            mastery=state["mastery"],
+            evidence_count=state["evidence_count"],
+            required_videos=required_videos,
+            completed_videos=state["completed_videos"],
+            required_activities=required_activities,
+            completed_activities=state["completed_activities"],
+            required_concepts=required_concepts,
+            verified_concepts=state["verified_concepts"],
+            unknown_count=state["unknown_count"],
+            user_confirmation=bool(
+                state["certificate"]["issued"]
+            ),
+        )
+
+        profile = ProfileEngine(profile_path()).load()
+        grading = {
+            "engines": [
+                "ProgressEngine",
+                "IntelligenceEngine",
+                "EvidenceEngine",
+                "CertificateEngine",
+            ],
+            "formula": (
+                "overall = Σ (peso_i × progreso_i)   ·   "
+                "mastery = conceptos verificados / total   ·   "
+                "learning_score = Inteligencia adaptativa"
+            ),
+            "weights": dict(profile.weights),
+            "components": profile.enabled_components(),
+            "course_id": profile.course_id,
+        }
+
+        return jsonify(
+            {
+                "course": {
+                    "id": course_data.get("id"),
+                    "title": course_data.get("title"),
+                    "provider": course_data.get("provider"),
+                    "platform": course_data.get("platform"),
+                    "hours": course_data.get("hours"),
+                },
+                "grading": grading,
+                "principles": rules_data.get("principles", []),
+                "certificate_policy": rules_data.get(
+                    "certificate_policy", {}
+                ),
+                "eligibility": checks,
+                "state": {
+                    "operational": state["operational"],
+                    "mastery": state["mastery"],
+                    "evidence_count": state["evidence_count"],
+                    "unknown_count": state["unknown_count"],
+                    "completed_videos": state["completed_videos"],
+                    "required_videos": required_videos,
+                    "completed_activities": state[
+                        "completed_activities"
+                    ],
+                    "required_activities": required_activities,
+                    "verified_concepts": state["verified_concepts"],
+                    "required_concepts": required_concepts,
+                },
+            }
+        )
 
     @app.get("/api/certificate")
     def certificate_status():
@@ -362,6 +829,14 @@ def create_app() -> Flask:
 
     @app.post("/api/certificate")
     def issue_certificate():
+        if not _cert_allowed(request):
+            return jsonify(
+                {
+                    "ok": False,
+                    "error": "Acceso denegado. Se requiere permiso del sistema.",
+                }
+            ), 403
+
         payload = request.get_json(silent=True) or {}
 
         user_confirmation = bool(
@@ -372,7 +847,7 @@ def create_app() -> Flask:
 
         engine = CertificateEngine(CERT_DIR)
         course_data = course()
-        profile = ProfileEngine(PROFILE).load()
+        profile = ProfileEngine(profile_path()).load()
 
         required_videos = len(course_data.get("videos", []))
         required_activities = len(
@@ -467,8 +942,11 @@ def create_app() -> Flask:
 
     @app.get("/verificar/<certificate_id>")
     def verify_certificate(certificate_id: str):
+        if not _cert_allowed(request):
+            return render_template("gated.html"), 403
+
         engine = CertificateEngine(CERT_DIR)
-        profile = ProfileEngine(PROFILE).load()
+        profile = ProfileEngine(profile_path()).load()
         record = _load_issued(engine, profile.course_id)
 
         valid = bool(
@@ -485,8 +963,16 @@ def create_app() -> Flask:
 
     @app.get("/api/verify/<certificate_id>")
     def verify_certificate_api(certificate_id: str):
+        if not _cert_allowed(request):
+            return jsonify(
+                {
+                    "ok": False,
+                    "error": "Acceso denegado. Se requiere permiso del sistema.",
+                }
+            ), 403
+
         engine = CertificateEngine(CERT_DIR)
-        profile = ProfileEngine(PROFILE).load()
+        profile = ProfileEngine(profile_path()).load()
         record = _load_issued(engine, profile.course_id)
         valid = bool(
             record
@@ -495,6 +981,7 @@ def create_app() -> Flask:
 
         return jsonify(
             {
+                "ok": True,
                 "valid": valid,
                 "certificate": record if valid else None,
             }
@@ -502,6 +989,9 @@ def create_app() -> Flask:
 
     @app.get("/certificado")
     def certificate_page():
+        if not _cert_allowed(request):
+            return render_template("gated.html"), 403
+
         course_data = course()
         return render_template(
             "certificate.html",
@@ -524,15 +1014,16 @@ def create_app() -> Flask:
 
     @app.get("/api/progress/<vid>")
     def get_video_progress(vid: str):
+        cid = active_course_id()
         connection = conn()
 
         row = connection.execute(
             """
             SELECT *
             FROM video_progress
-            WHERE video_id = ?
+            WHERE video_id = ? AND course_id = ?
             """,
-            (vid,),
+            (vid, cid),
         ).fetchone()
 
         connection.close()
@@ -543,6 +1034,7 @@ def create_app() -> Flask:
         return jsonify(
             {
                 "video_id": vid,
+                "course_id": cid,
                 "position": 0,
                 "duration": 0,
                 "completed": 0,
@@ -569,18 +1061,20 @@ def create_app() -> Flask:
         )
 
         connection = conn()
+        cid = active_course_id()
 
         connection.execute(
             """
             INSERT INTO video_progress (
                 video_id,
+                course_id,
                 position,
                 duration,
                 completed
             )
-            VALUES (?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?)
 
-            ON CONFLICT(video_id)
+            ON CONFLICT(video_id, course_id)
             DO UPDATE SET
                 position = excluded.position,
                 duration = excluded.duration,
@@ -589,6 +1083,7 @@ def create_app() -> Flask:
             """,
             (
                 vid,
+                cid,
                 position,
                 duration,
                 completed,
@@ -602,6 +1097,7 @@ def create_app() -> Flask:
             {
                 "ok": True,
                 "video_id": vid,
+                "course_id": cid,
                 "position": position,
                 "duration": duration,
                 "completed": completed,
@@ -617,22 +1113,25 @@ def create_app() -> Flask:
         )
 
         connection = conn()
+        cid = active_course_id()
 
         connection.execute(
             """
             INSERT INTO item_progress (
                 item_id,
+                course_id,
                 completed
             )
-            VALUES (?, ?)
+            VALUES (?, ?, ?)
 
-            ON CONFLICT(item_id)
+            ON CONFLICT(item_id, course_id)
             DO UPDATE SET
                 completed = excluded.completed,
                 updated_at = CURRENT_TIMESTAMP
             """,
             (
                 item_id,
+                cid,
                 completed,
             ),
         )
@@ -644,6 +1143,7 @@ def create_app() -> Flask:
             {
                 "ok": True,
                 "item_id": item_id,
+                "course_id": cid,
                 "completed": completed,
             }
         )
@@ -683,18 +1183,21 @@ def create_app() -> Flask:
             ), 400
 
         connection = conn()
+        cid = active_course_id()
 
         connection.execute(
             """
             INSERT INTO study_log (
+                course_id,
                 kind,
                 ref_id,
                 minutes,
                 note
             )
-            VALUES (?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?)
             """,
             (
+                cid,
                 kind,
                 ref_id,
                 minutes,
@@ -706,6 +1209,239 @@ def create_app() -> Flask:
         connection.close()
 
         return jsonify({"ok": True})
+
+    @app.get("/api/activity/<activity_id>")
+    def activity_detail(activity_id: str):
+        course_data = course()
+
+        item = next(
+            (
+                item
+                for item in course_data.get("items", [])
+                if item.get("id") == activity_id
+            ),
+            None,
+        )
+
+        if item is None:
+            return jsonify(
+                {"ok": False, "error": "Actividad no encontrada."}
+            ), 404
+
+        conn_activity = conn()
+
+        row = conn_activity.execute(
+            """
+            SELECT completed FROM item_progress
+            WHERE item_id = ?
+            """,
+            (activity_id,),
+        ).fetchone()
+
+        video_row = conn_activity.execute(
+            """
+            SELECT position, duration, completed
+            FROM video_progress
+            WHERE video_id = ?
+            """,
+            (f"video:{activity_id}",),
+        ).fetchone()
+
+        conn_activity.close()
+
+        evidence_records = _evidence_for(activity_id)
+        uploaded_files = _uploaded_files(activity_id)
+
+        return jsonify(
+            {
+                **item,
+                "completed": bool(
+                    row["completed"] if row else False
+                ),
+                "video_progress": {
+                    "position": (
+                        video_row["position"]
+                        if video_row
+                        else 0
+                    ),
+                    "duration": (
+                        video_row["duration"]
+                        if video_row
+                        else 0
+                    ),
+                    "completed": bool(
+                        video_row["completed"]
+                        if video_row
+                        else False
+                    ),
+                },
+                "evidence_count": len(evidence_records),
+                "evidence_files": uploaded_files,
+            }
+        )
+
+    @app.get("/api/activities")
+    def activities_list():
+        course_data = course()
+        connection = conn()
+
+        rows = {
+            row["item_id"]: row["completed"]
+            for row in connection.execute(
+                "SELECT item_id, completed FROM item_progress"
+            ).fetchall()
+        }
+
+        connection.close()
+
+        result = []
+        for item in course_data.get("items", []):
+            if item.get("kind") != "activity":
+                continue
+            activity_id = item["id"]
+            result.append(
+                {
+                    "id": activity_id,
+                    "title": item.get("title", activity_id),
+                    "due": item.get("due", ""),
+                    "completed": bool(rows.get(activity_id)),
+                    "evidence_count": len(
+                        _evidence_for(activity_id)
+                    ),
+                }
+            )
+
+        return jsonify(result)
+
+    @app.get("/api/evidence")
+    def evidence_overview():
+        course_data = course()
+        result = []
+        for item in course_data.get("items", []):
+            if item.get("kind") != "activity":
+                continue
+            activity_id = item["id"]
+            result.append(
+                {
+                    "activity_id": activity_id,
+                    "title": item.get("title", activity_id),
+                    "records": _evidence_for(activity_id),
+                    "files": _uploaded_files(activity_id),
+                }
+            )
+        return jsonify(result)
+
+    @app.post("/api/evidence/<activity_id>")
+    def upload_evidence(activity_id: str):
+        from werkzeug.utils import secure_filename
+
+        if "file" not in request.files:
+            return jsonify(
+                {"ok": False, "error": "No se recibió archivo."}
+            ), 400
+
+        upload = request.files["file"]
+        if not upload or not upload.filename:
+            return jsonify(
+                {"ok": False, "error": "Archivo vacío."}
+            ), 400
+
+        safe = secure_filename(upload.filename).lower()
+        allowed = {
+            "pdf",
+            "png",
+            "jpg",
+            "jpeg",
+            "gif",
+            "webp",
+            "xlsx",
+            "xls",
+            "doc",
+            "docx",
+            "ppt",
+            "pptx",
+            "txt",
+            "zip",
+        }
+        if "." not in safe or safe.rsplit(".", 1)[1] not in allowed:
+            return jsonify(
+                {
+                    "ok": False,
+                    "error": "Formato no permitido.",
+                }
+            ), 400
+
+        evidence_dir = DATA / "evidence" / activity_id
+        evidence_dir.mkdir(parents=True, exist_ok=True)
+
+        stamp = datetime.now(timezone.utc).strftime(
+            "%Y%m%d_%H%M%S"
+        )
+        stored_name = f"{stamp}_{safe}"
+        path = evidence_dir / stored_name
+        upload.save(path)
+
+        from vida_engines import EvidenceEngine
+
+        evidence = EvidenceEngine(
+            DATA / "evidence" / "evidence.json"
+        )
+        record = evidence.record(
+            source=f"work/{activity_id}",
+            method="evidence_upload",
+            event_type="ACTIVITY_COMPLETE",
+            result="DELIVERED",
+            context={
+                "activity_id": activity_id,
+                "file": stored_name,
+                "size": path.stat().st_size,
+                "note": str(
+                    request.form.get("note", "")
+                ),
+            },
+        )
+
+        connection = conn()
+        cid = active_course_id()
+        connection.execute(
+            """
+            INSERT INTO item_progress (item_id, course_id, completed)
+            VALUES (?, ?, 1)
+            ON CONFLICT(item_id, course_id) DO UPDATE SET
+                completed = 1,
+                updated_at = CURRENT_TIMESTAMP
+            """,
+            (activity_id, cid),
+        )
+        connection.commit()
+        connection.close()
+
+        return jsonify(
+            {
+                "ok": True,
+                "evidence_id": record.evidence_id,
+                "file": stored_name,
+                "url": (
+                    f"/media/evidence/{activity_id}/"
+                    f"{stored_name}"
+                ),
+            }
+        ), 201
+
+    @app.get("/media/evidence/<activity_id>/<path:name>")
+    def media_evidence(activity_id: str, name: str):
+        return send_from_directory(
+            DATA / "evidence" / activity_id,
+            name,
+            as_attachment=False,
+        )
+
+    @app.get("/media/materials/<path:name>")
+    def media_material(name: str):
+        return send_from_directory(
+            MEDIA / "materials",
+            name,
+        )
 
     @app.get("/media/videos/<path:name>")
     def media_video(name: str):
@@ -813,21 +1549,22 @@ def seed() -> None:
     ]
 
     connection = conn()
+    cid = active_course_id()
 
     for video_id in video_ids:
         connection.execute(
             """
             INSERT INTO video_progress (
-                video_id, position, duration, completed
+                video_id, course_id, position, duration, completed
             )
-            VALUES (?, 1, 1, 1)
-            ON CONFLICT(video_id) DO UPDATE SET
+            VALUES (?, ?, 1, 1, 1)
+            ON CONFLICT(video_id, course_id) DO UPDATE SET
                 position = 1,
                 duration = 1,
                 completed = 1,
                 updated_at = CURRENT_TIMESTAMP
             """,
-            (video_id,),
+            (video_id, cid),
         )
 
     for activity_id in activity_ids + [
@@ -836,13 +1573,13 @@ def seed() -> None:
     ]:
         connection.execute(
             """
-            INSERT INTO item_progress (item_id, completed)
-            VALUES (?, 1)
-            ON CONFLICT(item_id) DO UPDATE SET
+            INSERT INTO item_progress (item_id, course_id, completed)
+            VALUES (?, ?, 1)
+            ON CONFLICT(item_id, course_id) DO UPDATE SET
                 completed = 1,
                 updated_at = CURRENT_TIMESTAMP
             """,
-            (activity_id,),
+            (activity_id, cid),
         )
 
     connection.commit()
@@ -914,7 +1651,7 @@ def issue_certificate() -> None:
     ensure_dirs()
 
     course_data = course()
-    profile = ProfileEngine(PROFILE).load()
+    profile = ProfileEngine(profile_path()).load()
     state = api_snapshot()
 
     required_videos = len(course_data.get("videos", []))

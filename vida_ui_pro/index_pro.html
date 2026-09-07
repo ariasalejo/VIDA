@@ -1,1 +1,187 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>VIDA · BLUMIX PRO</title><link rel="stylesheet" href="/static/style_pro.css"></head><body><header class="top"><div><b>🧠 VIDA <span>/ PRO</span></b><small>BLUMIX · LEARNING COMMAND CENTER</small></div><button id="sync">↻ SYNC</button></header><div class="app"><aside><div class="label">COMMAND</div><a href="#overview">◉ Overview</a><a href="#media">▶ Recordings</a><a href="#activities">☷ Activities</a><a href="#knowledge">◈ Knowledge</a><a href="#evidence">◇ Evidence</a><div class="label space">ENGINE STATE</div><div class="engine">Course <b>ONLINE</b></div><div class="engine">Progress <b>ONLINE</b></div><div class="engine">Evidence <b>ONLINE</b></div><div class="engine">Rules <b>LOCKED</b></div></aside><main id="overview"><section class="hero"><div><small>PERSONAL LEARNING COMMAND CENTER</small><h1>{{ course.title }}</h1><p>Observar · verificar · comprender · demostrar · avanzar.</p></div><div class="logo">VIDA<small>01 · SENA</small></div></section><section class="kpis"><div><small>OPERATIVE PROGRESS</small><strong id="overall">0%</strong><i><em id="overallbar"></em></i></div><div><small>MASTERY</small><strong id="mastery">0%</strong><i><em id="masterybar"></em></i></div><div><small>EVIDENCE</small><strong id="evidence">0</strong><p>observaciones</p></div><div><small>UNKNOWN</small><strong id="unknown">0</strong><p>sin demostración</p></div></section><section class="card" id="media"><header><div><small>MEDIA ENGINE</small><h2>Sesión actual</h2></div><span>LOCAL · EVIDENCE AWARE</span></header><video id="player" controls preload="metadata"></video><div class="row"><select id="videoSelect"><option value="">Selecciona una grabación…</option></select><b id="videoPct">0%</b></div><i class="big"><em id="videoBar"></em></i><p id="videoState">Esperando recurso.</p></section><section class="card cert-card"><header><div><small>CERTIFICATION ENGINE</small><h2>Mi certificado de logro</h2></div><span>PERSONAL VERIFIED · SHA-256</span></header><p class="cert-quote">«Tu primer logro educativo, de muchos que vienen.»</p><p class="cert-learner">Aprendiz: <b>{{ course.learner }}</b></p><p class="cert-tutor">Dedicado a mi instructor: <b>{{ course.tutor }}</b></p><div id="certBox"><button id="certBtn" type="button">Emitir certificado</button></div><div id="certInfo"></div><div class="row"><a id="certLink" href="/certificado" target="_blank">Ver certificado →</a></div></section><div class="grid"><section class="card"><header><h2>Ruta curricular</h2><span>SOURCE OF TRUTH</span></header><div id="timeline"></div></section><section class="card" id="evidence"><header><h2>Truth / Verification</h2><span>RULES</span></header><div class="truth"><p>Video playback <b id="truthVideo">UNKNOWN</b></p><p>Concept mastery <b>UNKNOWN</b></p><p>Activity completion <b>UNKNOWN</b></p><blockquote>VIDA no convierte ausencia de evidencia en certeza.</blockquote></div></section></div><div class="grid"><section class="card" id="activities"><header><h2>Actividades</h2><span>ACTIONABLE</span></header><div id="activityList"></div></section><section class="card" id="knowledge"><header><h2>Knowledge</h2><span>DECLARATIVE</span></header><div id="conceptList"></div></section></div><footer>VIDA · una estructura para aprender, crear y avanzar.</footer></main></div><script src="/static/app_pro.js"></script></body></html>
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VIDA · BLUMIX Learning Command Center</title>
+<link rel="stylesheet" href="/static/style_pro.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="brand"><b>🧠 VIDA <span>/ BLUMIX</span></b><small>Learning Command Center</small></div>
+  <div class="top-actions">
+    <label class="course-switch" title="Cambiar de curso (VIDA se adapta)">
+      <span class="cs-label">CURSO</span>
+      <select id="courseSel"></select>
+    </label>
+    <button id="voiceBtn" type="button" title="Guía por voz">🔊</button>
+    <a class="cert-link" href="/certificado" target="_blank">🏆 Certificado</a>
+    <button id="sync" type="button">↻ SYNC</button>
+  </div>
+</header>
+
+<div class="app">
+  <aside>
+    <div class="nav-label">COMMAND</div>
+    <a class="nav" href="#/dashboard" data-nav="dashboard"><span class="ico">◉</span>Dashboard</a>
+    <a class="nav" href="#/actividades" data-nav="actividades"><span class="ico">📝</span>Actividades</a>
+    <a class="nav" href="#/conocimiento" data-nav="conocimiento"><span class="ico">◈</span>Conocimiento</a>
+    <a class="nav" href="#/evidencias" data-nav="evidencias"><span class="ico">◇</span>Evidencias</a>
+    <a class="nav" href="#/reglas" data-nav="reglas"><span class="ico">⚖</span>Reglas</a>
+
+    <div class="nav-label">ENGINE STATE</div>
+    <div class="engine-list">
+      <div class="engine-row">Course <b>ONLINE</b></div>
+      <div class="engine-row">Progress <b id="engProgress">ONLINE</b></div>
+      <div class="engine-row">Evidence <b id="engEvidence">ONLINE</b></div>
+      <div class="engine-row">Intel <b id="engIntel">ONLINE</b></div>
+    </div>
+  </aside>
+
+  <main>
+
+    <!-- ============ DASHBOARD ============ -->
+    <section class="view active" id="view-dashboard">
+      <div class="hero">
+        <div>
+          <small>PERSONAL LEARNING COMMAND CENTER</small>
+          <h1 id="heroTitle">{{ course.title }}</h1>
+          <p class="tagline">Observar · verificar · comprender · demostrar · avanzar.</p>
+          <p class="tagline" style="margin-top:10px">Aprendiz: <b style="color:var(--gold2)">{{ course.learner }}</b></p>
+        </div>
+        <div class="logo">VIDA<small>01 · SENA</small></div>
+      </div>
+
+      <div class="kpis">
+        <div class="kpi"><small>OPERATIVE PROGRESS</small><strong id="overall">0%</strong><div class="bar"><i id="overallbar"></i></div><p id="overallSub">actividades+video</p></div>
+        <div class="kpi gold"><small>MASTERY</small><strong id="mastery">0%</strong><div class="bar"><i id="masterybar"></i></div><p>conceptos verificados</p></div>
+        <div class="kpi"><small>EVIDENCE</small><strong id="evidence">0</strong><div class="bar"><i id="evbar"></i></div><p>observaciones</p></div>
+        <div class="kpi green"><small>LEARNING SCORE</small><strong id="lscore">0%</strong><div class="bar"><i id="lscorebar"></i></div><p>inteligencia adaptativa</p></div>
+      </div>
+
+      <div class="grid2">
+        <div class="card" id="mediaCard">
+          <header><div><small>MEDIA ENGINE</small><h2>Sesión de grabación</h2></div><span class="pill">LOCAL · EVIDENCE AWARE</span></header>
+          <video id="player" controls preload="metadata"></video>
+          <div class="player-meta"><span>Reproducción de la sesión sincrónica</span><b id="videoState">Esperando recurso…</b></div>
+          <div class="big-bar"><em id="videoBar"></em></div>
+        </div>
+
+        <div class="card">
+          <header><div><small>KNOWLEDGE ENGINE</small><h2>Conceptos del curso</h2></div><span class="pill">DECLARATIVE</span></header>
+          <div id="conceptList"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <header><div><small>ROADMAP</small><h2>Ruta curricular</h2></div><span class="pill">SOURCE OF TRUTH</span></header>
+        <div id="timeline"></div>
+      </div>
+    </section>
+
+    <!-- ============ ACTIVIDADES ============ -->
+    <section class="view" id="view-actividades">
+      <div class="card">
+        <header><div><small>ACTIVIDADES</small><h2>Ruta de aprendizaje</h2></div><span class="pill" id="actCount"></span></header>
+        <p class="hint">Cada actividad tiene su propia página: video de la sesión, material de aprendizaje y zona de evidencias para subir tu entrega.</p>
+        <div id="activityList"></div>
+      </div>
+    </section>
+
+    <!-- ============ ACTIVIDAD DETALLE ============ -->
+    <section class="view" id="view-activity">
+      <div class="card">
+        <button class="btn ghost" id="actBack" type="button">← Volver a actividades</button>
+        <div class="act-head">
+          <div>
+            <small class="nav-label" style="margin:0">ACTIVIDAD DE APRENDIZAJE</small>
+            <h1 id="actTitle"></h1>
+            <div class="due" id="actDue"></div>
+          </div>
+          <div id="actStatusChip"></div>
+        </div>
+
+        <div class="act-brief">
+          <div class="lbl">OBJETIVO · QUÉ DEBES LOGRAR</div>
+          <p id="actBrief"></p>
+          <p><strong>Entregable:</strong> <span id="actDeliverable"></span></p>
+        </div>
+
+        <div class="grid2" style="margin-top:14px">
+          <div>
+            <div class="nav-label" style="margin:0 0 8px">📽 VIDEO DE LA SESIÓN</div>
+            <video id="actVideo" controls preload="metadata"></video>
+            <div class="player-meta"><span>Sesión sincrónica</span><b id="actVideoState">Preparando…</b></div>
+            <div class="big-bar"><em id="actVideoBar"></em></div>
+          </div>
+
+          <div>
+            <div class="nav-label" style="margin:0 0 8px">📚 MATERIAL DE APRENDIZAJE</div>
+            <div id="actMaterials">
+              <div class="hint">Coloca tus guías y documentos en <code>media/materials/</code> y regístralos en <code>data/course.json</code>.</div>
+            </div>
+
+            <div class="nav-label" style="margin:18px 0 8px">⬆ ENTREGA DE EVIDENCIAS</div>
+            <div class="drop-zone" id="dropZone">
+              <span class="big">⬆</span>
+              Suelta aquí tu evidencia (PDF, imagen, XLSX…)
+              <br>(o haz clic para seleccionar)
+            </div>
+            <input type="file" id="evFile" accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.xlsx,.xls,.doc,.docx,.ppt,.pptx,.txt,.zip" hidden>
+            <div class="file-list" id="evList"></div>
+            <div class="ok-note" id="evMsg"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CONOCIMIENTO ============ -->
+    <section class="view" id="view-conocimiento">
+      <div class="card">
+        <header><div><small>KNOWLEDGE ENGINE</small><h2>Perspectiva declarativa</h2></div><span class="pill">CONCEPTOS · ISO 27001</span></header>
+        <p class="hint">Base conceptual del curso, alineada con el estándar ISO/IEC 27001:2017.</p>
+        <div class="grid2" id="conceptFullList"></div>
+      </div>
+    </section>
+
+    <!-- ============ EVIDENCIAS ============ -->
+    <section class="view" id="view-evidencias">
+      <div class="card">
+        <header><div><small>EVIDENCE ENGINE</small><h2>Centro de evidencias</h2></div><span class="pill">OBSERVADO ≠ INFERIDO</span></header>
+        <p class="hint">Registro verificable de entregas: archivos subidos y observaciones del motor. VIDA no inventa evidencia.</p>
+        <div id="evidenceGroups"></div>
+      </div>
+    </section>
+
+    <!-- ============ REGLAS ============ -->
+    <section class="view" id="view-reglas">
+      <div class="card">
+        <header><div><small>RULE ENGINE · TRANSPARENCIA</small><h2>Reglas y verificación del motor</h2></div><span class="pill">OBSERVADO ≠ INFERIDO</span></header>
+        <p class="hint">VIDA no adivina ni inventa evidencia. Cada conclusión se rige por reglas explícitas y verificables. Así lo puede revisar cualquier instructor del SENA.</p>
+
+        <div class="nav-label" style="margin:22px 0 8px">QUIÉN CALIFICA · PESOS Y FÓRMULA DEL CURSO ACTIVO</div>
+        <div id="gradingList" class="grid2"></div>
+
+        <div class="nav-label" style="margin:22px 0 8px">PRINCIPIOS</div>
+        <div class="grid2" id="principlesList"></div>
+
+        <div class="nav-label" style="margin:22px 0 8px">POLÍTICA DEL CERTIFICADO · ESTADO EN VIVO</div>
+        <div id="eligibilityList"></div>
+
+        <div class="nav-label" style="margin:22px 0 8px">REGLAS DEL MOTOR</div>
+        <div class="grid3" id="rulesList"></div>
+      </div>
+    </section>
+
+    <div class="sig">
+      <b>VIDA</b> · una estructura para aprender, crear y avanzar. Motor de progreso · evidencia · inteligencia · certificados verificables.<br>
+      {{ course.provider }} · {{ course.platform }} · {{ course.hours }} horas
+    </div>
+
+  </main>
+</div>
+
+<script src="/static/app_pro.js"></script>
+</body>
+</html>

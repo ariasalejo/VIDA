@@ -51,28 +51,31 @@
     </div>
   </section>
 
-  <section class="dedication">
-    <div class="quote-mark">“</div>
-    <p>{{ dedication }}</p>
-    <div class="dedi-to">
-      — Con gratitud a mi instructor y guía:
-      <strong>{{ tutor }}</strong>
-    </div>
-  </section>
-
   <section class="footer">
     <div class="verify">
       <div class="status">PERSONAL VERIFIED · HUELLA SHA-256</div>
       <div class="vid">VIDA&nbsp;·&nbsp;{{ cert.certificate_id or 'PENDIENTE' }}</div>
       <div class="hash">{{ cert.status }}</div>
-      <a class="verify-link" href="/certificado">Verificar en línea ⇢</a>
+      <a class="verify-link" href="/verificar/{{ cert.certificate_id }}">Verificar en línea ⇢</a>
     </div>
+    <div class="sign">Eduar Alejandro Arias Londoño</div>
   </section>
 
   <footer class="legal">
     <p>Certificado personal generado por BLUMIX · VIDA. No constituye certificación oficial del SENA.</p>
   </footer>
-
 </main>
+
+<section class="dedication">
+  <div class="dedi-or">❦</div>
+  <div class="dedi-kicker">AGRADECIMIENTO</div>
+  <h2>Dedicatoria</h2>
+  <p class="dedi-text">«{{ dedication }}»</p>
+  <div class="dedi-close">— Eduar Alejandro Arias Londoño, aprendiz</div>
+</section>
+
+<section class="thanks-note">
+  <p>Gracias, <strong>{{ tutor }}</strong>, por acompañarme en este primer logro educativo de muchos que vienen.</p>
+</section>
 </body>
 </html>

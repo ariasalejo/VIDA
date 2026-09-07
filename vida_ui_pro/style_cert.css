@@ -7,8 +7,7 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{
   min-height:100vh;
-  display:grid;place-items:center;
-  padding:32px 16px;
+  padding:34px 16px 60px;
   font-family:"Georgia","Times New Roman",serif;
   color:var(--text);
   background:
@@ -19,6 +18,7 @@ body{
 .certificate{
   position:relative;
   width:min(980px,100%);
+  margin:0 auto;
   overflow:hidden;
   border-radius:30px;
   padding:64px 72px 48px;
@@ -40,21 +40,12 @@ body{
   pointer-events:none;
 }
 .orn{position:absolute;width:74px;height:74px;opacity:.85}
-.orn::before,.orn::after{content:"";position:absolute;border:2px solid rgba(212,175,55,.75)}
-.orn::before{inset:4px;transform:rotate(45deg)}
-.orn::after{inset:14px;transform:rotate(45deg)}
+.orn::before{content:"";position:absolute;inset:4px;transform:rotate(45deg);border:2px solid rgba(212,175,55,.75);
+  background:conic-gradient(from 0deg,transparent 0 25%,rgba(212,175,55,.9) 25% 50%,transparent 50% 75%,rgba(212,175,55,.9) 75%)}
 .orn-top-left{top:26px;left:26px}
-.orn-top-left::before{background:
-  conic-gradient(from 0deg,transparent 0 25%,rgba(212,175,55,.9) 25% 50%,transparent 50% 75%,rgba(212,175,55,.9) 75%)}
 .orn-top-right{top:26px;right:26px;transform:rotate(90deg)}
-.orn-top-right::before{background:
-  conic-gradient(from 0deg,transparent 0 25%,rgba(212,175,55,.9) 25% 50%,transparent 50% 75%,rgba(212,175,55,.9) 75%)}
 .orn-bottom-left{bottom:26px;left:26px;transform:rotate(-90deg)}
-.orn-bottom-left::before{background:
-  conic-gradient(from 0deg,transparent 0 25%,rgba(212,175,55,.9) 25% 50%,transparent 50% 75%,rgba(212,175,55,.9) 75%)}
 .orn-bottom-right{bottom:26px;right:26px;transform:rotate(180deg)}
-.orn-bottom-right::before{background:
-  conic-gradient(from 0deg,transparent 0 25%,rgba(212,175,55,.9) 25% 50%,transparent 50% 75%,rgba(212,175,55,.9) 75%)}
 .shine{position:absolute;inset:0;pointer-events:none;
   background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.05) 42%,transparent 54%)}
 .head{position:relative;z-index:1;display:flex;align-items:center;gap:16px;justify-content:center}
@@ -91,31 +82,46 @@ h1{
 .metric{padding:18px 12px;border:1px solid var(--line);border-radius:16px;background:#071522}
 .metric b{display:block;font-family:Inter,system-ui,sans-serif;font-size:26px;color:var(--cyan)}
 .metric span{font-family:Inter,system-ui,sans-serif;font-size:9px;letter-spacing:.16em;color:var(--muted)}
-.dedication{
-  max-width:720px;margin:44px auto 0;
-  padding:34px 40px;
-  position:relative;z-index:1;
-  background:linear-gradient(180deg,rgba(11,27,42,.6),rgba(7,21,34,.85));
-  border:1px solid rgba(212,175,55,.45);
-  border-radius:18px;
-  box-shadow:0 0 40px rgba(212,175,55,.07) inset;
-}
-.quote-mark{font-size:44px;color:var(--gold2);line-height:0;height:22px;font-weight:900;opacity:.9}
-.dedication p{font-style:italic;font-size:18px;line-height:1.55;color:#f3eef0}
-.dedi-to{margin-top:16px;font-family:Inter,system-ui,sans-serif;font-size:13px;color:var(--muted)}
-.dedi-to strong{color:var(--gold2);letter-spacing:.04em}
 .footer{margin-top:44px;position:relative;z-index:1}
 .status{display:inline-block;padding:8px 16px;border:1px solid #1d574c;color:var(--green);border-radius:999px;letter-spacing:.14em;font-size:10px;font-family:Inter,system-ui,sans-serif}
 .vid{font-family:ui-monospace,monospace;font-size:14px;color:#8cc7db;margin-top:18px;letter-spacing:.05em}
 .hash{font-family:ui-monospace,monospace;font-size:11px;color:var(--muted);margin-top:6px;word-break:break-all}
 .verify-link{display:inline-block;margin-top:18px;font-family:Inter,system-ui,sans-serif;font-size:12px;letter-spacing:.1em;color:var(--cyan);text-decoration:none;border:1px solid rgba(69,230,255,.4);padding:9px 18px;border-radius:999px}
 .verify-link:hover{background:rgba(69,230,255,.1)}
-.legal{font-family:Inter,system-ui,sans-serif;margin-top:34px;position:relative;z-index:1}
+.sign{margin-top:26px;font-family:Georgia,serif;font-style:italic;font-size:15px;color:#cfe3ef;letter-spacing:.06em}
+.legal{font-family:Inter,system-ui,sans-serif;margin-top:30px;position:relative;z-index:1}
 .legal p{color:#6f8fa3;font-size:11px;line-height:1.6}
+
+/* ---------- Dedicatoria (apartada, debajo del certificado) ---------- */
+.dedication{
+  width:min(980px,100%);
+  margin:52px auto 0;
+  position:relative;
+  padding:46px 56px;
+  text-align:center;
+  border:1px solid rgba(212,175,55,.55);
+  border-radius:24px;
+  background:
+    radial-gradient(560px 240px at 50% -20%,rgba(212,175,55,.16),transparent 60%),
+    linear-gradient(180deg,rgba(11,27,42,.9),rgba(6,17,29,.95));
+  box-shadow:0 0 0 5px rgba(6,17,29,1),0 0 0 6px rgba(212,175,55,.35),0 30px 90px rgba(0,0,0,.5);
+}
+.dedi-or{font-size:34px;color:var(--gold2);text-shadow:0 0 24px rgba(212,175,55,.8)}
+.dedi-kicker{font-family:Inter,system-ui,sans-serif;letter-spacing:.4em;font-size:10px;color:var(--muted);margin-top:14px}
+.dedication h2{margin-top:10px;font-size:34px;font-weight:700;color:#f6ecd0}
+.dedi-text{margin:26px auto 0;max-width:700px;font-style:italic;font-size:20px;line-height:1.7;color:#f4eff2}
+.dedi-close{margin-top:26px;font-family:Georgia,serif;font-size:15px;color:#c9dce9;letter-spacing:.04em}
+.thanks-note{
+  width:min(980px,100%);margin:22px auto 0;text-align:center;
+  font-family:Inter,system-ui,sans-serif;color:var(--muted);font-size:13.5px;line-height:1.7;
+}
+.thanks-note strong{color:var(--gold2);letter-spacing:.03em}
 @media(max-width:720px){
   .certificate{padding:44px 22px 36px}
   h1{font-size:30px}
   .name{font-size:28px}
   .metrics{grid-template-columns:1fr}
   .orn{width:50px;height:50px}
+  .dedication{padding:36px 22px}
+  .dedi-text{font-size:17px}
 }
