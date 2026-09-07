@@ -1,0 +1,28 @@
+{
+  "course_id": "sena_ciberseguridad",
+  "name": "Ciberseguridad",
+  "version": "1.0",
+
+  "components": {
+    "videos": true,
+    "activities": true,
+    "concepts": true,
+    "evidence": true,
+    "projects": true,
+    "certification": true
+  },
+
+  "weights": {
+    "video": 0.20,
+    "activity": 0.40,
+    "mastery": 0.25,
+    "evidence": 0.15
+  },
+
+  "metadata": {
+    "institution": "SENA",
+    "domain": "Ciberseguridad",
+    "learning_mode": "formal",
+    "evidence_required": true
+  }
+}

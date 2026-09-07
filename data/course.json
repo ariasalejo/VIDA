@@ -1,0 +1,73 @@
+{
+  "title": "Apropiación de los Conceptos en Ciberseguridad",
+  "provider": "SENA",
+  "hours": 48,
+  "platform": "Zajuna",
+  "source": "https://zajuna.sena.edu.co/",
+  "learner": "Eduar Alejandro Arias Londoño",
+  "tutor": "Libardo Antonio Contreras",
+  "dedication": "A Libardo Antonio Contreras, mi instructor y guía, por acompañarme en este primer logro educativo de muchos que vienen.",
+  "items": [
+    {
+      "id": "aa1",
+      "kind": "activity",
+      "title": "AA1 · Informe análisis y valoración de activos",
+      "due": "2026-08-13"
+    },
+    {
+      "id": "aa2",
+      "kind": "activity",
+      "title": "AA2 · Infografía",
+      "due": "2026-08-21"
+    },
+    {
+      "id": "aa3",
+      "kind": "activity",
+      "title": "AA3 · Matriz de riesgo",
+      "due": "2026-08-28"
+    },
+    {
+      "id": "aa4",
+      "kind": "activity",
+      "title": "AA4 · Mapa mental",
+      "due": "2026-09-06"
+    }
+  ],
+  "concepts": [
+    {
+      "id": "concepto_activo",
+      "title": "Activo de información",
+      "definition": "Recurso que tiene valor para una organización y, por ello, requiere protección."
+    },
+    {
+      "id": "concepto_confidencialidad",
+      "title": "Confidencialidad",
+      "definition": "La información solo debe estar disponible para quienes están autorizados."
+    },
+    {
+      "id": "concepto_integridad",
+      "title": "Integridad",
+      "definition": "La información debe conservar su exactitud y completitud."
+    },
+    {
+      "id": "concepto_disponibilidad",
+      "title": "Disponibilidad",
+      "definition": "La información y los servicios deben estar disponibles cuando se necesitan."
+    },
+    {
+      "id": "concepto_riesgo",
+      "title": "Riesgo",
+      "definition": "Posibilidad de que una amenaza aproveche una vulnerabilidad y produzca un impacto."
+    }
+  ],
+  "videos": [
+    {
+      "id": "video_und_bien",
+      "title": "Und Bien",
+      "file": "media/videos/Und_Bien.mp4",
+      "kind": "video",
+      "source": "local",
+      "required": false
+    }
+  ]
+}

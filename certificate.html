@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>VIDA · Certificate of Mastery</title>
+<style>
+:root{--bg:#06111d;--panel:#0b1b2a;--line:#1b3d56;--cyan:#45e6ff;--blue:#2e8bff;--green:#47e0b7;--text:#eef8ff;--muted:#8aa8ba}
+body{margin:0;min-height:100vh;background:radial-gradient(circle at top,rgba(46,139,255,.18),transparent 32%),linear-gradient(180deg,#06111d,#03080f);color:var(--text);font-family:Inter,system-ui,sans-serif;display:grid;place-items:center}
+.card{width:min(980px,calc(100% - 40px));padding:54px;border:1px solid var(--line);border-radius:28px;background:rgba(11,27,42,.96);box-shadow:0 35px 100px rgba(0,0,0,.5);text-align:center}
+.brand{color:var(--cyan);letter-spacing:.2em;font-weight:900;font-size:14px}.title{font-size:42px;font-weight:900;margin:28px 0 12px}.learner{font-size:28px;color:white}.course{color:var(--muted);font-size:18px;margin:18px auto 30px;max-width:760px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:30px 0}.metric{padding:20px;border:1px solid var(--line);border-radius:16px;background:#071522}.metric b{display:block;font-size:28px;color:var(--cyan)}.metric span{font-size:10px;letter-spacing:.16em;color:var(--muted)}.hash{font-family:ui-monospace,monospace;font-size:11px;color:#8cc7db;word-break:break-all;margin-top:24px}.status{display:inline-block;margin-top:20px;padding:9px 14px;border:1px solid #1d574c;color:var(--green);border-radius:999px;letter-spacing:.12em;font-size:10px}.legal{margin-top:26px;color:#6f8fa3;font-size:11px}
+</style>
+</head>
+<body>
+<main class="card">
+<div class="brand">🧠 BLUMIX · VIDA</div>
+<div class="title">CERTIFICATE OF MASTERY</div>
+<div class="learner">{{ learner }}</div>
+<div class="course">{{ course }}</div>
+<div class="grid">
+<div class="metric"><b>{{ operational_progress }}%</b><span>PROGRESO OPERATIVO</span></div>
+<div class="metric"><b>{{ mastery }}%</b><span>DOMINIO VERIFICADO</span></div>
+<div class="metric"><b>{{ evidence_count }}</b><span>EVIDENCIAS</span></div>
+</div>
+<div>VIDA-ID: <strong>{{ certificate_id }}</strong></div>
+<div class="status">PERSONAL VERIFIED · ONE PER COURSE</div>
+<div class="hash">SHA-256 · {{ verification_hash }}</div>
+<div class="legal">Certificado personal generado por BLUMIX · VIDA. No constituye certificación oficial del SENA.</div>
+</main>
+</body>
+</html>

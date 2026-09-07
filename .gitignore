@@ -1,0 +1,30 @@
+# Entorno virtual y paquetes
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Copias de seguridad locales
+.vida_backup_*/
+*.backup*
+*.bak*
+
+# Datos generados (base local, evidencias, eventos, informes)
+data/vida.db
+data/evidence/*.json
+data/events/*.json
+data/reports/*.json
+certificates/*.issued.json
+!certificates/.gitkeep
+
+# Multimedia pesado
+media/videos/*
+media/materials/*
+!media/videos/.gitkeep
+!media/materials/.gitkeep
+
+# SQLite temporales
+*.db-journal
+*.db-wal
+*.db-shm

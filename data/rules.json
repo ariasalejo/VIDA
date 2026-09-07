@@ -1,0 +1,55 @@
+{
+  "version": 2,
+  "principles": [
+    "NO_GUESSING",
+    "NO_INVENTED_EVIDENCE",
+    "OBSERVATION_SEPARATE_FROM_INTERPRETATION",
+    "VIDEO_WATCHED_IS_NOT_MASTERY",
+    "MISSING_DATA_IS_UNKNOWN",
+    "AI_PROPOSES_NOT_CERTIFIES",
+    "CERTIFICATE_IS_ISSUED_ONCE_PER_COURSE",
+    "CERTIFICATE_REQUIRES_ALL_OBJECTIVES",
+    "USER_CONFIRMATION_IS_FINAL"
+  ],
+  "certificate_policy": {
+    "max_certificates_per_course": 1,
+    "requires": [
+      "operational_progress == 100",
+      "mastery == 100",
+      "all_required_videos_complete",
+      "all_required_activities_complete",
+      "all_required_concepts_verified",
+      "evidence_count > 0",
+      "unknown_required == 0",
+      "user_confirmation == true"
+    ],
+    "official_status": false,
+    "issuer": "BLUMIX · VIDA"
+  },
+  "rules": [
+    {
+      "id": "R-001",
+      "name": "Video completion",
+      "condition": "playback >= 95%",
+      "result": "VERIFIED_VIDEO"
+    },
+    {
+      "id": "R-002",
+      "name": "Mastery",
+      "condition": "explicit verification evidence",
+      "result": "VERIFIED_MASTERY"
+    },
+    {
+      "id": "R-003",
+      "name": "Unknown",
+      "condition": "required evidence missing",
+      "result": "UNKNOWN"
+    },
+    {
+      "id": "R-004",
+      "name": "Certificate",
+      "condition": "all certificate policy conditions satisfied",
+      "result": "ISSUE_ONCE"
+    }
+  ]
+}
