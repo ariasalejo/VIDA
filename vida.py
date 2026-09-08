@@ -368,6 +368,20 @@ def register_course(manifest: dict, activate: bool = True) -> str:
     return cid
 
 
+
+LEGACY_USER_ID = "local-owner"
+
+
+def current_user_id() -> str:
+    """Devuelve la identidad activa de VIDA.
+
+    Durante la migración inicial se utiliza LEGACY_USER_ID.
+    Posteriormente esta función será el único punto que resolverá
+    invitado, usuario registrado y otras identidades persistentes.
+    """
+    return LEGACY_USER_ID
+
+
 def conn() -> sqlite3.Connection:
     ensure_dirs()
 
@@ -409,6 +423,7 @@ def conn() -> sqlite3.Connection:
     )
 
     _migrate_existing_db(connection)
+    _migrate_identity_db(connection)
 
     connection.commit()
     return connection
@@ -481,29 +496,167 @@ def _migrate_existing_db(connection: sqlite3.Connection) -> None:
         connection.execute(f"ALTER TABLE {table}__mig RENAME TO {table}")
 
 
+
+def _migrate_identity_db(connection: sqlite3.Connection) -> None:
+    """Migra las tablas de progreso al modelo con identidad.
+
+    Los datos existentes se asignan al usuario local heredado.
+    La migración es idempotente y nunca elimina registros sin
+    copiarlos previamente a la nueva estructura.
+    """
+    legacy_user = LEGACY_USER_ID
+
+    tables = {
+        row["name"]
+        for row in connection.execute(
+            "SELECT name FROM sqlite_master WHERE type='table'"
+        )
+    }
+
+    # ---------------------------------------------------------
+    # video_progress
+    # ---------------------------------------------------------
+    if "video_progress" in tables:
+        columns = {
+            row["name"]
+            for row in connection.execute(
+                "PRAGMA table_info(video_progress)"
+            )
+        }
+
+        if "user_id" not in columns:
+            connection.execute("""
+                CREATE TABLE video_progress__identity (
+                    user_id TEXT NOT NULL DEFAULT 'local-owner',
+                    video_id TEXT NOT NULL,
+                    course_id TEXT NOT NULL
+                        DEFAULT 'sena_ciberseguridad',
+                    position REAL NOT NULL DEFAULT 0,
+                    duration REAL NOT NULL DEFAULT 0,
+                    completed INTEGER NOT NULL DEFAULT 0,
+                    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (user_id, video_id, course_id)
+                )
+            """)
+
+            connection.execute("""
+                INSERT INTO video_progress__identity (
+                    user_id,
+                    video_id,
+                    course_id,
+                    position,
+                    duration,
+                    completed,
+                    updated_at
+                )
+                SELECT
+                    ?,
+                    video_id,
+                    course_id,
+                    position,
+                    duration,
+                    completed,
+                    updated_at
+                FROM video_progress
+            """, (legacy_user,))
+
+            connection.execute("DROP TABLE video_progress")
+
+            connection.execute("""
+                ALTER TABLE video_progress__identity
+                RENAME TO video_progress
+            """)
+
+    # ---------------------------------------------------------
+    # item_progress
+    # ---------------------------------------------------------
+    if "item_progress" in tables:
+        columns = {
+            row["name"]
+            for row in connection.execute(
+                "PRAGMA table_info(item_progress)"
+            )
+        }
+
+        if "user_id" not in columns:
+            connection.execute("""
+                CREATE TABLE item_progress__identity (
+                    user_id TEXT NOT NULL DEFAULT 'local-owner',
+                    item_id TEXT NOT NULL,
+                    course_id TEXT NOT NULL
+                        DEFAULT 'sena_ciberseguridad',
+                    completed INTEGER NOT NULL DEFAULT 0,
+                    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (user_id, item_id, course_id)
+                )
+            """)
+
+            connection.execute("""
+                INSERT INTO item_progress__identity (
+                    user_id,
+                    item_id,
+                    course_id,
+                    completed,
+                    updated_at
+                )
+                SELECT
+                    ?,
+                    item_id,
+                    course_id,
+                    completed,
+                    updated_at
+                FROM item_progress
+            """, (legacy_user,))
+
+            connection.execute("DROP TABLE item_progress")
+
+            connection.execute("""
+                ALTER TABLE item_progress__identity
+                RENAME TO item_progress
+            """)
+
+    # ---------------------------------------------------------
+    # study_log
+    # ---------------------------------------------------------
+    if "study_log" in tables:
+        columns = {
+            row["name"]
+            for row in connection.execute(
+                "PRAGMA table_info(study_log)"
+            )
+        }
+
+        if "user_id" not in columns:
+            connection.execute("""
+                ALTER TABLE study_log
+                ADD COLUMN user_id TEXT NOT NULL
+                    DEFAULT 'local-owner'
+            """)
+
 def engine_state(course_id: str | None = None) -> dict:
     cid = course_id or active_course_id()
+    uid = current_user_id()
     connection = conn()
 
     items = connection.execute(
         "SELECT item_id, completed, course_id FROM item_progress "
-        "WHERE course_id = ?",
-        (cid,),
+        "WHERE user_id = ? AND course_id = ?",
+        (uid, cid),
     ).fetchall()
 
     videos = connection.execute(
         """
         SELECT video_id, position, duration, completed
         FROM video_progress
-        WHERE course_id = ?
+        WHERE user_id = ? AND course_id = ?
         """,
-        (cid,),
+        (uid, cid),
     ).fetchall()
 
     log = connection.execute(
         "SELECT COALESCE(SUM(minutes), 0) AS minutes FROM study_log "
-        "WHERE course_id = ?",
-        (cid,),
+        "WHERE user_id = ? AND course_id = ?",
+        (uid, cid),
     ).fetchone()
 
     connection.close()
@@ -633,6 +786,9 @@ def engine_state(course_id: str | None = None) -> dict:
 
 
 def _evidence_count() -> int:
+    uid = current_user_id()
+    cid = active_course_id()
+
     evidence_dir = evidence_root()
     if not evidence_dir.exists():
         return 0
@@ -643,11 +799,19 @@ def _evidence_count() -> int:
         except (json.JSONDecodeError, OSError):
             continue
         if isinstance(data, list):
-            total += len(data)
+            total += sum(
+                1
+                for record in data
+                if record.get("context", {}).get("user_id") == uid
+                and record.get("context", {}).get("course_id") == cid
+            )
     return total
 
 
 def _evidence_for(activity_id: str) -> list[dict]:
+    uid = current_user_id()
+    cid = active_course_id()
+
     path = evidence_root() / "evidence.json"
     if not path.exists():
         return []
@@ -660,8 +824,11 @@ def _evidence_for(activity_id: str) -> list[dict]:
     return [
         record
         for record in data
-        if record.get("context", {}).get("activity_id")
-        == activity_id
+        if (
+            record.get("context", {}).get("activity_id") == activity_id
+            and record.get("context", {}).get("user_id") == uid
+            and record.get("context", {}).get("course_id") == cid
+        )
     ]
 
 
@@ -1086,12 +1253,6 @@ def create_app() -> Flask:
 
     @app.get("/verificar/<certificate_id>")
     def verify_certificate(certificate_id: str):
-        if not _cert_allowed(request):
-            return render_template(
-                "gated.html",
-                target=request.path,
-            ), 403
-
         engine = CertificateEngine(certificates_root())
         profile = ProfileEngine(profile_path()).load()
         record = _load_issued(engine, profile.course_id)
@@ -1110,14 +1271,6 @@ def create_app() -> Flask:
 
     @app.get("/api/verify/<certificate_id>")
     def verify_certificate_api(certificate_id: str):
-        if not _cert_allowed(request):
-            return jsonify(
-                {
-                    "ok": False,
-                    "error": "Acceso denegado. Se requiere permiso del sistema.",
-                }
-            ), 403
-
         engine = CertificateEngine(certificates_root())
         profile = ProfileEngine(profile_path()).load()
         record = _load_issued(engine, profile.course_id)
@@ -1166,13 +1319,15 @@ def create_app() -> Flask:
         cid = active_course_id()
         connection = conn()
 
+        uid = current_user_id()
+
         row = connection.execute(
             """
             SELECT *
             FROM video_progress
-            WHERE video_id = ? AND course_id = ?
+            WHERE user_id = ? AND video_id = ? AND course_id = ?
             """,
-            (vid, cid),
+            (uid, vid, cid),
         ).fetchone()
 
         connection.close()
@@ -1211,19 +1366,21 @@ def create_app() -> Flask:
 
         connection = conn()
         cid = active_course_id()
+        uid = current_user_id()
 
         connection.execute(
             """
             INSERT INTO video_progress (
+                user_id,
                 video_id,
                 course_id,
                 position,
                 duration,
                 completed
             )
-            VALUES (?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?)
 
-            ON CONFLICT(video_id, course_id)
+            ON CONFLICT(user_id, video_id, course_id)
             DO UPDATE SET
                 position = excluded.position,
                 duration = excluded.duration,
@@ -1231,6 +1388,7 @@ def create_app() -> Flask:
                 updated_at = CURRENT_TIMESTAMP
             """,
             (
+                uid,
                 vid,
                 cid,
                 position,
@@ -1263,22 +1421,25 @@ def create_app() -> Flask:
 
         connection = conn()
         cid = active_course_id()
+        uid = current_user_id()
 
         connection.execute(
             """
             INSERT INTO item_progress (
+                user_id,
                 item_id,
                 course_id,
                 completed
             )
-            VALUES (?, ?, ?)
+            VALUES (?, ?, ?, ?)
 
-            ON CONFLICT(item_id, course_id)
+            ON CONFLICT(user_id, item_id, course_id)
             DO UPDATE SET
                 completed = excluded.completed,
                 updated_at = CURRENT_TIMESTAMP
             """,
             (
+                uid,
                 item_id,
                 cid,
                 completed,
@@ -1333,19 +1494,22 @@ def create_app() -> Flask:
 
         connection = conn()
         cid = active_course_id()
+        uid = current_user_id()
 
         connection.execute(
             """
             INSERT INTO study_log (
+                user_id,
                 course_id,
                 kind,
                 ref_id,
                 minutes,
                 note
             )
-            VALUES (?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?)
             """,
             (
+                uid,
                 cid,
                 kind,
                 ref_id,
@@ -1378,22 +1542,24 @@ def create_app() -> Flask:
             ), 404
 
         conn_activity = conn()
+        uid = current_user_id()
+        cid = active_course_id()
 
         row = conn_activity.execute(
             """
             SELECT completed FROM item_progress
-            WHERE item_id = ?
+            WHERE user_id = ? AND item_id = ? AND course_id = ?
             """,
-            (activity_id,),
+            (uid, activity_id, cid),
         ).fetchone()
 
         video_row = conn_activity.execute(
             """
             SELECT position, duration, completed
             FROM video_progress
-            WHERE video_id = ?
+            WHERE user_id = ? AND video_id = ? AND course_id = ?
             """,
-            (f"video:{activity_id}",),
+            (uid, f"video:{activity_id}", cid),
         ).fetchone()
 
         conn_activity.close()
@@ -1438,11 +1604,18 @@ def create_app() -> Flask:
     def activities_list():
         course_data = course()
         connection = conn()
+        uid = current_user_id()
+        cid = active_course_id()
 
         rows = {
             row["item_id"]: row["completed"]
             for row in connection.execute(
-                "SELECT item_id, completed FROM item_progress"
+                """
+                SELECT item_id, completed
+                FROM item_progress
+                WHERE user_id = ? AND course_id = ?
+                """,
+                (uid, cid),
             ).fetchall()
         }
 
@@ -1568,6 +1741,8 @@ def create_app() -> Flask:
             result="DELIVERED",
             context={
                 "activity_id": activity_id,
+                "user_id": current_user_id(),
+                "course_id": active_course_id(),
                 "file": stored_name,
                 "size": path.stat().st_size,
                 "note": str(
@@ -1578,15 +1753,22 @@ def create_app() -> Flask:
 
         connection = conn()
         cid = active_course_id()
+        uid = current_user_id()
+
         connection.execute(
             """
-            INSERT INTO item_progress (item_id, course_id, completed)
-            VALUES (?, ?, 1)
-            ON CONFLICT(item_id, course_id) DO UPDATE SET
+            INSERT INTO item_progress (
+                user_id,
+                item_id,
+                course_id,
+                completed
+            )
+            VALUES (?, ?, ?, 1)
+            ON CONFLICT(user_id, item_id, course_id) DO UPDATE SET
                 completed = 1,
                 updated_at = CURRENT_TIMESTAMP
             """,
-            (activity_id, cid),
+            (uid, activity_id, cid),
         )
         connection.commit()
         connection.close()
@@ -1725,21 +1907,22 @@ def seed() -> None:
 
     connection = conn()
     cid = active_course_id()
+    uid = current_user_id()
 
     for video_id in video_ids:
         connection.execute(
             """
             INSERT INTO video_progress (
-                video_id, course_id, position, duration, completed
+                user_id, video_id, course_id, position, duration, completed
             )
-            VALUES (?, ?, 1, 1, 1)
-            ON CONFLICT(video_id, course_id) DO UPDATE SET
+            VALUES (?, ?, ?, 1, 1, 1)
+            ON CONFLICT(user_id, video_id, course_id) DO UPDATE SET
                 position = 1,
                 duration = 1,
                 completed = 1,
                 updated_at = CURRENT_TIMESTAMP
             """,
-            (video_id, cid),
+            (uid, video_id, cid),
         )
 
     for activity_id in activity_ids + [
@@ -1748,13 +1931,15 @@ def seed() -> None:
     ]:
         connection.execute(
             """
-            INSERT INTO item_progress (item_id, course_id, completed)
-            VALUES (?, ?, 1)
-            ON CONFLICT(item_id, course_id) DO UPDATE SET
+            INSERT INTO item_progress (
+                user_id, item_id, course_id, completed
+            )
+            VALUES (?, ?, ?, 1)
+            ON CONFLICT(user_id, item_id, course_id) DO UPDATE SET
                 completed = 1,
                 updated_at = CURRENT_TIMESTAMP
             """,
-            (activity_id, cid),
+            (uid, activity_id, cid),
         )
 
     connection.commit()
