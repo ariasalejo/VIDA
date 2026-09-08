@@ -25,7 +25,7 @@
       "due": "2026-08-21",
       "brief": "Representar de forma visual las clases de amenazas, vulnerabilidades y el proceso de análisis y evaluación del riesgo.",
       "deliverable": "Infografía en formato PDF o imagen (PNG/JPG).",
-      "video": "Und_Bien.mp4",
+      "video": "aa2_infografia.mp4",
       "materials": []
     },
     {
@@ -35,7 +35,7 @@
       "due": "2026-08-28",
       "brief": "Estructurar el mapa de riesgos de ciberseguridad según los activos de información, la normativa y los estándares técnicos.",
       "deliverable": "Matriz de riesgo en hoja de cálculo (XLSX) o documento (PDF).",
-      "video": "Und_Bien.mp4",
+      "video": "aa3_matriz_riesgo.mp4",
       "materials": []
     },
     {
@@ -45,7 +45,7 @@
       "due": "2026-09-06",
       "brief": "Sintetizar los procesos críticos de la gestión de la seguridad de la información mediante un mapa mental.",
       "deliverable": "Mapa mental en imagen (PNG/JPG) o documento (PDF).",
-      "video": "Und_Bien.mp4",
+      "video": "aa4_mapa_mental.mp4",
       "materials": []
     }
   ],
@@ -78,12 +78,12 @@
   ],
   "videos": [
     {
-      "id": "video_und_bien",
-      "title": "Und Bien",
-      "file": "media/videos/Und_Bien.mp4",
+      "id": "video_dashboard",
+      "title": "Ciberseguridad · sesión del dashboard",
+      "file": "media/videos/dashboard_sesion.mp4",
       "kind": "video",
       "source": "local",
-      "required": false
+      "required": true
     }
   ]
 }

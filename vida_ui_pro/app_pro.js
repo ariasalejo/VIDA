@@ -224,9 +224,14 @@ window.addEventListener("hashchange", router);
 async function load() {
   course = await getJSON("/api/course");
   $("#heroTitle").textContent = course.title;
+  const t = $("#chipTutor"); if (t) t.textContent = "🧑‍🏫 " + (course.tutor || "");
+  const i = $("#chipInst"); if (i) i.textContent = "🏛 " + (course.provider || "") + " · " + (course.platform || "");
+  const h = $("#chipHours"); if (h) h.textContent = "⏱ " + (course.hours || 0) + " horas";
+  document.title = "VIDA · " + (course.title || "");
   await loadVideosMeta();
   await loadCourses();
   await renderRoadmap();
+  await refresh();
   router();
 }
 
@@ -241,11 +246,76 @@ async function refresh() {
   $("#evbar").style.width = Math.min(100, (state.evidence_count ?? 0) * 10) + "%";
   animNum($("#lscore"), state.learning_score ?? 0, "%", 0);
   $("#lscorebar").style.width = (state.learning_score ?? 0) + "%";
+  renderComponents(state);
+  const sm = $("#studyMinutes");
+  if (sm) sm.textContent = (state.study_minutes ?? 0) + " MIN";
   renderConcepts();
   if (parseHash().name === "dashboard") {
     renderDashboard();
+    renderSignals(state);
+    renderNextActions(state);
     renderZona(state);
   }
+}
+
+function renderComponents(st) {
+  const set = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.style.width = Math.max(0, Math.min(100, (val ?? 0) * 100)) + "%";
+  };
+  const setLbl = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = Math.round((val ?? 0) * 100) + "%";
+  };
+  const v = st.video_progress ?? 0, a = st.activity_progress ?? 0, c = st.concept_progress ?? 0;
+  setLbl("compVideo", v); set("compVideoBar", v);
+  setLbl("compActivity", a); set("compActivityBar", a);
+  setLbl("compConcept", c); set("compConceptBar", c);
+}
+
+function renderSignals(st) {
+  const box = $("#intelSignals");
+  if (!box) return;
+  const meta = {
+    observed: { tag: "OBSERVADO", cls: "sig-observed" },
+    inferred: { tag: "INFERIDO", cls: "sig-inferred" },
+    predicted: { tag: "PREDICHO", cls: "sig-predicted" }
+  };
+  box.innerHTML = "";
+  (st.signals || []).forEach(s => {
+    const el = document.createElement("div");
+    el.className = "sig-row";
+    const m = meta[s.kind] || meta.observed;
+    const pct = Math.round((s.value ?? 0) * 100);
+    el.innerHTML =
+      `<div class="sig-top"><b>${esc(s.name.replace(/_/g, " "))}</b>` +
+      `<span class="sig-chip ${m.cls}">${m.tag}</span></div>` +
+      `<div class="sig-bar"><i style="width:${pct}%"></i></div>` +
+      `<small>${pct}% · <code>${esc(s.source)}</code></small>`;
+    box.appendChild(el);
+  });
+}
+
+function renderNextActions(st) {
+  const box = $("#intelActions");
+  if (!box) return;
+  box.innerHTML = "";
+  const acts = st.next_actions || [];
+  if (!acts.length) {
+    box.innerHTML = `<div class="ev-empty">🎉 Sin pasos pendientes: has demostrado todo lo requerido.</div>`;
+    return;
+  }
+  const ico = { activity: "📝", video: "📼", concept: "◈", evidence: "📤" };
+  acts.forEach((a, i) => {
+    const el = document.createElement("div");
+    el.className = "action-row";
+    el.innerHTML =
+      `<div class="ar-ico">${ico[a.type] || "▶"}</div>` +
+      `<div class="ar-body"><b>${esc(a.title || a.type)}</b>` +
+      `<small>${esc(a.reason || "")}</small></div>` +
+      `<span class="ar-prio ${a.priority === "high" ? "hi" : "lo"}">${esc(String(a.priority || "high").toUpperCase())}</span>`;
+    box.appendChild(el);
+  });
 }
 
 function renderConcepts() {
@@ -263,23 +333,35 @@ function renderConcepts() {
   });
 }
 
-function renderRoadmap() {
+async function renderRoadmap() {
   const box = $("#timeline");
   if (!box) return;
-  const steps = [
-    ["01", "Fundamentos", "Contenido y vocabulario base del curso."],
-    ["02", "Activos y valoración", "Componente formativo 1 · AA1."],
-    ["03", "Amenazas y riesgo", "Mapa de amenazas y matriz de riesgo."],
-    ["04", "Evidencias", "Demostrar lo comprendido y avanzar."]
-  ];
+  const acts = (course.items || []).filter(x => x.kind === "activity");
   box.innerHTML = "";
-  steps.forEach(([n, t, d]) => {
+  if (!acts.length) {
+    box.innerHTML = `<div class="ev-empty">Sin actividades registradas aún.</div>`;
+    return;
+  }
+  const actsState = await getJSON("/api/activities").catch(() => []);
+  const nd = $("#nextDue");
+  if (nd) {
+    const closed = acts.filter(a => a.due).sort((a, b) => String(b.due).localeCompare(String(a.due)))[0];
+    nd.textContent = closed
+      ? "📅 curso finalizado · cierre " + closed.due
+      : "📅 curso finalizado";
+  }
+  acts.forEach((a, i) => {
+    const stA = actsState.find(x => x.id === a.id) || {};
     const el = document.createElement("div");
     el.className = "file-item";
     el.style.marginTop = "8px";
+    el.style.cursor = "pointer";
     el.innerHTML =
-      `<div class="fi" style="color:var(--gold2)">${n}</div>` +
-      `<div class="fm"><b>${esc(t)}</b><small>${esc(d)}</small></div>`;
+      `<div class="fi" style="color:${stA.completed ? "var(--green)" : "var(--gold2)"}">${i + 1}</div>` +
+      `<div class="fm"><b>${esc(a.title)}</b>` +
+      `<small>${a.due ? "cierre " + a.due + " · " : ""}${stA.evidence_count || 0} evidencia${(stA.evidence_count || 0) === 1 ? "" : "s"}</small></div>` +
+      `<span class="status-chip ${stA.completed ? "on" : "off"}">${stA.completed ? "ENTREGADA" : "PENDIENTE"}</span>`;
+    el.addEventListener("click", () => { location.hash = "#/actividad/" + a.id; });
     box.appendChild(el);
   });
 }
@@ -394,13 +476,22 @@ async function renderActivities() {
   $("#actCount").textContent = list.filter(a => a.completed).length + "/" + list.length + " COMPLETADAS";
   const box = $("#activityList");
   box.innerHTML = "";
-  list.forEach(a => {
+  const details = await Promise.all(
+    list.map(a => getJSON("/api/activity/" + a.id).catch(() => null))
+  );
+  list.forEach((a, i) => {
+    const det = details[i] || {};
+    const vidPct = det.video_progress && det.video_progress.duration
+      ? Math.min(100, Math.round((det.video_progress.position / det.video_progress.duration) * 100))
+      : 0;
     const el = document.createElement("div");
     el.className = "activity-row" + (a.completed ? " done" : "");
     el.innerHTML =
-      `<div class="st">${a.completed ? "✅" : "📋"}</div>` +
+      `<div class="st">${a.completed ? "✅" : String(i + 1).padStart(2, "0")}</div>` +
       `<div class="meta"><b>${esc(a.title)}</b>` +
-      `<small>${a.due ? "cierre " + a.due : ""} · ${a.evidence_count} evidencias</small></div>` +
+      `<small>${det.deliverable ? esc(det.deliverable) : ""}</small>` +
+      `<small class="meta-line">${a.due ? "cierre " + a.due : "sin cierre"}` +
+      ` · 📼 ${vidPct}% visto · ${a.evidence_count} evidencia${a.evidence_count === 1 ? "" : "s"}</small></div>` +
       `<span class="status-chip ${a.completed ? "on" : "off"}">${a.completed ? "ENTREGADA" : "PENDIENTE"}</span>` +
       `<span class="go">abrir →</span>`;
     el.addEventListener("click", () => { location.hash = "#/actividad/" + a.id; });
@@ -554,10 +645,19 @@ async function renderKnowledge() {
   const box = $("#conceptFullList");
   if (!box) return;
   box.innerHTML = "";
+  if (!state) state = await getJSON("/api/dashboard");
+  const verified = new Set(state.verified_concept_ids || []);
+  const total = (course.concepts || []).length;
+  const cnt = $("#conceptCount");
+  if (cnt) cnt.textContent = (course.concepts || []).filter(c => verified.has(c.id)).length + "/" + total + " VERIFICADOS";
   (course.concepts || []).forEach(c => {
+    const ok = verified.has(c.id);
     const el = document.createElement("article");
-    el.className = "concept";
-    el.innerHTML = `<strong>◈ ${esc(c.title)}</strong><p>${esc(c.definition)}</p>`;
+    el.className = "concept" + (ok ? " verified" : "");
+    el.innerHTML =
+      `<div class="concept-head"><strong>◈ ${esc(c.title)}</strong>` +
+      `<span class="status-chip ${ok ? "on" : "off"}">${ok ? "VERIFICADO" : "PENDIENTE"}</span></div>` +
+      `<p>${esc(c.definition)}</p>`;
     box.appendChild(el);
   });
 }

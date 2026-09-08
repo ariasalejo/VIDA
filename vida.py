@@ -602,6 +602,7 @@ def engine_state(course_id: str | None = None) -> dict:
         "completed_activities": len(completed_activity_ids),
         "concept_count": len(concepts_cfg),
         "verified_concepts": len(verified_concepts),
+        "verified_concept_ids": sorted(verified_concepts),
         "learning_score": score,
         "signals": [
             {

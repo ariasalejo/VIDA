@@ -49,8 +49,13 @@
         <div>
           <small>PERSONAL LEARNING COMMAND CENTER</small>
           <h1 id="heroTitle">{{ course.title }}</h1>
+          <div class="hero-chips">
+            <span class="chip-chip" id="chipTutor">🧑‍🏫 {{ course.tutor }}</span>
+            <span class="chip-chip" id="chipInst">🏛 {{ course.provider }} · {{ course.platform }}</span>
+            <span class="chip-chip" id="chipHours">⏱ {{ course.hours }} horas</span>
+            <span class="chip-chip" id="nextDue">📅 curso finalizado</span>
+          </div>
           <p class="tagline">Observar · verificar · comprender · demostrar · avanzar.</p>
-          <p class="tagline" style="margin-top:10px">Aprendiz: <b style="color:var(--gold2)">{{ course.learner }}</b></p>
         </div>
         <div class="logo">VIDA<small>01 · SENA</small></div>
       </div>
@@ -60,6 +65,32 @@
         <div class="kpi gold"><small>MASTERY</small><strong id="mastery">0%</strong><div class="bar"><i id="masterybar"></i></div><p>conceptos verificados</p></div>
         <div class="kpi"><small>EVIDENCE</small><strong id="evidence">0</strong><div class="bar"><i id="evbar"></i></div><p>observaciones</p></div>
         <div class="kpi green"><small>LEARNING SCORE</small><strong id="lscore">0%</strong><div class="bar"><i id="lscorebar"></i></div><p>inteligencia adaptativa</p></div>
+      </div>
+
+      <div class="card comps-card">
+        <header>
+          <div><small>OPERATIVE COMPONENTS</small><h2>Desglose del progreso</h2></div>
+          <span class="pill" id="studyMinutes">0 MIN</span>
+        </header>
+        <div class="comps">
+          <div class="comp"><span class="comp-ico">📼</span><div class="comp-meta"><b id="compVideo">0%</b><small>Video</small></div><div class="comp-bar"><i id="compVideoBar"></i></div></div>
+          <div class="comp"><span class="comp-ico">📝</span><div class="comp-meta"><b id="compActivity">0%</b><small>Actividades</small></div><div class="comp-bar"><i id="compActivityBar"></i></div></div>
+          <div class="comp"><span class="comp-ico">◈</span><div class="comp-meta"><b id="compConcept">0%</b><small>Conceptos</small></div><div class="comp-bar"><i id="compConceptBar"></i></div></div>
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div class="card">
+          <header><div><small>INTELLIGENCE ENGINE</small><h2>Señales del motor</h2></div><span class="pill">OBSERVADO ≠ INFERIDO</span></header>
+          <p class="hint">Cinco señales provienen de hechos observados; tres son inferencias de histórico. El motor distingue lo que demuestras de lo que asume.</p>
+          <div id="intelSignals" class="intel-signals"></div>
+        </div>
+
+        <div class="card">
+          <header><div><small>NEXT ACTIONS</small><h2>Próximos pasos</h2></div><span class="pill">HOJA DE RUTA</span></header>
+          <p class="hint">Lo que falta demostrar para completar el curso, por prioridad.</p>
+          <div id="intelActions" class="intel-actions"></div>
+        </div>
       </div>
 
       <div class="grid2">
@@ -166,7 +197,7 @@
     <!-- ============ CONOCIMIENTO ============ -->
     <section class="view" id="view-conocimiento">
       <div class="card">
-        <header><div><small>KNOWLEDGE ENGINE</small><h2>Perspectiva declarativa</h2></div><span class="pill">CONCEPTOS · ISO 27001</span></header>
+        <header><div><small>KNOWLEDGE ENGINE</small><h2>Perspectiva declarativa</h2></div><span class="pill" id="conceptCount">CONCEPTOS · ISO 27001</span></header>
         <p class="hint">Base conceptual del curso, alineada con el estándar ISO/IEC 27001:2017.</p>
         <div class="grid2" id="conceptFullList"></div>
       </div>
@@ -200,6 +231,13 @@
         <div class="grid3" id="rulesList"></div>
       </div>
     </section>
+
+    <div class="dedic">
+      <div class="dedic-flor">✦</div>
+      <p class="dedic-texto">“{{ course.dedication }}”</p>
+      <p class="dedic-firma">— Eduar Alejandro Arias Londoño · Aprendiz SENA</p>
+      <div class="dedic-marca">💛 SENA · Zajuna · Curso: «{{ course.title }}» ({{ course.hours }} h) · Instructor: {{ course.tutor }}</div>
+    </div>
 
     <div class="sig">
       <b>VIDA</b> · una estructura para aprender, crear y avanzar. Motor de progreso · evidencia · inteligencia · certificados verificables.<br>

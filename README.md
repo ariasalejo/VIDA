@@ -21,6 +21,8 @@ e inteligencia adaptativa** que solo registra lo que se demuestra, nunca lo que 
 | 🌐 **Fuente del curso** | [zajuna.sena.edu.co](https://zajuna.sena.edu.co/) |
 
 > 💛 *A Libardo Antonio Contreras, mi instructor y guía, por acompañarme en este primer logro educativo de muchos que vienen.*
+>
+> ✦ Esta dedicatoria al docente y al SENA aparece al final del dashboard, en letra cursiva. ✦
 
 ---
 
@@ -36,6 +38,8 @@ e inteligencia adaptativa** que solo registra lo que se demuestra, nunca lo que 
 - 🚧 **Zona en construcción**: lo que está por llegar, sin engaños.
 - 🛰 **Multi-curso adaptativo**: selector en tiempo real (el perfil se ajusta solo).
 - 📟 Tres interfaces: **web** (Flask), **TUI** (Textual) y **CLI**.
+- 🎛 **Dashboard pro**: desglose de progreso por componente, señales del motor (OBSERVADO/INFERIDO/PREDICHO), próximos pasos y ruta curricular con las actividades reales.
+- ✦ **Dedicatoria final** al docente y al SENA, en letra cursiva.
 
 ---
 
@@ -86,19 +90,30 @@ python vida.py cert     # emite el certificado (si cumples las condiciones)
 
 ## 🎬 Sesiones grabadas
 
-Coloca el MP4 de la sesión en `media/videos/` y regístralo en `data/course.json`:
+Coloca el MP4 de la sesión en `media/videos/` y regístralo en `data/course.json`
+(cada actividad en `items[].video` y la sesión del dashboard en `videos[0]`):
 
 ```json
-{ "id": "video_und_bien", "title": "Und Bien", "file": "media/videos/Und_Bien.mp4", "required": false }
+{ "id": "video_dashboard", "title": "Ciberseguridad · sesión del dashboard", "file": "media/videos/dashboard_sesion.mp4", "required": true }
 ```
 
-VIDA guarda **posición, duración, porcentaje y completitud** en SQLite.
-No guarda credenciales de Zajuna. La sesión actual ya vive en `media/videos/Und_Bien.mp4` y se despliega a Vercel.
+| Sesión | Archivo en `media/videos/` | Actividad |
+|---|---|---|
+| Dashboard · Ciberseguridad | `dashboard_sesion.mp4` | Reproductor principal |
+| AA1 · Informe de activos | `Und_Bien.mp4` | `aa1` |
+| AA2 · Infografía de riesgos | `aa2_infografia.mp4` | `aa2` |
+| AA3 · Matriz de riesgo | `aa3_matriz_riesgo.mp4` | `aa3` |
+| AA4 · Mapa mental | `aa4_mapa_mental.mp4` | `aa4` |
 
-> ⚠️ **Sobre el deploy del video:** es un archivo de ~64 MB y se sirve a través de la función
-> de Python. La reproducción funciona, pero en planes gratuitos de Vercel puede tardar en el
-> primer arranque. Para una versión ultrarrápida, múdalo a un bucket/streaming y cambia `file`
-> por una URL pública (`https://…/sesion01.mp4`).
+VIDA guarda **posición, duración, porcentaje y completitud** en SQLite.
+No guarda credenciales de Zajuna. La sesión del dashboard es un clip de ~12 MB.
+
+> ⚠️ **Sobre el deploy del video:** las cinco sesiones quedaron comprimidas por debajo
+> del límite de 100 MB por archivo de GitHub (dashboard ~12 MB, AA1 ~64 MB, AA2 ~81 MB,
+> AA3 ~95 MB, AA4 ~90 MB), por lo que sí pueden subirse al repo. El problema de tamaño
+> se resuelve, pero **Vercel** (límite de función ~250 MB) no puede servir ~340 MB de
+> videos de modo fiable; para una versión completa en el servidor, múdalo a un
+> bucket/streaming y cambia `file` por una URL pública.
 
 ---
 
@@ -163,8 +178,9 @@ pytest -q
 - [x] UI web profesional responsive + multi-curso
 - [x] Guía por voz en español (voz femenina)
 - [x] Sesión grabada integrada y desplegada en Vercel
+- [x] Dedicatoria especial al docente y al SENA (final del dashboard, en cursiva)
+- [x] Sesiones por actividad (AA1–AA4) más video del dashboard
 - [ ] Material de aprendizaje por actividad
-- [ ] Más sesiones grabadas (AA2–AA4)
 - [ ] Certificado final emitido
 
 🚧 *VIDA es obra viva: crece con cada sesión, cada entrega y cada concepto demostrado.* 🚧

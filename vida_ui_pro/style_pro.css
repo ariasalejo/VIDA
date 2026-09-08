@@ -125,6 +125,13 @@ main{width:min(1180px,100%);padding:32px 34px 70px;margin:auto}
 .hero small{font-size:10px;letter-spacing:.3em;color:var(--muted);font-weight:800}
 .hero h1{margin:10px 0 6px;font-size:30px;font-weight:800;line-height:1.15}
 .hero .tagline{color:var(--muted);font-size:14px}
+.hero-chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.chip-chip{
+  font-size:11px;color:var(--muted);letter-spacing:.03em;
+  border:1px solid var(--line);border-radius:99px;padding:5px 11px;
+  background:rgba(8,20,33,.55);
+}
+.chip-chip:last-child{color:var(--warn);border-color:rgba(247,198,90,.35)}
 .hero .logo{
   flex:0 0 auto;width:110px;height:110px;border-radius:24px;
   display:grid;place-items:center;background:linear-gradient(150deg,#15344f,#0a1e33);
@@ -180,7 +187,8 @@ main{width:min(1180px,100%);padding:32px 34px 70px;margin:auto}
 .activity-row .st{font-size:17px;flex:0 0 auto}
 .activity-row .meta{flex:1;min-width:0}
 .activity-row .meta b{display:block;font-size:14px;font-weight:600}
-.activity-row .meta small{color:var(--muted2);font-size:11px}
+.activity-row .meta small{color:var(--muted2);font-size:11px;display:block;line-height:1.5}
+.activity-row .meta .meta-line{margin-top:3px;color:var(--gold2);font-size:10.5px;letter-spacing:.02em}
 .activity-row .go{color:var(--cyan);font-size:12px;flex:0 0 auto}
 .activity-row.done .meta b{color:var(--green)}
 .status-chip{font-size:9px;letter-spacing:.12em;padding:4px 9px;border-radius:99px;flex:0 0 auto}
@@ -252,11 +260,48 @@ video.offline{opacity:.18;filter:grayscale(.7)}
 .file-item a{color:var(--cyan);font-size:12px}
 .ok-note{color:var(--green);font-size:12.5px;margin-top:8px}
 
-/* Concepts */
+/* ---------- Dashboard: desglose de componentes ---------- */
+.comps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:6px}
+.comp{display:flex;align-items:center;gap:12px}
+.comp-ico{flex:0 0 auto;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:rgba(69,230,255,.08);border:1px solid var(--line);font-size:16px}
+.comp-meta{flex:0 0 auto;min-width:64px}
+.comp-meta b{display:block;font-size:20px;font-weight:800;color:var(--cyan)}
+.comp-meta small{font-size:9.5px;letter-spacing:.14em;color:var(--muted2);text-transform:uppercase}
+.comp-bar{flex:1;height:7px;border-radius:99px;background:#0c2034;overflow:hidden}
+.comp-bar i{display:block;height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,var(--blue),var(--cyan));transition:width .6s ease}
+
+/* ---------- Dashboard: señales del motor ---------- */
+.intel-signals{display:flex;flex-direction:column;gap:10px;margin-top:6px}
+.sig-row{padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:rgba(8,20,33,.5)}
+.sig-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px}
+.sig-top b{font-size:12.5px;color:var(--text);text-transform:capitalize}
+.sig-chip{font-size:8.5px;letter-spacing:.14em;padding:3px 8px;border-radius:99px;font-weight:800}
+.sig-chip.sig-observed{color:var(--green);border:1px solid rgba(71,224,183,.4)}
+.sig-chip.sig-inferred{color:var(--warn);border:1px solid rgba(247,198,90,.4)}
+.sig-chip.sig-predicted{color:var(--cyan);border:1px solid rgba(69,230,255,.4)}
+.sig-bar{height:5px;border-radius:99px;background:#0c2034;overflow:hidden}
+.sig-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--gold),var(--gold2));transition:width .6s ease}
+.sig-row small{display:block;margin-top:5px;font-size:10px;color:var(--muted2)}
+.sig-row code{color:var(--cyan);background:rgba(69,230,255,.08);padding:1px 5px;border-radius:5px}
+
+/* ---------- Dashboard: próximos pasos ---------- */
+.intel-actions{display:flex;flex-direction:column;gap:10px;margin-top:6px}
+.action-row{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:rgba(8,20,33,.5)}
+.ar-ico{flex:0 0 auto;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:rgba(69,230,255,.08);border:1px solid var(--line);font-size:15px}
+.ar-body{flex:1;min-width:0}
+.ar-body b{display:block;font-size:12.5px;color:var(--text)}
+.ar-body small{color:var(--muted2);font-size:10.5px}
+.ar-prio{flex:0 0 auto;font-size:8.5px;letter-spacing:.14em;padding:3px 8px;border-radius:99px;font-weight:800}
+.ar-prio.hi{color:var(--red);border:1px solid rgba(251,113,133,.4)}
+.ar-prio.lo{color:var(--green);border:1px solid rgba(71,224,183,.4)}
+
+/* Conceptos */
 .concept{
   padding:18px;border:1px solid var(--line);border-radius:14px;background:rgba(8,20,33,.5);
 }
-.concept strong{display:block;font-size:14.5px;color:var(--cyan);margin-bottom:6px}
+.concept.verified{border-color:rgba(71,224,183,.35);background:rgba(20,60,48,.22)}
+.concept-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px}
+.concept strong{display:block;font-size:14.5px;color:var(--cyan)}
 .concept p{margin:0;font-size:12.5px;color:var(--muted);line-height:1.6}
 
 /* Evidence overview */
@@ -299,12 +344,20 @@ video.offline{opacity:.18;filter:grayscale(.7)}
 .sig{margin-top:34px;padding:18px 22px;border-top:1px solid var(--line);color:var(--muted2);font-size:11px;line-height:1.7;text-align:center}
 .sig b{color:var(--muted)}
 
+/* Dedicatoria final */
+.dedic{margin:46px 0 8px;padding:30px 26px 26px;text-align:center;border:1px solid var(--line);border-radius:16px;background:linear-gradient(160deg,rgba(247,198,90,.10),rgba(71,224,183,.06) 55%,rgba(129,140,248,.08));position:relative}
+.dedic-flor{position:absolute;top:-14px;left:50%;transform:translateX(-50%);width:30px;height:30px;line-height:30px;border-radius:50%;background:var(--bg);border:1px solid var(--gold2);color:var(--gold2);font-size:13px;box-shadow:0 4px 14px rgba(0,0,0,.35)}
+.dedic-texto{margin:0 0 14px;font-family:"Dancing Script","Segoe Script","Brush Script MT",cursive,"Great Vibes",serif;font-style:italic;font-size:clamp(19px,3vmax,27px);font-weight:600;line-height:1.55;color:var(--gold2);text-shadow:0 1px 3px rgba(0,0,0,.45)}
+.dedic-firma{margin:0 0 12px;font-family:"Dancing Script","Segoe Script","Brush Script MT",cursive;font-size:clamp(14px,2vmax,18px);color:var(--muted)}
+.dedic-marca{margin-top:4px;font-size:10.5px;letter-spacing:.06em;color:var(--muted2)}
+
 @media(max-width:960px){
   .app{grid-template-columns:1fr}
   aside{position:static;height:auto;flex-direction:row;flex-wrap:wrap;border-right:0;border-bottom:1px solid var(--line)}
   .nav-label{display:none}
   aside a.nav{flex:1 0 auto}
   .kpis,.grid2,.grid3{grid-template-columns:1fr}
+  .comps{grid-template-columns:1fr}
   main{padding:22px 16px}
 }
 
