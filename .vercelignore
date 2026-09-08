@@ -4,8 +4,7 @@ __pycache__
 *.pyc
 .pytest_cache
 
-# Multimedia pesado (los videos y materiales se sirven localmente)
-media/videos/*
+# Multimedia: la sesión grabada se despliega; los materiales se sirven localmente
 media/materials/*
 
 # Datos generados en runtime

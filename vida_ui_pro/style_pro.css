@@ -265,6 +265,36 @@ video.offline{opacity:.18;filter:grayscale(.7)}
 .ev-group h3 span{font-size:10px;color:var(--gold2);letter-spacing:.1em}
 .ev-empty{color:var(--muted2);font-size:12.5px;padding:10px 2px}
 
+/* ---------- Zona en construcción ---------- */
+.zone-card{
+  border:1px dashed rgba(247,198,90,.4);border-radius:var(--radius);
+  background:linear-gradient(180deg,rgba(38,30,10,.32),rgba(7,17,30,.92));
+}
+.zone-card:hover{border-color:rgba(247,198,90,.65)}
+.zone-card .zone-pill{color:var(--warn)!important;border-color:rgba(247,198,90,.45)!important}
+.zone-banner{
+  font-size:22px;letter-spacing:.4em;text-align:center;padding:13px 16px;
+  margin:4px 0 6px;border:1px solid rgba(247,198,90,.22);border-radius:12px;
+  background:repeating-linear-gradient(45deg,rgba(247,198,90,.08),rgba(247,198,90,.08) 12px,rgba(20,14,4,.14) 12px,rgba(20,14,4,.14) 24px);
+  white-space:nowrap;overflow:hidden;
+}
+.zone-list{margin-top:12px;display:flex;flex-direction:column;gap:8px}
+.zone-item{
+  display:flex;align-items:center;gap:12px;padding:11px 14px;
+  border:1px solid rgba(247,198,90,.2);border-radius:12px;background:rgba(20,14,4,.32);
+}
+.zone-item .zi{color:var(--gold2);font-size:17px;flex:0 0 auto}
+.zone-item .zm{flex:1;min-width:0}
+.zone-item .zm b{display:block;font-size:13px}
+.zone-item .zm small{display:block;margin-top:2px;color:var(--muted2);font-size:11px;line-height:1.45}
+.zone-chip{
+  font-size:9px;letter-spacing:.12em;padding:4px 9px;border-radius:99px;flex:0 0 auto;
+  color:var(--warn);border:1px solid rgba(247,198,90,.45);white-space:nowrap;
+}
+.zone-chip.en-obra,.zone-chip.wip{color:var(--warn);border-color:rgba(247,198,90,.45)}
+.zone-chip.pendiente,.zone-chip.en-espera{color:var(--red);border-color:rgba(251,113,133,.45)}
+.zone-chip.ok{color:var(--green);border-color:rgba(71,224,183,.45)}
+
 /* Footer sig */
 .sig{margin-top:34px;padding:18px 22px;border-top:1px solid var(--line);color:var(--muted2);font-size:11px;line-height:1.7;text-align:center}
 .sig b{color:var(--muted)}

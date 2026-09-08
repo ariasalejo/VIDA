@@ -71,15 +71,27 @@ const GUIDES = {
   evidencias: "Centro de evidencias. VIDA solo registra lo que observa; nunca inventa evidencia.",
   reglas: "Reglas del motor. Aquí puedes ver quién califica, con qué pesos y bajo qué condiciones se emite el certificado."
 };
+const VOZ_FEMENINA = /laura|helena|sabina|paulina|m[oó]nica|camila|marisol|luci|ximena|valentina|isabella|sof[aí]a|elena|paloma|palmira|samantha|karina|nuria|silvia|beatriz|marta|olga|andrea|daniela|mar[íi]a|google español|google espa|milena|alicia|emma|selma|rosa|tessa|linda|allison/i;
+const VOZ_MASCULINA = /jorge|pedro|carlos|lucas|pablo|diego|david|miguel|juan|javier|antonio|raul|ram[oó]n|alberto|fernando|fernando|andres|andr[eé]s|thomas|alex|male|masculino|hombre/i;
+let vidaVoice = null;
+function pickVoice() {
+  const vs = speechSynthesis.getVoices();
+  const es = vs.filter(v => (v.lang || "").toLowerCase().replace("_", "-").indexOf("es") === 0);
+  const pool = es.length ? es : vs;
+  const female = pool.filter(v => VOZ_FEMENINA.test(v.name) && !VOZ_MASCULINA.test(v.name));
+  const neutral = pool.filter(v => !VOZ_MASCULINA.test(v.name) && !VOZ_FEMENINA.test(v.name));
+  vidaVoice = female[0] || neutral[0] || pool[0] || null;
+  return vidaVoice;
+}
 function speak(text) {
   if (!text || !voiceOn || !("speechSynthesis" in window)) return;
   try {
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
     u.lang = "es-CO";
-    u.rate = 0.96;
-    const vs = speechSynthesis.getVoices();
-    const v = vs.find((x) => x.lang.toLowerCase().startsWith("es"));
+    u.rate = 0.94;
+    u.pitch = 1.12;
+    const v = pickVoice();
     if (v) u.voice = v;
     speechSynthesis.speak(u);
   } catch (_) {}
@@ -230,7 +242,10 @@ async function refresh() {
   animNum($("#lscore"), state.learning_score ?? 0, "%", 0);
   $("#lscorebar").style.width = (state.learning_score ?? 0) + "%";
   renderConcepts();
-  if (parseHash().name === "dashboard") renderDashboard();
+  if (parseHash().name === "dashboard") {
+    renderDashboard();
+    renderZona(state);
+  }
 }
 
 function renderConcepts() {
@@ -271,6 +286,52 @@ function renderRoadmap() {
 
 function renderDashboard() {
   initMediumVideo();
+  renderZona(state);
+}
+
+/* 🚧 ZONA EN CONSTRUCCIÓN */
+async function renderZona(st) {
+  const box = $("#zoneList");
+  if (!box) return;
+  const zone = [];
+  let vistos = 0;
+  (course.videos || []).forEach(v => {
+    const meta = videoById(v.id);
+    if (meta && meta.available === true) { vistos++; return; }
+    zone.push({ ico: "📼", t: "Sesión de grabación sincrónica", d: (v.title || v.id) + " · subiéndose al servidor.", tag: "EN OBRA" });
+  });
+  if (!zone.length && vistos) zone.push({ ico: "📼", t: "Sesiones sincrónicas en línea", d: "El motor ya reproduce y valida las grabaciones.", tag: "OK" });
+  (course.items || []).filter(x => x.kind === "activity").forEach(a => {
+    if (!a.materials || !a.materials.length) {
+      zone.push({ ico: "📚", t: "Material de aprendizaje", d: a.title + " · guías y lecturas por montar.", tag: "EN OBRA" });
+    }
+  });
+  try {
+    const acts = await getJSON("/api/activities");
+    (acts || []).filter(a => !a.completed).forEach(a => {
+      zone.push({ ico: "📝", t: "Entrega pendiente", d: a.title, tag: "PENDIENTE" });
+    });
+  } catch (_) {}
+  const cert = (st && st.certificate) || {};
+  if (!cert.issued) {
+    zone.push({ ico: "🏆", t: "Certificado digital", d: "Se emite automáticamente al demostrar todas las condiciones.", tag: "EN ESPERA" });
+  }
+  box.innerHTML = "";
+  if (!zone.length) {
+    box.innerHTML = `<div class="ev-empty">🚧 Obra terminada por ahora. VIDA sigue construyendo.</div>`;
+    return;
+  }
+  zone.forEach(z => {
+    const el = document.createElement("div");
+    el.className = "zone-item";
+    el.innerHTML =
+      `<div class="zi">${z.ico}</div>` +
+      `<div class="zm"><b>${esc(z.t)}</b><small>${esc(z.d)}</small></div>` +
+      `<span class="zone-chip ${z.tag.toLowerCase().replace(/[^a-z]/g, "-")}">${z.tag}</span>`;
+    box.appendChild(el);
+  });
+  const card = $("#zoneCard");
+  if (card) card.style.display = "";
 }
 
 /* Shared session video (top-level course.videos) */
@@ -627,7 +688,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const vb = $("#voiceBtn");
   if (vb) vb.addEventListener("click", () => {
     voiceOn = !voiceOn;
-    setVoiceBtn();
+setVoiceBtn();
+  if ("speechSynthesis" in window) {
+    pickVoice();
+    const refreshVoz = () => pickVoice();
+    if (speechSynthesis.addEventListener) speechSynthesis.addEventListener("voiceschanged", refreshVoz);
+    else speechSynthesis.onvoiceschanged = refreshVoz;
+  }
     if (voiceOn) speak(GUIDES[parseHash().name] || GUIDES.dashboard);
   });
   const cs = $("#courseSel");

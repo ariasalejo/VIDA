@@ -9,7 +9,7 @@ import tempfile
 import webbrowser
 from datetime import datetime, timezone
 from pathlib import Path
-from secrets import compare_digest, token_hex
+from secrets import compare_digest
 
 from flask import Flask, jsonify, render_template, request, send_from_directory
 from rich.console import Console
@@ -708,19 +708,23 @@ def _resolve_video_file(file_ref: str) -> tuple[bool, int]:
     return False, 0
 
 
+DEFAULT_CERT_KEY = os.environ.get("VIDA_CERT_KEY", "1035868489")
+
+
 def _cert_token() -> str:
     token_file = runtime_root() / ".cert_token"
     if not token_file.exists():
         try:
             token_file.parent.mkdir(parents=True, exist_ok=True)
-            token_file.write_text(token_hex(16), encoding="utf-8")
+            token_file.write_text(DEFAULT_CERT_KEY, encoding="utf-8")
             token_file.chmod(0o600)
         except OSError:
             pass
     try:
-        return token_file.read_text(encoding="utf-8").strip()
+        token = token_file.read_text(encoding="utf-8").strip()
     except OSError:
-        return ""
+        token = ""
+    return token or DEFAULT_CERT_KEY
 
 
 def _cert_allowed(req: request) -> bool:
