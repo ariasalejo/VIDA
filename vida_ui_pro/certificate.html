@@ -70,12 +70,51 @@
   <div class="dedi-or">❦</div>
   <div class="dedi-kicker">AGRADECIMIENTO</div>
   <h2>Dedicatoria</h2>
-  <p class="dedi-text">«{{ dedication }}»</p>
+  <p class="dedi-text">«A mi madre, Ángela María Londoño, la reina de mi corazón y la mujer que me dio la vida: este primer logro educativo también es tuyo, porque en cada paso estuvo tu amor, tu fe y tu sacrificio. Gracias, madrecita del alma.»</p>
   <div class="dedi-close">— Eduar Alejandro Arias Londoño, aprendiz</div>
+  <button class="dedi-btn" id="readDedic" type="button" style="margin-top:16px;padding:10px 18px;border:1px solid rgba(247,198,90,.55);border-radius:10px;background:rgba(247,198,90,.08);color:#f6ecd0;font-size:13px;cursor:pointer">🔊 Escuchar la dedicatoria</button>
 </section>
 
 <section class="thanks-note">
-  <p>Gracias, <strong>{{ tutor }}</strong>, por acompañarme en este primer logro educativo de muchos que vienen.</p>
+  <p>Con todo mi amor y mi gratitud, este logro es para ti, <strong>madrecita del alma</strong>.</p>
 </section>
+
+<script>
+(function () {
+  var DEDICACION = "A mi madre, Ángela María Londoño, la reina de mi corazón y la mujer que me dio la vida: este primer logro educativo también es tuyo, porque en cada paso estuvo tu amor, tu fe y tu sacrificio. Gracias, madrecita del alma.";
+  function vozHumana() {
+    if (!("speechSynthesis" in window)) return null;
+    var vs = speechSynthesis.getVoices();
+    var es = vs.filter(function (v) {
+      return (v.lang || "").toLowerCase().replace("_", "-").indexOf("es") === 0;
+    });
+    var pool = es.length ? es : vs;
+    var naturales = pool.filter(function (v) {
+      return /natural|neural|enhanced|google|online|premium/i.test(v.name) &&
+        !/jorge|pedro|carlos|lucas|pablo|diego|david|miguel|juan|javier|male|federico|daniel|thomas|alex/i.test(v.name);
+    });
+    return naturales[0] || pool[0] || null;
+  }
+  function leerDedicatoria() {
+    if (!("speechSynthesis" in window)) return;
+    speechSynthesis.cancel();
+    var u = new SpeechSynthesisUtterance(DEDICACION);
+    u.lang = "es-CO";
+    u.rate = 0.9;
+    u.pitch = 1.0;
+    var v = vozHumana();
+    if (v) u.voice = v;
+    speechSynthesis.speak(u);
+  }
+  document.addEventListener("DOMContentLoaded", function () {
+    var b = document.getElementById("readDedic");
+    if (b) b.addEventListener("click", leerDedicatoria);
+    setTimeout(leerDedicatoria, 900);
+  });
+  if ("speechSynthesis" in window && speechSynthesis.addEventListener) {
+    speechSynthesis.addEventListener("voiceschanged", function () {});
+  }
+})();
+</script>
 </body>
 </html>

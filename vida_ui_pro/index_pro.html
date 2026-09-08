@@ -50,7 +50,6 @@
           <small>PERSONAL LEARNING COMMAND CENTER</small>
           <h1 id="heroTitle">{{ course.title }}</h1>
           <div class="hero-chips">
-            <span class="chip-chip" id="chipTutor">🧑‍🏫 {{ course.tutor }}</span>
             <span class="chip-chip" id="chipInst">🏛 {{ course.provider }} · {{ course.platform }}</span>
             <span class="chip-chip" id="chipHours">⏱ {{ course.hours }} horas</span>
             <span class="chip-chip" id="nextDue">📅 curso finalizado</span>
@@ -93,28 +92,26 @@
         </div>
       </div>
 
-      <div class="grid2">
-        <div class="card" id="mediaCard">
-          <header><div><small>MEDIA ENGINE</small><h2>Sesión de grabación</h2></div><span class="pill">LOCAL · EVIDENCE AWARE</span></header>
-          <div class="media-wrap">
-            <video id="player" controls preload="metadata"></video>
-            <div class="media-overlay" id="playerOverlay" hidden>
-              <div class="mo-icon">📼</div>
-              <div class="mo-title">RECURSO DE VÍDEO NO DISPONIBLE</div>
-              <small>Graba la sesión y coloca el MP4 en <code>media/videos/</code><br>para que VIDA registre posición, duración y completitud.</small>
-            </div>
+      <div class="card dashboard-media-card" id="mediaCard">
+        <header><div><small>MEDIA ENGINE</small><h2>Sesión de grabación</h2></div><span class="pill">LOCAL · EVIDENCE AWARE</span></header>
+        <div class="media-wrap">
+          <video id="player" controls preload="metadata"></video>
+          <div class="media-overlay" id="playerOverlay" hidden>
+            <div class="mo-icon">📼</div>
+            <div class="mo-title">RECURSO DE VÍDEO NO DISPONIBLE</div>
+            <small>Graba la sesión y coloca el MP4 en <code>media/videos/</code><br>para que VIDA registre posición, duración y completitud.</small>
           </div>
-          <div class="player-meta"><span>Reproducción de la sesión sincrónica</span><b id="videoState">Esperando recurso…</b></div>
-          <div class="big-bar"><em id="videoBar"></em></div>
         </div>
-
-        <div class="card">
-          <header><div><small>KNOWLEDGE ENGINE</small><h2>Conceptos del curso</h2></div><span class="pill">DECLARATIVE</span></header>
-          <div id="conceptList"></div>
-        </div>
+        <div class="player-meta"><span>Reproducción de la sesión sincrónica</span><b id="videoState">Esperando recurso…</b></div>
+        <div class="big-bar"><em id="videoBar"></em></div>
       </div>
 
-      <div class="card zone-card" id="zoneCard">
+      <div class="card dashboard-knowledge-card">
+        <header><div><small>KNOWLEDGE ENGINE</small><h2>Conceptos del curso</h2></div><span class="pill">DECLARATIVE</span></header>
+        <div id="conceptList"></div>
+      </div>
+
+      <div class="card zone-card" id="zoneCard" hidden>
         <header>
           <div><small>ZONA EN CONSTRUCCIÓN</small><h2>🚧 Obra viva · lo que está por llegar</h2></div>
           <span class="pill zone-pill">WIP · EN OBRA</span>
@@ -236,7 +233,7 @@
       <div class="dedic-flor">✦</div>
       <p class="dedic-texto">“{{ course.dedication }}”</p>
       <p class="dedic-firma">— Eduar Alejandro Arias Londoño · Aprendiz SENA</p>
-      <div class="dedic-marca">💛 SENA · Zajuna · Curso: «{{ course.title }}» ({{ course.hours }} h) · Instructor: {{ course.tutor }}</div>
+      <div class="dedic-marca">💛 SENA · Zajuna · Curso: «{{ course.title }}» ({{ course.hours }} h)</div>
     </div>
 
     <div class="sig">

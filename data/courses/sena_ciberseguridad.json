@@ -1,4 +1,5 @@
 {
+  "id": "sena_ciberseguridad",
   "title": "Apropiación de los Conceptos en Ciberseguridad",
   "provider": "SENA",
   "hours": 48,
@@ -7,6 +8,18 @@
   "learner": "Eduar Alejandro Arias Londoño",
   "tutor": "Libardo Antonio Contreras",
   "dedication": "A Libardo Antonio Contreras, mi instructor y guía, por acompañarme en este primer logro educativo de muchos que vienen.",
+
+  "learning_objectives": [
+    "Reconocer los conceptos fundamentales de ciberseguridad.",
+    "Identificar y clasificar los activos de información.",
+    "Comprender la relación entre amenazas, vulnerabilidades, riesgos e impactos.",
+    "Analizar y evaluar riesgos de seguridad de la información.",
+    "Aplicar criterios de confidencialidad, integridad y disponibilidad.",
+    "Proponer controles para reducir los riesgos identificados.",
+    "Representar información de seguridad mediante matrices, infografías y mapas mentales.",
+    "Demostrar comprensión mediante actividades y evidencias verificables."
+  ],
+
   "items": [
     {
       "id": "aa1",
@@ -16,7 +29,16 @@
       "brief": "Identificar, clasificar y valorar los activos de información de la organización de acuerdo con métodos y criterios técnicos de evaluación.",
       "deliverable": "Documento PDF con el informe de análisis y valoración de activos.",
       "video": "Und_Bien.mp4",
-      "materials": []
+      "materials": [],
+      "knowledge": [
+        "Activo de información",
+        "Propietario del activo",
+        "Clasificación de activos",
+        "Valoración",
+        "Confidencialidad",
+        "Integridad",
+        "Disponibilidad"
+      ]
     },
     {
       "id": "aa2",
@@ -26,7 +48,16 @@
       "brief": "Representar de forma visual las clases de amenazas, vulnerabilidades y el proceso de análisis y evaluación del riesgo.",
       "deliverable": "Infografía en formato PDF o imagen (PNG/JPG).",
       "video": "aa2_infografia.mp4",
-      "materials": []
+      "materials": [],
+      "knowledge": [
+        "Amenaza",
+        "Vulnerabilidad",
+        "Riesgo",
+        "Impacto",
+        "Probabilidad",
+        "Análisis de riesgos",
+        "Evaluación de riesgos"
+      ]
     },
     {
       "id": "aa3",
@@ -36,7 +67,18 @@
       "brief": "Estructurar el mapa de riesgos de ciberseguridad según los activos de información, la normativa y los estándares técnicos.",
       "deliverable": "Matriz de riesgo en hoja de cálculo (XLSX) o documento (PDF).",
       "video": "aa3_matriz_riesgo.mp4",
-      "materials": []
+      "materials": [],
+      "knowledge": [
+        "Activo",
+        "Amenaza",
+        "Vulnerabilidad",
+        "Probabilidad",
+        "Impacto",
+        "Nivel de riesgo",
+        "Controles",
+        "Tratamiento del riesgo",
+        "Riesgo residual"
+      ]
     },
     {
       "id": "aa4",
@@ -46,45 +88,414 @@
       "brief": "Sintetizar los procesos críticos de la gestión de la seguridad de la información mediante un mapa mental.",
       "deliverable": "Mapa mental en imagen (PNG/JPG) o documento (PDF).",
       "video": "aa4_mapa_mental.mp4",
-      "materials": []
+      "materials": [],
+      "knowledge": [
+        "Gestión de seguridad de la información",
+        "Activos",
+        "Amenazas",
+        "Vulnerabilidades",
+        "Riesgos",
+        "Controles",
+        "Tratamiento",
+        "Monitoreo",
+        "Mejora continua"
+      ]
     }
   ],
+
   "concepts": [
+    {
+      "id": "concepto_ciberseguridad",
+      "title": "Ciberseguridad",
+      "definition": "Conjunto de prácticas, procesos y controles destinados a proteger sistemas, redes, aplicaciones, dispositivos y datos frente a amenazas.",
+      "content": "La ciberseguridad busca reducir la posibilidad de que una amenaza comprometa los recursos de una organización. Incluye personas, procesos y tecnología.",
+      "examples": [
+        "Protección de una red corporativa.",
+        "Control de acceso a sistemas.",
+        "Copias de seguridad.",
+        "Actualización y parcheo de software.",
+        "Monitoreo de eventos de seguridad."
+      ],
+      "related_activities": [
+        "aa1",
+        "aa2",
+        "aa3",
+        "aa4"
+      ]
+    },
+
     {
       "id": "concepto_activo",
       "title": "Activo de información",
-      "definition": "Recurso que tiene valor para una organización y, por ello, requiere protección."
+      "definition": "Recurso que posee valor para una organización y que debe ser protegido.",
+      "content": "Un activo puede ser información, hardware, software, personas, procesos, servicios, instalaciones o conocimiento. La identificación y valoración de activos permite determinar qué debe protegerse primero.",
+      "examples": [
+        "Base de datos de clientes.",
+        "Servidor.",
+        "Computador portátil.",
+        "Aplicación empresarial.",
+        "Credenciales.",
+        "Documentos confidenciales.",
+        "Personal especializado.",
+        "Procesos críticos."
+      ],
+      "questions": [
+        "¿Qué valor tiene este activo?",
+        "¿Qué ocurriría si se pierde?",
+        "¿Quién es responsable del activo?",
+        "¿Qué información contiene?",
+        "¿Qué nivel de protección necesita?"
+      ],
+      "related_activities": [
+        "aa1",
+        "aa3"
+      ]
     },
+
     {
       "id": "concepto_confidencialidad",
       "title": "Confidencialidad",
-      "definition": "La información solo debe estar disponible para quienes están autorizados."
+      "definition": "Garantiza que la información solamente sea accesible para personas, procesos o sistemas autorizados.",
+      "content": "La pérdida de confidencialidad ocurre cuando información protegida es conocida o divulgada por personas que no tienen autorización.",
+      "examples": [
+        "Robo de contraseñas.",
+        "Filtración de información.",
+        "Acceso no autorizado.",
+        "Espionaje.",
+        "Envío accidental de información sensible."
+      ],
+      "controls": [
+        "Autenticación.",
+        "Autorización.",
+        "Cifrado.",
+        "Control de acceso.",
+        "Gestión de privilegios."
+      ],
+      "related_activities": [
+        "aa1",
+        "aa2",
+        "aa3"
+      ]
     },
+
     {
       "id": "concepto_integridad",
       "title": "Integridad",
-      "definition": "La información debe conservar su exactitud y completitud."
+      "definition": "Garantiza que la información mantenga su exactitud, completitud y consistencia y que no sea modificada de manera no autorizada.",
+      "content": "La integridad protege los datos frente a modificaciones accidentales o maliciosas.",
+      "examples": [
+        "Alteración de una base de datos.",
+        "Modificación de una factura.",
+        "Manipulación de registros.",
+        "Borrado de información.",
+        "Cambios no autorizados en configuraciones."
+      ],
+      "controls": [
+        "Hashes.",
+        "Firmas digitales.",
+        "Control de cambios.",
+        "Permisos de escritura.",
+        "Copias de seguridad."
+      ],
+      "related_activities": [
+        "aa1",
+        "aa3"
+      ]
     },
+
     {
       "id": "concepto_disponibilidad",
       "title": "Disponibilidad",
-      "definition": "La información y los servicios deben estar disponibles cuando se necesitan."
+      "definition": "Garantiza que la información y los servicios estén disponibles y utilizables cuando sean necesarios.",
+      "content": "La disponibilidad puede verse afectada por fallos técnicos, errores humanos, desastres naturales o ataques deliberados.",
+      "examples": [
+        "Caída de un servidor.",
+        "Corte eléctrico.",
+        "Fallo de almacenamiento.",
+        "Ataque de denegación de servicio.",
+        "Ransomware."
+      ],
+      "controls": [
+        "Redundancia.",
+        "Respaldos.",
+        "Alta disponibilidad.",
+        "Planes de continuidad.",
+        "Recuperación ante desastres."
+      ],
+      "related_activities": [
+        "aa1",
+        "aa3",
+        "aa4"
+      ]
     },
+
+    {
+      "id": "concepto_amenaza",
+      "title": "Amenaza",
+      "definition": "Circunstancia, evento, actor o acción con capacidad potencial de causar daño a un activo.",
+      "content": "Una amenaza representa una fuente potencial de daño. Para producir un incidente normalmente debe existir una condición que permita que esa amenaza afecte un activo.",
+      "examples": [
+        "Phishing.",
+        "Malware.",
+        "Ransomware.",
+        "Ataque de fuerza bruta.",
+        "Incendio.",
+        "Robo.",
+        "Error humano.",
+        "Insider malicioso."
+      ],
+      "related_activities": [
+        "aa2",
+        "aa3",
+        "aa4"
+      ]
+    },
+
+    {
+      "id": "concepto_vulnerabilidad",
+      "title": "Vulnerabilidad",
+      "definition": "Debilidad o condición que puede ser aprovechada por una amenaza.",
+      "content": "Una vulnerabilidad puede encontrarse en software, hardware, configuraciones, procesos o personas.",
+      "examples": [
+        "Software sin actualizar.",
+        "Contraseña débil.",
+        "Puerto innecesariamente expuesto.",
+        "Permisos excesivos.",
+        "Falta de copias de seguridad.",
+        "Configuración insegura."
+      ],
+      "related_activities": [
+        "aa2",
+        "aa3"
+      ]
+    },
+
     {
       "id": "concepto_riesgo",
       "title": "Riesgo",
-      "definition": "Posibilidad de que una amenaza aproveche una vulnerabilidad y produzca un impacto."
+      "definition": "Posibilidad de que una amenaza aproveche una vulnerabilidad y produzca consecuencias sobre un activo.",
+      "content": "El análisis de riesgos permite identificar escenarios que podrían afectar los objetivos de una organización y determinar cuáles requieren atención prioritaria.",
+      "formula": "Riesgo ≈ Probabilidad × Impacto",
+      "chain": [
+        "Activo",
+        "Amenaza",
+        "Vulnerabilidad",
+        "Probabilidad",
+        "Impacto",
+        "Riesgo"
+      ],
+      "related_activities": [
+        "aa2",
+        "aa3",
+        "aa4"
+      ]
+    },
+
+    {
+      "id": "concepto_impacto",
+      "title": "Impacto",
+      "definition": "Consecuencia o efecto producido cuando un riesgo se materializa.",
+      "content": "El impacto puede afectar las operaciones, las finanzas, la reputación, el cumplimiento legal o la confianza de los usuarios.",
+      "examples": [
+        "Pérdida económica.",
+        "Interrupción del servicio.",
+        "Pérdida de información.",
+        "Daño reputacional.",
+        "Sanciones.",
+        "Pérdida de clientes."
+      ],
+      "related_activities": [
+        "aa2",
+        "aa3"
+      ]
+    },
+
+    {
+      "id": "concepto_control",
+      "title": "Control de seguridad",
+      "definition": "Medida utilizada para prevenir, detectar, corregir o reducir los efectos de un riesgo.",
+      "content": "Los controles pueden ser técnicos, administrativos, físicos o relacionados con las personas y los procesos.",
+      "examples": [
+        "Firewall.",
+        "Antivirus/EDR.",
+        "MFA.",
+        "Políticas.",
+        "Capacitación.",
+        "Cifrado.",
+        "Backups.",
+        "Control de acceso."
+      ],
+      "related_activities": [
+        "aa3",
+        "aa4"
+      ]
+    },
+
+    {
+      "id": "concepto_tratamiento",
+      "title": "Tratamiento del riesgo",
+      "definition": "Proceso mediante el cual una organización decide qué hacer frente a un riesgo identificado.",
+      "content": "Dependiendo del contexto, una organización puede evitar un riesgo, reducirlo mediante controles, compartirlo o transferirlo, o aceptarlo cuando se encuentra dentro de los criterios establecidos.",
+      "options": [
+        "Evitar",
+        "Reducir o mitigar",
+        "Compartir o transferir",
+        "Aceptar"
+      ],
+      "related_activities": [
+        "aa3",
+        "aa4"
+      ]
+    },
+
+    {
+      "id": "concepto_riesgo_residual",
+      "title": "Riesgo residual",
+      "definition": "Riesgo que permanece después de aplicar controles o medidas de tratamiento.",
+      "content": "Los controles normalmente reducen el riesgo, pero no necesariamente lo eliminan completamente. Por eso es importante volver a evaluar el riesgo después del tratamiento.",
+      "related_activities": [
+        "aa3",
+        "aa4"
+      ]
+    },
+
+    {
+      "id": "concepto_matriz_riesgo",
+      "title": "Matriz de riesgos",
+      "definition": "Herramienta utilizada para organizar y visualizar riesgos considerando principalmente probabilidad e impacto.",
+      "content": "La matriz ayuda a priorizar los riesgos y facilita la toma de decisiones sobre los controles y acciones de tratamiento.",
+      "workflow": [
+        "Identificar activos.",
+        "Identificar amenazas.",
+        "Identificar vulnerabilidades.",
+        "Determinar probabilidad.",
+        "Determinar impacto.",
+        "Calcular o clasificar el riesgo.",
+        "Priorizar.",
+        "Definir controles.",
+        "Evaluar riesgo residual."
+      ],
+      "related_activities": [
+        "aa3"
+      ]
+    },
+
+    {
+      "id": "concepto_gestion_seguridad",
+      "title": "Gestión de la seguridad de la información",
+      "definition": "Conjunto organizado de procesos mediante los cuales una organización protege su información y gestiona los riesgos asociados.",
+      "content": "La seguridad no consiste solamente en instalar herramientas. Requiere identificar activos, comprender amenazas y vulnerabilidades, evaluar riesgos, establecer controles, verificar resultados y mejorar continuamente.",
+      "cycle": [
+        "Identificar",
+        "Analizar",
+        "Evaluar",
+        "Tratar",
+        "Monitorear",
+        "Mejorar"
+      ],
+      "related_activities": [
+        "aa1",
+        "aa2",
+        "aa3",
+        "aa4"
+      ]
     }
   ],
+
+  "learning_path": [
+    {
+      "step": 1,
+      "title": "Conocer los activos",
+      "activity": "aa1",
+      "concepts": [
+        "concepto_activo",
+        "concepto_confidencialidad",
+        "concepto_integridad",
+        "concepto_disponibilidad"
+      ]
+    },
+    {
+      "step": 2,
+      "title": "Comprender las amenazas y vulnerabilidades",
+      "activity": "aa2",
+      "concepts": [
+        "concepto_amenaza",
+        "concepto_vulnerabilidad",
+        "concepto_riesgo",
+        "concepto_impacto"
+      ]
+    },
+    {
+      "step": 3,
+      "title": "Evaluar y tratar los riesgos",
+      "activity": "aa3",
+      "concepts": [
+        "concepto_riesgo",
+        "concepto_matriz_riesgo",
+        "concepto_control",
+        "concepto_tratamiento",
+        "concepto_riesgo_residual"
+      ]
+    },
+    {
+      "step": 4,
+      "title": "Integrar los conocimientos",
+      "activity": "aa4",
+      "concepts": [
+        "concepto_gestion_seguridad",
+        "concepto_activo",
+        "concepto_amenaza",
+        "concepto_vulnerabilidad",
+        "concepto_riesgo",
+        "concepto_control"
+      ]
+    }
+  ],
+
   "videos": [
+    {
+      "id": "video_aa1",
+      "title": "AA1 · Informe análisis y valoración de activos",
+      "file": "Und_Bien.mp4",
+      "kind": "video",
+      "source": "local",
+      "required": true,
+      "activity_id": "aa1"
+    },
+    {
+      "id": "video_aa2",
+      "title": "AA2 · Análisis y Evaluación de Riesgos",
+      "file": "aa2_infografia.mp4",
+      "kind": "video",
+      "source": "local",
+      "required": true,
+      "activity_id": "aa2"
+    },
+    {
+      "id": "video_aa3",
+      "title": "AA3 · Matriz de riesgo",
+      "file": "aa3_matriz_riesgo.mp4",
+      "kind": "video",
+      "source": "local",
+      "required": true,
+      "activity_id": "aa3"
+    },
+    {
+      "id": "video_aa4",
+      "title": "AA4 · Mapa mental",
+      "file": "aa4_mapa_mental.mp4",
+      "kind": "video",
+      "source": "local",
+      "required": true,
+      "activity_id": "aa4"
+    },
     {
       "id": "video_dashboard",
       "title": "Ciberseguridad · sesión del dashboard",
-      "file": "media/videos/dashboard_sesion.mp4",
+      "file": "dashboard_sesion.mp4",
       "kind": "video",
       "source": "local",
-      "required": true
+      "required": false
     }
-  ],
-  "id": "sena_ciberseguridad"
+  ]
 }

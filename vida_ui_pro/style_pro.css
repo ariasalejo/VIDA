@@ -385,3 +385,160 @@ video.offline{opacity:.18;filter:grayscale(.7)}
   .course-switch select{max-width:100%;width:100%}
   .hero h1{font-size:20px}
 }
+/* =========================================================
+   VIDA PRO · DASHBOARD LAYOUT
+   MEDIA → KNOWLEDGE → ROADMAP
+   ========================================================= */
+
+#mediaCard {
+  grid-column: 1 / -1;
+}
+
+#mediaCard .media-wrap {
+  width: 100%;
+}
+
+#mediaCard video {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: contain;
+}
+
+/* Móvil */
+@media (max-width: 600px) {
+  #mediaCard,
+  #knowledgeCard,
+  #roadmapCard {
+    grid-column: 1;
+  }
+
+  #mediaCard video {
+    aspect-ratio: 16 / 9;
+    border-radius: 10px;
+  }
+
+  #mediaCard .player-meta {
+    gap: 6px;
+  }
+
+  #mediaCard .big-bar {
+    margin-top: 8px;
+  }
+}
+
+
+/* =========================================================
+   DASHBOARD · MEDIA + KNOWLEDGE
+   Layout vertical, sin columnas ni huecos.
+   ========================================================= */
+
+.dashboard-media-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  width: 100%;
+}
+
+.dashboard-media-grid > .card {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.dashboard-media-grid #mediaCard {
+  grid-column: auto;
+}
+
+.dashboard-media-grid #mediaCard .media-wrap {
+  width: 100%;
+}
+
+.dashboard-media-grid #mediaCard video {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: contain;
+}
+
+.dashboard-media-grid #conceptList {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  width: 100%;
+}
+
+.dashboard-media-grid #conceptList > .concept {
+  min-width: 0;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 900px) {
+  .dashboard-media-grid #conceptList {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .dashboard-media-grid {
+    gap: 14px;
+  }
+
+  .dashboard-media-grid #conceptList {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-media-grid #mediaCard video {
+    aspect-ratio: 16 / 9;
+    border-radius: 10px;
+  }
+}
+
+
+/* =========================================================
+   DASHBOARD FINAL · MEDIA / KNOWLEDGE
+   ========================================================= */
+
+.dashboard-media-card,
+.dashboard-knowledge-card {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  margin-top: 18px;
+}
+
+.dashboard-media-card .media-wrap {
+  width: 100%;
+}
+
+.dashboard-media-card #player {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: contain;
+}
+
+.dashboard-knowledge-card #conceptList {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.dashboard-knowledge-card #conceptList .file-item {
+  margin-top: 0 !important;
+  min-width: 0;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 760px) {
+  .dashboard-knowledge-card #conceptList {
+    grid-template-columns: 1fr;
+  }
+}

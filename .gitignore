@@ -19,10 +19,8 @@ data/reports/*.json
 certificates/*.issued.json
 !certificates/.gitkeep
 
-# Multimedia pesado
-media/videos/*
+# Multimedia (materiales se sirven localmente; videos se versionan por deploy)
 media/materials/*
-!media/videos/.gitkeep
 !media/materials/.gitkeep
 
 # SQLite temporales

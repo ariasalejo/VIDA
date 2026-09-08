@@ -72,30 +72,146 @@ const GUIDES = {
   reglas: "Reglas del motor. Aquí puedes ver quién califica, con qué pesos y bajo qué condiciones se emite el certificado."
 };
 const VOZ_FEMENINA = /laura|helena|sabina|paulina|m[oó]nica|camila|marisol|luci|ximena|valentina|isabella|sof[aí]a|elena|paloma|palmira|samantha|karina|nuria|silvia|beatriz|marta|olga|andrea|daniela|mar[íi]a|google español|google espa|milena|alicia|emma|selma|rosa|tessa|linda|allison/i;
-const VOZ_MASCULINA = /jorge|pedro|carlos|lucas|pablo|diego|david|miguel|juan|javier|antonio|raul|ram[oó]n|alberto|fernando|fernando|andres|andr[eé]s|thomas|alex|male|masculino|hombre/i;
+const VOZ_MASCULINA = /jorge|pedro|carlos|lucas|pablo|diego|david|miguel|juan|javier|antonio|raul|ram[oó]n|alberto|fernando|andres|andr[eé]s|thomas|alex|male|masculino|hombre/i;
+const VOZ_NATURAL = /natural|neural|enhanced|premium|online|google|espa[nñ]a.*mujer|mujer|software upgrade|eloquence|aria|siri/i;
+
 let vidaVoice = null;
+
 function pickVoice() {
   const vs = speechSynthesis.getVoices();
-  const es = vs.filter(v => (v.lang || "").toLowerCase().replace("_", "-").indexOf("es") === 0);
-  const pool = es.length ? es : vs;
-  const female = pool.filter(v => VOZ_FEMENINA.test(v.name) && !VOZ_MASCULINA.test(v.name));
-  const neutral = pool.filter(v => !VOZ_MASCULINA.test(v.name) && !VOZ_FEMENINA.test(v.name));
-  vidaVoice = female[0] || neutral[0] || pool[0] || null;
+  if (!vs.length) return null;
+
+  const es = vs.filter(v => /^(es)(-|_|$)/i.test(v.lang || ""));
+  const co = es.filter(v => /(^|[-_])CO($|[-_])/i.test(v.lang || ""));
+  const pool = co.length ? co : (es.length ? es : vs);
+
+  const natural = pool.filter(
+    v => VOZ_NATURAL.test(v.name) && !VOZ_MASCULINA.test(v.name)
+  );
+
+  const female = pool.filter(
+    v => VOZ_FEMENINA.test(v.name) && !VOZ_MASCULINA.test(v.name)
+  );
+
+  const neutral = pool.filter(
+    v => !VOZ_MASCULINA.test(v.name) && !VOZ_FEMENINA.test(v.name)
+  );
+
+  vidaVoice =
+    natural[0] ||
+    female[0] ||
+    neutral[0] ||
+    pool[0] ||
+    null;
+
   return vidaVoice;
 }
+
+if ("speechSynthesis" in window) {
+  speechSynthesis.onvoiceschanged = () => pickVoice();
+}
+
+function limpiaVoz(text) {
+  return String(text || "")
+    .replace(/https?:\/\/\S+/g, "")
+    .replace(/[|*_=<>`#]/g, " ")
+    .replace(/\b(ONLINE|ENGINE|DASHBOARD|KNOWLEDGE|MEDIA|EVIDENCE|INTEL)\b/gi, " ")
+    .replace(/[^\w\s.,;:áéíóúÁÉÍÓÚñÑ¿?¡!()'"-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function troceaVoz(text, max = 180) {
+  const limpio = limpiaVoz(text);
+  if (!limpio) return [];
+
+  const frases = limpio
+    .match(/[^.!?;:]+[.!?;:]?/g)
+    ?.map(x => x.trim())
+    .filter(Boolean) || [];
+
+  const resultado = [];
+
+  for (const frase of frases) {
+    if (frase.length <= max) {
+      resultado.push(frase);
+      continue;
+    }
+
+    const palabras = frase.split(/\s+/);
+    let actual = "";
+
+    for (const palabra of palabras) {
+      const candidato = actual
+        ? `${actual} ${palabra}`
+        : palabra;
+
+      if (candidato.length > max && actual) {
+        resultado.push(actual);
+        actual = palabra;
+      } else {
+        actual = candidato;
+      }
+    }
+
+    if (actual) resultado.push(actual);
+  }
+
+  return resultado;
+}
+
 function speak(text) {
   if (!text || !voiceOn || !("speechSynthesis" in window)) return;
+
   try {
     speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = "es-CO";
-    u.rate = 0.94;
-    u.pitch = 1.12;
-    const v = pickVoice();
-    if (v) u.voice = v;
-    speechSynthesis.speak(u);
+
+    const partes = troceaVoz(text);
+    if (!partes.length) return;
+
+    const voz = pickVoice() || vidaVoice;
+    let indice = 0;
+
+    const siguiente = () => {
+      if (!voiceOn || indice >= partes.length) return;
+
+      const u = new SpeechSynthesisUtterance(partes[indice++]);
+
+      if (voz) {
+        u.voice = voz;
+        u.lang = voz.lang || "es-CO";
+      } else {
+        u.lang = "es-CO";
+      }
+
+      // Ritmo más humano y menos acelerado.
+      u.rate = 0.82;
+
+      // Ligeramente cálida, evitando el tono excesivamente artificial.
+      u.pitch = 1.06;
+
+      u.volume = 1.0;
+
+      u.onend = () => {
+        if (!voiceOn) return;
+
+        // Pausa respiratoria entre frases.
+        window.setTimeout(siguiente, 280);
+      };
+
+      u.onerror = () => {
+        if (indice < partes.length) {
+          window.setTimeout(siguiente, 100);
+        }
+      };
+
+      speechSynthesis.speak(u);
+    };
+
+    siguiente();
   } catch (_) {}
 }
+
 function setVoiceBtn() {
   const b = $("#voiceBtn");
   if (b) b.textContent = voiceOn ? "🔊" : "🔇";
@@ -203,8 +319,30 @@ function parseHash() {
 
 function router() {
   const { name, arg } = parseHash();
+
+  // Detener cualquier reproducción al cambiar de página.
+  $$("video").forEach(v => {
+    try {
+      v.pause();
+      v.currentTime = v.currentTime;
+    } catch (_) {}
+  });
+
+  if (actVideoTimer) {
+    clearInterval(actVideoTimer);
+    actVideoTimer = null;
+  }
+
+  if (sharedVideoTimer) {
+    clearInterval(sharedVideoTimer);
+    sharedVideoTimer = null;
+  }
+
   $$(".view").forEach(v => v.classList.remove("active"));
-  const view = $("#view-" + name) || $("#view-dashboard");
+
+  // El HTML usa view-activity, mientras la ruta pública es /actividad/AA1.
+  const viewName = name === "actividad" ? "activity" : name;
+  const view = $("#view-" + viewName) || $("#view-dashboard");
   view.classList.add("active");
 
   $$("aside a.nav").forEach(a => {
@@ -215,7 +353,10 @@ function router() {
 
   const fn = routes[name === "actividad" && arg ? "actividad" : name] || renderDashboard;
   fn(arg);
-  if (voiceOn) setTimeout(() => speak(GUIDES[name] || GUIDES.dashboard), 500);
+
+  if (voiceOn) {
+    setTimeout(() => speak(GUIDES[name] || GUIDES.dashboard), 500);
+  }
 }
 
 window.addEventListener("hashchange", router);
@@ -224,7 +365,6 @@ window.addEventListener("hashchange", router);
 async function load() {
   course = await getJSON("/api/course");
   $("#heroTitle").textContent = course.title;
-  const t = $("#chipTutor"); if (t) t.textContent = "🧑‍🏫 " + (course.tutor || "");
   const i = $("#chipInst"); if (i) i.textContent = "🏛 " + (course.provider || "") + " · " + (course.platform || "");
   const h = $("#chipHours"); if (h) h.textContent = "⏱ " + (course.hours || 0) + " horas";
   document.title = "VIDA · " + (course.title || "");
@@ -254,7 +394,6 @@ async function refresh() {
     renderDashboard();
     renderSignals(state);
     renderNextActions(state);
-    renderZona(state);
   }
 }
 
@@ -368,52 +507,6 @@ async function renderRoadmap() {
 
 function renderDashboard() {
   initMediumVideo();
-  renderZona(state);
-}
-
-/* 🚧 ZONA EN CONSTRUCCIÓN */
-async function renderZona(st) {
-  const box = $("#zoneList");
-  if (!box) return;
-  const zone = [];
-  let vistos = 0;
-  (course.videos || []).forEach(v => {
-    const meta = videoById(v.id);
-    if (meta && meta.available === true) { vistos++; return; }
-    zone.push({ ico: "📼", t: "Sesión de grabación sincrónica", d: (v.title || v.id) + " · subiéndose al servidor.", tag: "EN OBRA" });
-  });
-  if (!zone.length && vistos) zone.push({ ico: "📼", t: "Sesiones sincrónicas en línea", d: "El motor ya reproduce y valida las grabaciones.", tag: "OK" });
-  (course.items || []).filter(x => x.kind === "activity").forEach(a => {
-    if (!a.materials || !a.materials.length) {
-      zone.push({ ico: "📚", t: "Material de aprendizaje", d: a.title + " · guías y lecturas por montar.", tag: "EN OBRA" });
-    }
-  });
-  try {
-    const acts = await getJSON("/api/activities");
-    (acts || []).filter(a => !a.completed).forEach(a => {
-      zone.push({ ico: "📝", t: "Entrega pendiente", d: a.title, tag: "PENDIENTE" });
-    });
-  } catch (_) {}
-  const cert = (st && st.certificate) || {};
-  if (!cert.issued) {
-    zone.push({ ico: "🏆", t: "Certificado digital", d: "Se emite automáticamente al demostrar todas las condiciones.", tag: "EN ESPERA" });
-  }
-  box.innerHTML = "";
-  if (!zone.length) {
-    box.innerHTML = `<div class="ev-empty">🚧 Obra terminada por ahora. VIDA sigue construyendo.</div>`;
-    return;
-  }
-  zone.forEach(z => {
-    const el = document.createElement("div");
-    el.className = "zone-item";
-    el.innerHTML =
-      `<div class="zi">${z.ico}</div>` +
-      `<div class="zm"><b>${esc(z.t)}</b><small>${esc(z.d)}</small></div>` +
-      `<span class="zone-chip ${z.tag.toLowerCase().replace(/[^a-z]/g, "-")}">${z.tag}</span>`;
-    box.appendChild(el);
-  });
-  const card = $("#zoneCard");
-  if (card) card.style.display = "";
 }
 
 /* Shared session video (top-level course.videos) */
@@ -421,7 +514,7 @@ function initMediumVideo() {
   const vids = course.videos || [];
   const video = $("#player");
   if (!video || !vids.length) return;
-  const first = vids[0];
+  const first = vids.find(video => video.id === "video_dashboard") || vids[0];
   const src = mediaUrl(first.file);
   if (video.dataset.src === src) return;
   video.dataset.src = src;
@@ -657,7 +750,8 @@ async function renderKnowledge() {
     el.innerHTML =
       `<div class="concept-head"><strong>◈ ${esc(c.title)}</strong>` +
       `<span class="status-chip ${ok ? "on" : "off"}">${ok ? "VERIFICADO" : "PENDIENTE"}</span></div>` +
-      `<p>${esc(c.definition)}</p>`;
+      `<p>${esc(c.definition)}</p>` +
+      (c.content ? `<p class="concept-det">${esc(c.content)}</p>` : "");
     box.appendChild(el);
   });
 }

@@ -14,15 +14,11 @@ e inteligencia adaptativa** que solo registra lo que se demuestra, nunca lo que 
 | | |
 |---|---|
 | 🎓 **Aprendiz** | Eduar Alejandro Arias Londoño |
-| 🧑🏫 **Instructor** | Libardo Antonio Contreras |
 | 🏛 **Institución** | SENA · Zajuna |
 | ⏱ **Horas** | 48 |
-| 🏆 **Clave del certificado** | `1035868489` |
 | 🌐 **Fuente del curso** | [zajuna.sena.edu.co](https://zajuna.sena.edu.co/) |
 
-> 💛 *A Libardo Antonio Contreras, mi instructor y guía, por acompañarme en este primer logro educativo de muchos que vienen.*
->
-> ✦ Esta dedicatoria al docente y al SENA aparece al final del dashboard, en letra cursiva. ✦
+> ✦ Al final del dashboard, VIDA lleva una **dedicatoria al docente y al SENA**, en letra cursiva. ✦
 
 ---
 
@@ -33,7 +29,7 @@ e inteligencia adaptativa** que solo registra lo que se demuestra, nunca lo que 
 - 🎬 **Media Engine**: reproducción de sesiones sincrónicas con registro de posición, duración y completitud.
 - 📤 **Evidencias reales**: subida de entregas (PDF, imágenes, XLSX…) con trazabilidad verificable.
 - ⚖️ **Reglas transparentes**: quién califica, con qué pesos y bajo qué condiciones se certifica.
-- 🏆 **Certificado verificable**, protegido con clave (`1035868489`).
+- 🏆 **Certificado verificable**, protegido con clave privada.
 - 🔊 **Guía por voz** en español (preferencia de **voz femenina**).
 - 🚧 **Zona en construcción**: lo que está por llegar, sin engaños.
 - 🛰 **Multi-curso adaptativo**: selector en tiempo real (el perfil se ajusta solo).
@@ -119,14 +115,11 @@ No guarda credenciales de Zajuna. La sesión del dashboard es un clip de ~12 MB.
 
 ## 🔑 Clave del certificado
 
-El certificado y los cambios de curso están protegidos. La clave del sistema es:
+El certificado y los cambios de curso están protegidos por una **clave privada de solo lectura**
+(no se publica aquí). Se configura con la variable de entorno `VIDA_CERT_KEY`;
+la primera vez se escribe en `data/.cert_token` (local) y está excluida del README por seguridad.
 
-```
-1035868489
-```
-
-Se puede sobrescribir con la variable de entorno `VIDA_CERT_KEY`.
-La primera vez se escribe en `data/.cert_token` (local); en el deploy se usa el valor por defecto.
+> 🔒 **Privacidad:** ni el nombre del instructor ni la clave del certificado aparecen en este documento.
 
 ---
 

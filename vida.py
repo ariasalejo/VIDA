@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import secrets
 import sqlite3
 import tempfile
 import webbrowser
@@ -709,23 +710,29 @@ def _resolve_video_file(file_ref: str) -> tuple[bool, int]:
     return False, 0
 
 
-DEFAULT_CERT_KEY = os.environ.get("VIDA_CERT_KEY", "1035868489")
-
-
 def _cert_token() -> str:
+    """Clave privada del certificado.
+
+    Prioridad: variable de entorno VIDA_CERT_KEY (único modo en el deploy).
+    En local, se genera un token aleatorio la primera vez y se guarda en
+    data/.cert_token (chmod 600); nunca se publica en el código.
+    """
+    env_token = os.environ.get("VIDA_CERT_KEY", "").strip()
+    if env_token:
+        return env_token
     token_file = runtime_root() / ".cert_token"
     if not token_file.exists():
         try:
             token_file.parent.mkdir(parents=True, exist_ok=True)
-            token_file.write_text(DEFAULT_CERT_KEY, encoding="utf-8")
+            token_file.write_text(secrets.token_urlsafe(24), encoding="utf-8")
             token_file.chmod(0o600)
         except OSError:
-            pass
+            return ""
     try:
         token = token_file.read_text(encoding="utf-8").strip()
     except OSError:
         token = ""
-    return token or DEFAULT_CERT_KEY
+    return token
 
 
 def _cert_allowed(req: request) -> bool:
@@ -1139,7 +1146,6 @@ def create_app() -> Flask:
         return render_template(
             "certificate.html",
             learner=course_data.get("learner", "Aprendiz VIDA"),
-            tutor=course_data.get("tutor", "Instructor SENA"),
             dedication=course_data.get(
                 "dedication",
                 "Dedicatoria del aprendiz.",
