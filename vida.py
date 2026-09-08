@@ -690,6 +690,24 @@ def _load_issued(certificate_engine: CertificateEngine, course_id: str) -> dict 
     return _json.loads(record.read_text(encoding="utf-8"))
 
 
+def _resolve_video_file(file_ref: str) -> tuple[bool, int]:
+    """Devuelve (disponible, tamaño_bytes) para una referencia de video.
+
+    Coincide con la resolución del frontend (mediaUrl): las URLs
+    externas o absolutas no se verifican localmente (se asumen en línea),
+    mientras que los nombres de archivo se buscan en media/videos/.
+    """
+    ref = str(file_ref or "")
+    if not ref:
+        return False, 0
+    if ref.startswith(("http://", "https://", "/")):
+        return True, 0
+    candidate = MEDIA / "videos" / Path(ref).name
+    if candidate.is_file():
+        return True, candidate.stat().st_size
+    return False, 0
+
+
 def _cert_token() -> str:
     token_file = runtime_root() / ".cert_token"
     if not token_file.exists():
@@ -810,6 +828,32 @@ def create_app() -> Flask:
     @app.get("/api/course")
     def get_course():
         return jsonify(course())
+
+    @app.get("/api/videos")
+    def videos_api():
+        course_data = course()
+        items = []
+        for video in course_data.get("videos", []):
+            file_ref = str(video.get("file", "") or "")
+            available, size = _resolve_video_file(file_ref)
+            items.append(
+                {
+                    "id": video.get("id"),
+                    "title": video.get("title", ""),
+                    "file": file_ref,
+                    "available": available,
+                    "required": bool(video.get("required", False)),
+                    "size_bytes": size,
+                }
+            )
+        return jsonify(
+            {
+                "course_id": active_course_id(),
+                "count": len(items),
+                "available_count": sum(1 for v in items if v["available"]),
+                "videos": items,
+            }
+        )
 
     @app.get("/api/rules")
     def rules_info():
@@ -1346,12 +1390,17 @@ def create_app() -> Flask:
         evidence_records = _evidence_for(activity_id)
         uploaded_files = _uploaded_files(activity_id)
 
+        video_ref = str(item.get("video", "") or "")
+        video_available, video_size = _resolve_video_file(video_ref)
+
         return jsonify(
             {
                 **item,
                 "completed": bool(
                     row["completed"] if row else False
                 ),
+                "video_available": video_available,
+                "video_bytes": video_size,
                 "video_progress": {
                     "position": (
                         video_row["position"]

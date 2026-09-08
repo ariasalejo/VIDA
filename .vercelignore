@@ -1,0 +1,24 @@
+# Entorno y caché
+.venv
+__pycache__
+*.pyc
+.pytest_cache
+
+# Multimedia pesado (los videos y materiales se sirven localmente)
+media/videos/*
+media/materials/*
+
+# Datos generados en runtime
+data/*.db
+data/evidence
+data/events
+data/reports
+certificates/*.issued.json
+
+# Artefactos accidentales
+os
+*.ps
+
+# Pruebas y configuración local
+tests
+.vercel

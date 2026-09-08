@@ -6,6 +6,7 @@ let state = null;
 let currentActivity = null;
 let actVideoTimer = null;
 let sharedVideoTimer = null;
+let videosMeta = null;
 
 const MIME = {
   pdf: "📕 PDF", png: "🖼 Imagen", jpg: "🖼 Imagen", jpeg: "🖼 Imagen",
@@ -17,6 +18,18 @@ const MIME = {
 function esc(v) {
   return String(v).replaceAll("&", "&amp;").replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
+}
+function animNum(el, to, suffix = "", decimals = 0) {
+  if (!el) return;
+  const start = performance.now();
+  const dur = 750;
+  function tick(now) {
+    const k = Math.min(1, (now - start) / dur);
+    const eased = 1 - Math.pow(1 - k, 3);
+    el.textContent = (to * eased).toFixed(decimals) + suffix;
+    if (k < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
 }
 function fileType(name) {
   const ext = String(name || "").split(".").pop().toLowerCase();
@@ -75,6 +88,45 @@ function setVoiceBtn() {
   const b = $("#voiceBtn");
   if (b) b.textContent = voiceOn ? "🔊" : "🔇";
   try { localStorage.setItem(VOICE_KEY, voiceOn ? "on" : "off"); } catch (_) {}
+}
+
+/* ---------------- MEDIA: AVAILABILITY ---------------- */
+async function loadVideosMeta() {
+  try { videosMeta = await getJSON("/api/videos"); }
+  catch (_) { videosMeta = { videos: [] }; }
+  return videosMeta;
+}
+function videoById(id) {
+  return ((videosMeta || {}).videos || []).find(v => v.id === id) || null;
+}
+function setVideoState(el, text, warn) {
+  if (!el) return;
+  el.textContent = text;
+  el.classList.toggle("warn", !!warn);
+}
+function showOverlay(overlay, show) {
+  if (!overlay) return;
+  overlay.hidden = !show;
+}
+function markVideoMissing(video, overlay, id) {
+  const meta = videoById(id);
+  if (meta == null) return true; // sin metadata conocida: no bloqueamos la reproducción
+  const missing = meta.available !== true;
+  showOverlay(overlay, missing);
+  if (missing) video.removeAttribute("src");
+  video.classList.toggle("offline", missing);
+  return !missing;
+}
+function bindVideoFallback(video, overlay, id, stateEl, okText) {
+  if (!video) return;
+  video.onerror = () => {
+    showOverlay(overlay, true);
+    video.classList.add("offline");
+    setVideoState(stateEl, "⛔ El recurso no se encontró en el servidor", true);
+  };
+  video.onloadedmetadata = () => {
+    video.classList.remove("offline");
+  };
 }
 
 /* ---------------- CAMBIO DE CURSO ---------------- */
@@ -160,6 +212,7 @@ window.addEventListener("hashchange", router);
 async function load() {
   course = await getJSON("/api/course");
   $("#heroTitle").textContent = course.title;
+  await loadVideosMeta();
   await loadCourses();
   await renderRoadmap();
   router();
@@ -168,13 +221,13 @@ async function load() {
 /* ---------------- DASHBOARD ---------------- */
 async function refresh() {
   state = await getJSON("/api/dashboard");
-  $("#overall").textContent = (state.overall ?? 0) + "%";
+  animNum($("#overall"), state.overall ?? 0, "%");
   $("#overallbar").style.width = (state.overall ?? 0) + "%";
-  $("#mastery").textContent = (state.mastery ?? 0) + "%";
+  animNum($("#mastery"), state.mastery ?? 0, "%");
   $("#masterybar").style.width = (state.mastery ?? 0) + "%";
-  $("#evidence").textContent = state.evidence_count ?? 0;
+  animNum($("#evidence"), state.evidence_count ?? 0);
   $("#evbar").style.width = Math.min(100, (state.evidence_count ?? 0) * 10) + "%";
-  $("#lscore").textContent = (state.learning_score ?? 0).toFixed(0) + "%";
+  animNum($("#lscore"), state.learning_score ?? 0, "%", 0);
   $("#lscorebar").style.width = (state.learning_score ?? 0) + "%";
   renderConcepts();
   if (parseHash().name === "dashboard") renderDashboard();
@@ -229,6 +282,16 @@ function initMediumVideo() {
   const src = mediaUrl(first.file);
   if (video.dataset.src === src) return;
   video.dataset.src = src;
+
+  const ok = markVideoMissing(video, $("#playerOverlay"), first.id);
+  if (!ok) {
+    setVideoState($("#videoState"),
+      "⛔ RECURSO NO ENCONTRADO · coloca el MP4 en media/videos/", true);
+    return;
+  }
+  bindVideoFallback(video, $("#playerOverlay"), first.id,
+    $("#videoState"), "▶ reproduciendo");
+
   video.src = src;
   getJSON("/api/progress/" + first.id).then(d => {
     video.onloadedmetadata = () => {
@@ -340,9 +403,18 @@ function initActivityVideo(activity) {
   const video = $("#actVideo");
   if (!video) return;
   const src = mediaUrl(activity.video || "Und_Bien.mp4");
-  video.src = src;
   const id = "video:" + activity.id;
 
+  if (activity.video_available === false) {
+    video.removeAttribute("src");
+    video.classList.add("offline");
+    showOverlay($("#actOverlay"), true);
+    setVideoState($("#actVideoState"), "⛔ SESIÓN NO DISPONIBLE · agrega el MP4", true);
+    return;
+  }
+  bindVideoFallback(video, $("#actOverlay"), id, $("#actVideoState"), "▶ reproduciendo");
+
+  video.src = src;
   getJSON("/api/progress/" + id).then(d => {
     video.onloadedmetadata = () => {
       if (d.position > 5 && d.position < video.duration - 3) video.currentTime = d.position;
@@ -541,8 +613,16 @@ async function renderEvidence() {
 }
 
 /* ---------------- INIT ---------------- */
+function tickClock() {
+  const el = $("#liveClock");
+  if (!el) return;
+  const d = new Date();
+  const p = n => String(n).padStart(2, "0");
+  const days = ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"];
+  el.textContent = `${days[d.getDay()]} ${p(d.getDate())}.${p(d.getMonth() + 1)} · ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
 document.addEventListener("DOMContentLoaded", () => {
-  $("#sync").addEventListener("click", refresh);
+  $("#sync").addEventListener("click", () => { loadVideosMeta(); refresh(); });
   $("#actBack").addEventListener("click", () => { location.hash = "#/actividades"; });
   const vb = $("#voiceBtn");
   if (vb) vb.addEventListener("click", () => {
@@ -558,6 +638,8 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   setVoiceBtn();
   initDropzone();
+  tickClock();
+  setInterval(tickClock, 1000);
   load();
   setInterval(() => { if (document.visibilityState === "visible") refresh(); }, 20000);
 });

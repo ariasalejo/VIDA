@@ -11,6 +11,8 @@
 <header class="top">
   <div class="brand"><b>🧠 VIDA <span>/ BLUMIX</span></b><small>Learning Command Center</small></div>
   <div class="top-actions">
+    <div class="live" title="Motor en línea"><span class="livedot"></span><b>LIVE</b></div>
+    <div class="clock" id="liveClock">--:--:--</div>
     <label class="course-switch" title="Cambiar de curso (VIDA se adapta)">
       <span class="cs-label">CURSO</span>
       <select id="courseSel"></select>
@@ -63,7 +65,14 @@
       <div class="grid2">
         <div class="card" id="mediaCard">
           <header><div><small>MEDIA ENGINE</small><h2>Sesión de grabación</h2></div><span class="pill">LOCAL · EVIDENCE AWARE</span></header>
-          <video id="player" controls preload="metadata"></video>
+          <div class="media-wrap">
+            <video id="player" controls preload="metadata"></video>
+            <div class="media-overlay" id="playerOverlay" hidden>
+              <div class="mo-icon">📼</div>
+              <div class="mo-title">RECURSO DE VÍDEO NO DISPONIBLE</div>
+              <small>Graba la sesión y coloca el MP4 en <code>media/videos/</code><br>para que VIDA registre posición, duración y completitud.</small>
+            </div>
+          </div>
           <div class="player-meta"><span>Reproducción de la sesión sincrónica</span><b id="videoState">Esperando recurso…</b></div>
           <div class="big-bar"><em id="videoBar"></em></div>
         </div>
@@ -111,7 +120,14 @@
         <div class="grid2" style="margin-top:14px">
           <div>
             <div class="nav-label" style="margin:0 0 8px">📽 VIDEO DE LA SESIÓN</div>
-            <video id="actVideo" controls preload="metadata"></video>
+            <div class="media-wrap">
+              <video id="actVideo" controls preload="metadata"></video>
+              <div class="media-overlay" id="actOverlay" hidden>
+                <div class="mo-icon">📼</div>
+                <div class="mo-title">SESIÓN DE VIDEO NO DISPONIBLE</div>
+                <small>Coloca el MP4 en <code>media/videos/</code> para habilitar<br>el registro de posición y completitud.</small>
+              </div>
+            </div>
             <div class="player-meta"><span>Sesión sincrónica</span><b id="actVideoState">Preparando…</b></div>
             <div class="big-bar"><em id="actVideoBar"></em></div>
           </div>
