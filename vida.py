@@ -3,7 +3,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sqlite3
+import tempfile
 import webbrowser
 from datetime import datetime, timezone
 from pathlib import Path
@@ -122,21 +124,72 @@ DEFAULT_COURSE = {
 
 
 def ensure_dirs() -> None:
-    DATA.mkdir(parents=True, exist_ok=True)
-    (MEDIA / "videos").mkdir(parents=True, exist_ok=True)
-    (MEDIA / "materials").mkdir(parents=True, exist_ok=True)
-    (DATA / "courses").mkdir(parents=True, exist_ok=True)
-    (DATA / "profiles").mkdir(parents=True, exist_ok=True)
+    root = runtime_root()
+    for directory in (
+        root,
+        root / "courses",
+        root / "profiles",
+        MEDIA / "videos",
+        MEDIA / "materials",
+    ):
+        try:
+            directory.mkdir(parents=True, exist_ok=True)
+        except OSError:
+            continue
 
-    if not COURSE.exists():
-        COURSE.write_text(
-            json.dumps(DEFAULT_COURSE, indent=2, ensure_ascii=False),
-            encoding="utf-8",
-        )
+    if not COURSE.exists() and _writable(DATA):
+        try:
+            COURSE.write_text(
+                json.dumps(DEFAULT_COURSE, indent=2, ensure_ascii=False),
+                encoding="utf-8",
+            )
+        except OSError:
+            pass
+
+
+def _writable(path: Path) -> bool:
+    """True si el filesystem permite crear archivos (local) o es de solo lectura (Vercel)."""
+    try:
+        path.mkdir(parents=True, exist_ok=True)
+        probe = path / ".vida_w"
+        probe.write_text("ok", encoding="utf-8")
+        probe.unlink()
+        return True
+    except OSError:
+        return False
+
+
+def runtime_root() -> Path:
+    """Raíz escribible: data/ en local, carpeta efímera en despliegues de solo lectura."""
+    if DATA.exists() and _writable(DATA):
+        return DATA
+    alt = Path(tempfile.gettempdir()) / "vida_runtime"
+    try:
+        alt.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        alt = DATA
+    return alt
+
+
+def evidence_root() -> Path:
+    """Carpeta de evidencias: data/evidence en local, efímera y escribible en el deploy."""
+    return runtime_root() / "evidence"
+
+
+def certificates_root() -> Path:
+    """Carpeta de certificados emitidos: certificates/ en local, efímera en el deploy."""
+    if runtime_root() is DATA:
+        return CERT_DIR
+    alt = runtime_root() / "certificates"
+    try:
+        alt.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        alt = CERT_DIR
+    return alt
 
 
 def _load_registry() -> dict:
-    (DATA / "courses").mkdir(parents=True, exist_ok=True)
+    _ensure_courses_dir()
     if not REGISTRY.exists():
         return {"active": DEFAULT_COURSE_ID, "courses": []}
     try:
@@ -149,14 +202,24 @@ def _load_registry() -> dict:
 
 
 def _save_registry(data: dict) -> None:
-    REGISTRY.write_text(
-        json.dumps(data, indent=2, ensure_ascii=False) + "\n",
-        encoding="utf-8",
-    )
+    try:
+        REGISTRY.write_text(
+            json.dumps(data, indent=2, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
+    except OSError:
+        pass
+
+
+def _ensure_courses_dir() -> None:
+    try:
+        (DATA / "courses").mkdir(parents=True, exist_ok=True)
+    except OSError:
+        pass
 
 
 def _discover_course_ids() -> list[str]:
-    (DATA / "courses").mkdir(parents=True, exist_ok=True)
+    _ensure_courses_dir()
     ids: list[str] = []
     for path in sorted((DATA / "courses").glob("*.json")):
         try:
@@ -170,7 +233,7 @@ def _discover_course_ids() -> list[str]:
 
 
 def migrate_registry() -> None:
-    (DATA / "courses").mkdir(parents=True, exist_ok=True)
+    _ensure_courses_dir()
     known = _discover_course_ids()
 
     if COURSE.exists() and DEFAULT_COURSE_ID not in known:
@@ -180,11 +243,14 @@ def migrate_registry() -> None:
             legacy = DEFAULT_COURSE
         legacy = dict(legacy)
         legacy.setdefault("id", DEFAULT_COURSE_ID)
-        (DATA / "courses").mkdir(parents=True, exist_ok=True)
-        (DATA / "courses" / f"{DEFAULT_COURSE_ID}.json").write_text(
-            json.dumps(legacy, indent=2, ensure_ascii=False) + "\n",
-            encoding="utf-8",
-        )
+        try:
+            (DATA / "courses").mkdir(parents=True, exist_ok=True)
+            (DATA / "courses" / f"{DEFAULT_COURSE_ID}.json").write_text(
+                json.dumps(legacy, indent=2, ensure_ascii=False) + "\n",
+                encoding="utf-8",
+            )
+        except OSError:
+            pass
         known = _discover_course_ids()
 
     registry = _load_registry()
@@ -223,7 +289,7 @@ def set_active_course_id(course_id: str) -> bool:
 
 
 def course(course_id: str | None = None) -> dict:
-    (DATA / "courses").mkdir(parents=True, exist_ok=True)
+    _ensure_courses_dir()
     cid = course_id or active_course_id()
     manifest = DATA / "courses" / f"{cid}.json"
     if not manifest.exists():
@@ -273,10 +339,13 @@ def profile_path(course_id: str | None = None) -> Path:
     if not path.exists():
         course_data = course(cid)
         template = _profile_template(cid, str(course_data.get("title", cid)))
-        path.write_text(
-            json.dumps(template, indent=2, ensure_ascii=False) + "\n",
-            encoding="utf-8",
-        )
+        try:
+            path.write_text(
+                json.dumps(template, indent=2, ensure_ascii=False) + "\n",
+                encoding="utf-8",
+            )
+        except OSError:
+            pass
     return path
 
 
@@ -301,7 +370,9 @@ def register_course(manifest: dict, activate: bool = True) -> str:
 def conn() -> sqlite3.Connection:
     ensure_dirs()
 
-    connection = sqlite3.connect(DB)
+    db_file = runtime_root() / "vida.db"
+
+    connection = sqlite3.connect(db_file)
     connection.row_factory = sqlite3.Row
 
     connection.executescript(
@@ -510,7 +581,7 @@ def engine_state(course_id: str | None = None) -> dict:
         snapshot.evidence_count,
     )
 
-    certificate = CertificateEngine(CERT_DIR)
+    certificate = CertificateEngine(certificates_root())
     course_id = profile.course_id
     issued_record = _load_issued(certificate, course_id)
 
@@ -560,7 +631,7 @@ def engine_state(course_id: str | None = None) -> dict:
 
 
 def _evidence_count() -> int:
-    evidence_dir = DATA / "evidence"
+    evidence_dir = evidence_root()
     if not evidence_dir.exists():
         return 0
     total = 0
@@ -575,7 +646,7 @@ def _evidence_count() -> int:
 
 
 def _evidence_for(activity_id: str) -> list[dict]:
-    path = DATA / "evidence" / "evidence.json"
+    path = evidence_root() / "evidence.json"
     if not path.exists():
         return []
     try:
@@ -593,7 +664,7 @@ def _evidence_for(activity_id: str) -> list[dict]:
 
 
 def _uploaded_files(activity_id: str) -> list[dict]:
-    activity_dir = DATA / "evidence" / activity_id
+    activity_dir = evidence_root() / activity_id
     if not activity_dir.exists():
         return []
     files = []
@@ -620,12 +691,18 @@ def _load_issued(certificate_engine: CertificateEngine, course_id: str) -> dict 
 
 
 def _cert_token() -> str:
-    token_file = DATA / ".cert_token"
+    token_file = runtime_root() / ".cert_token"
     if not token_file.exists():
-        token_file.parent.mkdir(parents=True, exist_ok=True)
-        token_file.write_text(token_hex(16), encoding="utf-8")
-        token_file.chmod(0o600)
-    return token_file.read_text(encoding="utf-8").strip()
+        try:
+            token_file.parent.mkdir(parents=True, exist_ok=True)
+            token_file.write_text(token_hex(16), encoding="utf-8")
+            token_file.chmod(0o600)
+        except OSError:
+            pass
+    try:
+        return token_file.read_text(encoding="utf-8").strip()
+    except OSError:
+        return ""
 
 
 def _cert_allowed(req: request) -> bool:
@@ -756,7 +833,7 @@ def create_app() -> Flask:
         )
         required_concepts = len(course_data.get("concepts", []))
 
-        engine = CertificateEngine(CERT_DIR)
+        engine = CertificateEngine(certificates_root())
         checks = engine.eligibility_report(
             operational=state["operational"],
             mastery=state["mastery"],
@@ -845,7 +922,7 @@ def create_app() -> Flask:
 
         state = api_snapshot()
 
-        engine = CertificateEngine(CERT_DIR)
+        engine = CertificateEngine(certificates_root())
         course_data = course()
         profile = ProfileEngine(profile_path()).load()
 
@@ -929,6 +1006,17 @@ def create_app() -> Flask:
                 }
             ), 409
 
+        except OSError:
+            return jsonify(
+                {
+                    "ok": False,
+                    "error": (
+                        "El entorno de despliegue es de solo lectura: "
+                        "el certificado solo se emite en la versión local."
+                    ),
+                }
+            ), 503
+
         return jsonify(
             {
                 "ok": True,
@@ -943,9 +1031,12 @@ def create_app() -> Flask:
     @app.get("/verificar/<certificate_id>")
     def verify_certificate(certificate_id: str):
         if not _cert_allowed(request):
-            return render_template("gated.html"), 403
+            return render_template(
+                "gated.html",
+                target=request.path,
+            ), 403
 
-        engine = CertificateEngine(CERT_DIR)
+        engine = CertificateEngine(certificates_root())
         profile = ProfileEngine(profile_path()).load()
         record = _load_issued(engine, profile.course_id)
 
@@ -971,7 +1062,7 @@ def create_app() -> Flask:
                 }
             ), 403
 
-        engine = CertificateEngine(CERT_DIR)
+        engine = CertificateEngine(certificates_root())
         profile = ProfileEngine(profile_path()).load()
         record = _load_issued(engine, profile.course_id)
         valid = bool(
@@ -990,7 +1081,10 @@ def create_app() -> Flask:
     @app.get("/certificado")
     def certificate_page():
         if not _cert_allowed(request):
-            return render_template("gated.html"), 403
+            return render_template(
+                "gated.html",
+                target=request.path,
+            ), 403
 
         course_data = course()
         return render_template(
@@ -1371,20 +1465,41 @@ def create_app() -> Flask:
                 }
             ), 400
 
-        evidence_dir = DATA / "evidence" / activity_id
-        evidence_dir.mkdir(parents=True, exist_ok=True)
+        evidence_dir = evidence_root() / activity_id
+        try:
+            evidence_dir.mkdir(parents=True, exist_ok=True)
+        except OSError:
+            return jsonify(
+                {
+                    "ok": False,
+                    "error": (
+                        "No se pudo escribir en el almacén de evidencias "
+                        "de este despliegue."
+                    ),
+                }
+            ), 503
 
         stamp = datetime.now(timezone.utc).strftime(
             "%Y%m%d_%H%M%S"
         )
         stored_name = f"{stamp}_{safe}"
         path = evidence_dir / stored_name
-        upload.save(path)
+        try:
+            upload.save(path)
+        except OSError:
+            return jsonify(
+                {
+                    "ok": False,
+                    "error": (
+                        "No se pudo guardar la evidencia en este despliegue."
+                    ),
+                }
+            ), 503
 
         from vida_engines import EvidenceEngine
 
         evidence = EvidenceEngine(
-            DATA / "evidence" / "evidence.json"
+            evidence_root() / "evidence.json"
         )
         record = evidence.record(
             source=f"work/{activity_id}",
@@ -1431,7 +1546,7 @@ def create_app() -> Flask:
     @app.get("/media/evidence/<activity_id>/<path:name>")
     def media_evidence(activity_id: str, name: str):
         return send_from_directory(
-            DATA / "evidence" / activity_id,
+            evidence_root() / activity_id,
             name,
             as_attachment=False,
         )
@@ -1664,7 +1779,7 @@ def issue_certificate() -> None:
     )
     required_concepts = len(course_data.get("concepts", []))
 
-    engine = CertificateEngine(CERT_DIR)
+    engine = CertificateEngine(certificates_root())
 
     try:
         cert = engine.issue_once(

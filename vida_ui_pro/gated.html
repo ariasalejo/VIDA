@@ -29,7 +29,7 @@ button{background:linear-gradient(135deg,#2e8bff,#45e6ff);color:#021018;border:0
   <p>El certificado se emite <b>una sola vez</b> y esta sección solo se abre con
      permiso del sistema (clave del aprendiz). Si eres un instructor del SENA
      y necesitas verificar esta evidencia, el aprendiz puede compartir el enlace con su clave.</p>
-  <form id="unlock" method="get" action="/certificado">
+  <form id="unlock" method="get" action="{{ target or '/certificado' }}">
     <input type="password" name="clave" placeholder="Clave de acceso VIDA" autocomplete="off">
     <button type="submit">Abrir</button>
   </form>

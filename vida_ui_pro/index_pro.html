@@ -123,10 +123,11 @@
             </div>
 
             <div class="nav-label" style="margin:18px 0 8px">⬆ ENTREGA DE EVIDENCIAS</div>
-            <div class="drop-zone" id="dropZone">
+            <div class="drop-zone" id="dropZone" role="button" tabindex="0" aria-label="Subir evidencia (haz clic para seleccionar un archivo)">
               <span class="big">⬆</span>
-              Suelta aquí tu evidencia (PDF, imagen, XLSX…)
-              <br>(o haz clic para seleccionar)
+              <b>Arrastra y suelta aquí tu evidencia</b>
+              <span>(PDF, imagen, XLSX…)</span>
+              <div class="drop-btn">📤 SUBIR EVIDENCIA</div>
             </div>
             <input type="file" id="evFile" accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.xlsx,.xls,.doc,.docx,.ppt,.pptx,.txt,.zip" hidden>
             <div class="file-list" id="evList"></div>

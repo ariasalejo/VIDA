@@ -381,6 +381,9 @@ function initDropzone() {
   const input = $("#evFile");
   if (!zone) return;
   zone.addEventListener("click", () => input.click());
+  zone.addEventListener("keydown", e => {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); input.click(); }
+  });
   zone.addEventListener("dragover", e => { e.preventDefault(); zone.classList.add("over"); });
   zone.addEventListener("dragleave", () => zone.classList.remove("over"));
   zone.addEventListener("drop", e => {
@@ -437,8 +440,11 @@ async function renderRules() {
   gcard.className = "concept";
   const rows = Object.entries(g.weights || {}).map(([k, w]) =>
     `<div class="grad-row"><span>${esc(String(k).toUpperCase())}</span><b>${((w || 0) * 100).toFixed(0)}%</b></div>`).join("");
-  const comps = (g.components || {});
-  const compStr = Object.keys(comps).filter(c => comps[c].enabled).map(c => esc(c)).join(" · ");
+  const comps = g.components || [];
+  const compNames = Array.isArray(comps)
+    ? comps
+    : Object.keys(comps).filter(c => comps[c] && comps[c].enabled);
+  const compStr = compNames.map(c => esc(c)).join(" · ");
   gcard.innerHTML =
     `<strong>⚙ Pesos del curso: ${esc((data.course || {}).title || (data.course || {}).id || "curso")}</strong>` +
     `<div class="grad-sums">${rows}</div>` +
