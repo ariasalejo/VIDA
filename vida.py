@@ -7,6 +7,11 @@ import os
 import secrets
 import sqlite3
 import tempfile
+import subprocess
+import sys
+import threading
+
+from piper import PiperVoice
 import webbrowser
 from datetime import datetime, timezone
 from pathlib import Path
@@ -29,6 +34,11 @@ from vida_engines import (
 )
 
 ROOT = Path(__file__).resolve().parent
+
+# VIDA Local · Piper persistente en memoria
+_piper_voice = None
+_piper_lock = threading.Lock()
+
 DATA = ROOT / "data"
 MEDIA = ROOT / "media"
 DB = DATA / "vida.db"
@@ -1033,6 +1043,86 @@ def create_app() -> Flask:
     app.config["SESSION_COOKIE_HTTPONLY"] = True
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
     app.config["SESSION_COOKIE_SECURE"] = False
+
+    @app.post("/api/voice")
+    def api_voice():
+        """Sintetiza voz con Piper manteniendo el modelo cargado en memoria."""
+        global _piper_voice
+
+        payload = request.get_json(silent=True) or {}
+        text_to_speak = str(payload.get("text", "")).strip()
+
+        if not text_to_speak:
+            return jsonify({
+                "ok": False,
+                "error": "No se recibió texto."
+            }), 400
+
+        if len(text_to_speak) > 2000:
+            return jsonify({
+                "ok": False,
+                "error": "El texto de voz supera el límite permitido."
+            }), 400
+
+        model = ROOT / "voices" / "piper" / "es_ES-sharvard-medium.onnx"
+
+        if not model.exists():
+            return jsonify({
+                "ok": False,
+                "error": "No está disponible la voz oficial de VIDA."
+            }), 503
+
+        output = tempfile.NamedTemporaryFile(
+            suffix=".wav",
+            delete=False
+        )
+        output_path = Path(output.name)
+        output.close()
+
+        try:
+            # Cargar Piper UNA sola vez y conservarlo en memoria.
+            if _piper_voice is None:
+                with _piper_lock:
+                    if _piper_voice is None:
+                        _piper_voice = PiperVoice.load(str(model))
+
+            with _piper_lock:
+                import wave
+
+                with wave.open(str(output_path), "wb") as wav_file:
+                    _piper_voice.synthesize_wav(
+                        text_to_speak,
+                        wav_file
+                    )
+
+            if not output_path.exists():
+                return jsonify({
+                    "ok": False,
+                    "error": "Piper no pudo generar el audio."
+                }), 500
+
+            audio = output_path.read_bytes()
+
+            return app.response_class(
+                audio,
+                mimetype="audio/wav",
+                headers={
+                    "Cache-Control": "no-store",
+                    "X-VIDA-Voice": "Piper/es_ES-sharvard-medium",
+                },
+            )
+
+        except Exception as exc:
+            return jsonify({
+                "ok": False,
+                "error": f"Error del motor de voz: {exc}"
+            }), 500
+
+        finally:
+            try:
+                output_path.unlink(missing_ok=True)
+            except OSError:
+                pass
 
     @app.get("/api/me")
     def api_me():

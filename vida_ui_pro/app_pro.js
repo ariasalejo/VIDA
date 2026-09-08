@@ -157,9 +157,10 @@ async function getJSON(u, o) {
   return data;
 }
 
-/* ---------------- GUÍA POR VOZ ---------------- */
+/* ---------------- GUÍA POR VOZ · PIPER ---------------- */
 const VOICE_KEY = "vida_voice";
 let voiceOn = localStorage.getItem(VOICE_KEY) !== "off";
+
 const GUIDES = {
   dashboard: "Este es tu centro de mando VIDA. Aquí revisas el progreso operativo, el dominio, las evidencias y el puntaje de aprendizaje del curso activo.",
   actividades: "Esta es tu ruta de aprendizaje. Cada actividad tiene video de la sesión, material y una zona para subir tu entrega.",
@@ -168,45 +169,11 @@ const GUIDES = {
   evidencias: "Centro de evidencias. VIDA solo registra lo que observa; nunca inventa evidencia.",
   reglas: "Reglas del motor. Aquí puedes ver quién califica, con qué pesos y bajo qué condiciones se emite el certificado."
 };
-const VOZ_FEMENINA = /laura|helena|sabina|paulina|m[oó]nica|camila|marisol|luci|ximena|valentina|isabella|sof[aí]a|elena|paloma|palmira|samantha|karina|nuria|silvia|beatriz|marta|olga|andrea|daniela|mar[íi]a|google español|google espa|milena|alicia|emma|selma|rosa|tessa|linda|allison/i;
-const VOZ_MASCULINA = /jorge|pedro|carlos|lucas|pablo|diego|david|miguel|juan|javier|antonio|raul|ram[oó]n|alberto|fernando|andres|andr[eé]s|thomas|alex|male|masculino|hombre/i;
-const VOZ_NATURAL = /natural|neural|enhanced|premium|online|google|espa[nñ]a.*mujer|mujer|software upgrade|eloquence|aria|siri/i;
 
-let vidaVoice = null;
+const VIDA_VOICE_ENGINE = "Piper";
+const VIDA_VOICE_MODEL = "es_ES-sharvard-medium";
 
-function pickVoice() {
-  const vs = speechSynthesis.getVoices();
-  if (!vs.length) return null;
-
-  const es = vs.filter(v => /^(es)(-|_|$)/i.test(v.lang || ""));
-  const co = es.filter(v => /(^|[-_])CO($|[-_])/i.test(v.lang || ""));
-  const pool = co.length ? co : (es.length ? es : vs);
-
-  const natural = pool.filter(
-    v => VOZ_NATURAL.test(v.name) && !VOZ_MASCULINA.test(v.name)
-  );
-
-  const female = pool.filter(
-    v => VOZ_FEMENINA.test(v.name) && !VOZ_MASCULINA.test(v.name)
-  );
-
-  const neutral = pool.filter(
-    v => !VOZ_MASCULINA.test(v.name) && !VOZ_FEMENINA.test(v.name)
-  );
-
-  vidaVoice =
-    natural[0] ||
-    female[0] ||
-    neutral[0] ||
-    pool[0] ||
-    null;
-
-  return vidaVoice;
-}
-
-if ("speechSynthesis" in window) {
-  speechSynthesis.onvoiceschanged = () => pickVoice();
-}
+let vidaAudio = null;
 
 function limpiaVoz(text) {
   return String(text || "")
@@ -257,62 +224,88 @@ function troceaVoz(text, max = 180) {
   return resultado;
 }
 
-function speak(text) {
-  if (!text || !voiceOn || !("speechSynthesis" in window)) return;
+function detenerVoz() {
+  if (vidaAudio) {
+    try {
+      vidaAudio.pause();
+      vidaAudio.currentTime = 0;
+    } catch (_) {}
+    vidaAudio = null;
+  }
+}
+
+async function reproducirPiper(text) {
+  const response = await fetch("/api/voice", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ text })
+  });
+
+  if (!response.ok) {
+    let message = "No se pudo generar la voz de VIDA.";
+    try {
+      const data = await response.json();
+      if (data.error) message = data.error;
+    } catch (_) {}
+    throw new Error(message);
+  }
+
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+
+  const audio = new Audio(url);
+  vidaAudio = audio;
+
+  audio.volume = 1.0;
+
+  audio.onended = () => {
+    URL.revokeObjectURL(url);
+    if (vidaAudio === audio) vidaAudio = null;
+  };
+
+  audio.onerror = () => {
+    URL.revokeObjectURL(url);
+    if (vidaAudio === audio) vidaAudio = null;
+  };
+
+  await audio.play();
+}
+
+async function speak(text) {
+  if (!text || !voiceOn) return;
 
   try {
-    speechSynthesis.cancel();
+    detenerVoz();
 
-    const partes = troceaVoz(text);
-    if (!partes.length) return;
+    const limpio = limpiaVoz(text);
+    if (!limpio) return;
 
-    const voz = pickVoice() || vidaVoice;
-    let indice = 0;
-
-    const siguiente = () => {
-      if (!voiceOn || indice >= partes.length) return;
-
-      const u = new SpeechSynthesisUtterance(partes[indice++]);
-
-      if (voz) {
-        u.voice = voz;
-        u.lang = voz.lang || "es-CO";
-      } else {
-        u.lang = "es-CO";
-      }
-
-      // Ritmo más humano y menos acelerado.
-      u.rate = 0.82;
-
-      // Ligeramente cálida, evitando el tono excesivamente artificial.
-      u.pitch = 1.06;
-
-      u.volume = 1.0;
-
-      u.onend = () => {
-        if (!voiceOn) return;
-
-        // Pausa respiratoria entre frases.
-        window.setTimeout(siguiente, 280);
-      };
-
-      u.onerror = () => {
-        if (indice < partes.length) {
-          window.setTimeout(siguiente, 100);
-        }
-      };
-
-      speechSynthesis.speak(u);
-    };
-
-    siguiente();
-  } catch (_) {}
+    await reproducirPiper(limpio);
+  } catch (err) {
+    console.error(
+      `[VIDA VOICE] ${VIDA_VOICE_ENGINE}/${VIDA_VOICE_MODEL}:`,
+      err
+    );
+  }
 }
 
 function setVoiceBtn() {
   const b = $("#voiceBtn");
-  if (b) b.textContent = voiceOn ? "🔊" : "🔇";
-  try { localStorage.setItem(VOICE_KEY, voiceOn ? "on" : "off"); } catch (_) {}
+  if (b) {
+    b.textContent = voiceOn ? "🔊" : "🔇";
+    b.title = voiceOn
+      ? "Guía por voz · Piper · VIDA Local"
+      : "Guía por voz desactivada";
+  }
+
+  try {
+    localStorage.setItem(
+      VOICE_KEY,
+      voiceOn ? "on" : "off"
+    );
+  } catch (_) {}
 }
 
 /* ---------------- MEDIA: AVAILABILITY ---------------- */
@@ -980,12 +973,6 @@ document.addEventListener("DOMContentLoaded", () => {
   if (vb) vb.addEventListener("click", () => {
     voiceOn = !voiceOn;
 setVoiceBtn();
-  if ("speechSynthesis" in window) {
-    pickVoice();
-    const refreshVoz = () => pickVoice();
-    if (speechSynthesis.addEventListener) speechSynthesis.addEventListener("voiceschanged", refreshVoz);
-    else speechSynthesis.onvoiceschanged = refreshVoz;
-  }
     if (voiceOn) speak(GUIDES[parseHash().name] || GUIDES.dashboard);
   });
   const cs = $("#courseSel");
