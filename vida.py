@@ -12,7 +12,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from secrets import compare_digest
 
-from flask import Flask, jsonify, render_template, request, send_from_directory
+from flask import Flask, jsonify, render_template, request, send_from_directory, session
+from werkzeug.security import generate_password_hash, check_password_hash
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
@@ -373,13 +374,94 @@ LEGACY_USER_ID = "local-owner"
 
 
 def current_user_id() -> str:
-    """Devuelve la identidad activa de VIDA.
+    """Identidad activa: usuario autenticado o invitado temporal."""
+    uid = session.get("user_id")
+    if uid:
+        return str(uid)
 
-    Durante la migración inicial se utiliza LEGACY_USER_ID.
-    Posteriormente esta función será el único punto que resolverá
-    invitado, usuario registrado y otras identidades persistentes.
-    """
-    return LEGACY_USER_ID
+    guest_id = "guest-" + secrets.token_urlsafe(12)
+
+    # El primer invitado local reclama los datos históricos de local-owner.
+    # Esto permite que la migración de identidad no haga desaparecer
+    # el progreso existente.
+    try:
+        connection = conn()
+        legacy = connection.execute(
+            """
+            SELECT COUNT(*) AS total
+            FROM video_progress
+            WHERE user_id = ?
+            """,
+            (LEGACY_USER_ID,),
+        ).fetchone()
+
+        legacy_items = connection.execute(
+            """
+            SELECT COUNT(*) AS total
+            FROM item_progress
+            WHERE user_id = ?
+            """,
+            (LEGACY_USER_ID,),
+        ).fetchone()
+
+        has_legacy = (
+            int(legacy["total"] or 0) > 0
+            or int(legacy_items["total"] or 0) > 0
+        )
+
+        already_claimed = connection.execute(
+            """
+            SELECT COUNT(*) AS total
+            FROM users
+            WHERE kind = 'guest'
+            """
+        ).fetchone()
+
+        if has_legacy and int(already_claimed["total"] or 0) == 0:
+            connection.execute(
+                """
+                UPDATE video_progress
+                SET user_id = ?
+                WHERE user_id = ?
+                """,
+                (guest_id, LEGACY_USER_ID),
+            )
+            connection.execute(
+                """
+                UPDATE item_progress
+                SET user_id = ?
+                WHERE user_id = ?
+                """,
+                (guest_id, LEGACY_USER_ID),
+            )
+            connection.execute(
+                """
+                UPDATE study_log
+                SET user_id = ?
+                WHERE user_id = ?
+                """,
+                (guest_id, LEGACY_USER_ID),
+            )
+
+        connection.execute(
+            """
+            INSERT OR IGNORE INTO users
+            (user_id, kind, display_name)
+            VALUES (?, 'guest', 'Invitado')
+            """,
+            (guest_id,),
+        )
+        connection.commit()
+        connection.close()
+    except Exception:
+        try:
+            connection.close()
+        except Exception:
+            pass
+
+    session["user_id"] = guest_id
+    session["user_kind"] = "guest"
+    return guest_id
 
 
 def conn() -> sqlite3.Connection:
@@ -419,11 +501,29 @@ def conn() -> sqlite3.Connection:
             note TEXT,
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
+
+        CREATE TABLE IF NOT EXISTS users (
+            user_id TEXT PRIMARY KEY,
+            kind TEXT NOT NULL DEFAULT 'user',
+            username TEXT UNIQUE,
+            display_name TEXT NOT NULL,
+            password_hash TEXT,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
         """
     )
 
     _migrate_existing_db(connection)
     _migrate_identity_db(connection)
+
+    connection.execute(
+        """
+        INSERT OR IGNORE INTO users
+        (user_id, kind, username, display_name)
+        VALUES (?, 'user', 'local-owner', 'Usuario local')
+        """,
+        (LEGACY_USER_ID,),
+    )
 
     connection.commit()
     return connection
@@ -925,6 +1025,252 @@ def create_app() -> Flask:
         static_folder=str(ROOT / "vida_ui_pro"),
         static_url_path="/static",
     )
+
+    app.secret_key = os.environ.get(
+        "VIDA_SESSION_SECRET",
+        "vida-local-development-secret-change-me",
+    )
+    app.config["SESSION_COOKIE_HTTPONLY"] = True
+    app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+    app.config["SESSION_COOKIE_SECURE"] = False
+
+    @app.get("/api/me")
+    def api_me():
+        uid = current_user_id()
+        connection = conn()
+        row = connection.execute(
+            """
+            SELECT user_id, kind, username, display_name, created_at
+            FROM users
+            WHERE user_id = ?
+            """,
+            (uid,),
+        ).fetchone()
+
+        if row is None:
+            kind = session.get("user_kind", "guest")
+            connection.execute(
+                """
+                INSERT INTO users
+                (user_id, kind, display_name)
+                VALUES (?, ?, ?)
+                """,
+                (uid, kind, "Invitado"),
+            )
+            connection.commit()
+            row = connection.execute(
+                """
+                SELECT user_id, kind, username, display_name, created_at
+                FROM users
+                WHERE user_id = ?
+                """,
+                (uid,),
+            ).fetchone()
+
+        connection.close()
+
+        return jsonify({
+            "ok": True,
+            "user": dict(row),
+        })
+
+
+    @app.post("/api/guest")
+    def api_guest():
+        session.clear()
+        uid = "guest-" + secrets.token_urlsafe(12)
+        session["user_id"] = uid
+        session["user_kind"] = "guest"
+
+        connection = conn()
+        connection.execute(
+            """
+            INSERT INTO users
+            (user_id, kind, display_name)
+            VALUES (?, 'guest', 'Invitado')
+            """,
+            (uid,),
+        )
+        connection.commit()
+        connection.close()
+
+        return jsonify({
+            "ok": True,
+            "user_id": uid,
+            "kind": "guest",
+            "display_name": "Invitado",
+        })
+
+
+    @app.post("/api/register")
+    def api_register():
+        payload = request.get_json(silent=True) or {}
+
+        username = str(payload.get("username", "")).strip().lower()
+        display_name = str(
+            payload.get("display_name") or username
+        ).strip()
+        password = str(payload.get("password", ""))
+
+        if len(username) < 3:
+            return jsonify({
+                "ok": False,
+                "error": "El usuario debe tener al menos 3 caracteres."
+            }), 400
+
+        if len(password) < 8:
+            return jsonify({
+                "ok": False,
+                "error": "La contraseña debe tener al menos 8 caracteres."
+            }), 400
+
+        if not display_name:
+            return jsonify({
+                "ok": False,
+                "error": "El nombre es obligatorio."
+            }), 400
+
+        old_uid = current_user_id()
+        new_uid = "user-" + secrets.token_urlsafe(12)
+
+        connection = conn()
+
+        try:
+            exists = connection.execute(
+                "SELECT 1 FROM users WHERE username = ?",
+                (username,),
+            ).fetchone()
+
+            if exists:
+                connection.close()
+                return jsonify({
+                    "ok": False,
+                    "error": "Ese usuario ya existe."
+                }), 409
+
+            connection.execute("BEGIN")
+
+            connection.execute(
+                """
+                INSERT INTO users
+                (user_id, kind, username, display_name, password_hash)
+                VALUES (?, 'user', ?, ?, ?)
+                """,
+                (
+                    new_uid,
+                    username,
+                    display_name,
+                    generate_password_hash(password),
+                ),
+            )
+
+            connection.execute(
+                """
+                UPDATE video_progress
+                SET user_id = ?
+                WHERE user_id = ?
+                """,
+                (new_uid, old_uid),
+            )
+
+            connection.execute(
+                """
+                UPDATE item_progress
+                SET user_id = ?
+                WHERE user_id = ?
+                """,
+                (new_uid, old_uid),
+            )
+
+            connection.execute(
+                """
+                UPDATE study_log
+                SET user_id = ?
+                WHERE user_id = ?
+                """,
+                (new_uid, old_uid),
+            )
+
+            connection.commit()
+
+        except sqlite3.IntegrityError:
+            connection.rollback()
+            connection.close()
+            return jsonify({
+                "ok": False,
+                "error": "No fue posible crear la cuenta."
+            }), 409
+        except Exception:
+            connection.rollback()
+            connection.close()
+            raise
+
+        connection.close()
+
+        session.clear()
+        session["user_id"] = new_uid
+        session["user_kind"] = "user"
+
+        return jsonify({
+            "ok": True,
+            "user_id": new_uid,
+            "kind": "user",
+            "username": username,
+            "display_name": display_name,
+        }), 201
+
+
+    @app.post("/api/login")
+    def api_login():
+        payload = request.get_json(silent=True) or {}
+
+        username = str(payload.get("username", "")).strip().lower()
+        password = str(payload.get("password", ""))
+
+        connection = conn()
+        row = connection.execute(
+            """
+            SELECT user_id, kind, username, display_name, password_hash
+            FROM users
+            WHERE username = ?
+            """,
+            (username,),
+        ).fetchone()
+        connection.close()
+
+        if not row or not row["password_hash"]:
+            return jsonify({
+                "ok": False,
+                "error": "Usuario o contraseña incorrectos."
+            }), 401
+
+        if not check_password_hash(row["password_hash"], password):
+            return jsonify({
+                "ok": False,
+                "error": "Usuario o contraseña incorrectos."
+            }), 401
+
+        session.clear()
+        session["user_id"] = row["user_id"]
+        session["user_kind"] = "user"
+
+        return jsonify({
+            "ok": True,
+            "user_id": row["user_id"],
+            "kind": row["kind"],
+            "username": row["username"],
+            "display_name": row["display_name"],
+        })
+
+
+    @app.post("/api/logout")
+    def api_logout():
+        session.clear()
+        return jsonify({
+            "ok": True,
+            "message": "Sesión cerrada.",
+        })
+
 
     @app.get("/")
     def home():

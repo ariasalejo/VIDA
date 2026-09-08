@@ -5,6 +5,211 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>VIDA · BLUMIX Learning Command Center</title>
 <link rel="stylesheet" href="/static/style_pro.css">
+<style id="vida-identity-premium">
+/* =========================================================
+   VIDA · IDENTIDAD PREMIUM
+   ========================================================= */
+
+.identity-box {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+
+  min-height: 36px;
+  padding: 6px 12px;
+
+  border: 1px solid rgba(212, 175, 55, 0.42);
+  border-radius: 14px;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(212, 175, 55, 0.12),
+      rgba(212, 175, 55, 0.035)
+    );
+
+  box-shadow:
+    0 0 18px rgba(212, 175, 55, 0.10),
+    inset 0 0 15px rgba(212, 175, 55, 0.035);
+
+  backdrop-filter: blur(8px);
+
+  transition:
+    border-color 0.25s ease,
+    box-shadow 0.25s ease,
+    transform 0.25s ease;
+}
+
+.identity-box:hover {
+  border-color: rgba(212, 175, 55, 0.68);
+
+  box-shadow:
+    0 0 25px rgba(212, 175, 55, 0.16),
+    inset 0 0 18px rgba(212, 175, 55, 0.05);
+
+  transform: translateY(-1px);
+}
+
+#identityIcon {
+  font-size: 18px;
+  line-height: 1;
+
+  filter:
+    drop-shadow(
+      0 0 6px
+      rgba(212, 175, 55, 0.35)
+    );
+}
+
+#identityName {
+  color: #f2d675;
+
+  font-family:
+    Georgia,
+    "Times New Roman",
+    serif;
+
+  font-style: italic;
+  font-weight: 700;
+
+  letter-spacing: 0.2px;
+
+  text-shadow:
+    0 0 8px rgba(212, 175, 55, 0.25);
+}
+
+#identityKind {
+  color: #cdb568;
+
+  font-family:
+    Georgia,
+    "Times New Roman",
+    serif;
+
+  font-style: italic;
+
+  font-size: 11px;
+  font-weight: 600;
+
+  opacity: 0.92;
+
+  white-space: nowrap;
+
+  text-shadow:
+    0 0 6px rgba(212, 175, 55, 0.12);
+}
+
+#identityAction {
+  margin-left: 5px;
+
+  padding: 5px 10px;
+
+  border: 1px solid rgba(212, 175, 55, 0.48);
+  border-radius: 9px;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(212, 175, 55, 0.13),
+      rgba(212, 175, 55, 0.045)
+    );
+
+  color: #f2d675;
+
+  font-family:
+    Georgia,
+    "Times New Roman",
+    serif;
+
+  font-style: italic;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+#identityAction:hover {
+  background:
+    linear-gradient(
+      135deg,
+      rgba(212, 175, 55, 0.22),
+      rgba(212, 175, 55, 0.08)
+    );
+
+  border-color: rgba(212, 175, 55, 0.75);
+
+  box-shadow:
+    0 0 14px rgba(212, 175, 55, 0.18);
+
+  transform: translateY(-1px);
+}
+
+#identityAction:active {
+  transform: translateY(0);
+}
+
+/* =========================================================
+   INVITADO
+   ========================================================= */
+
+.identity-box:has(#identityIcon) {
+  position: relative;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 1100px) {
+  .identity-box {
+    gap: 7px;
+    padding: 5px 9px;
+  }
+
+  #identityName {
+    font-size: 13px;
+  }
+
+  #identityKind {
+    display: none;
+  }
+
+  #identityAction {
+    padding: 4px 8px;
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 700px) {
+  .identity-box {
+    border-radius: 10px;
+    padding: 5px 7px;
+  }
+
+  #identityName {
+    max-width: 130px;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  #identityIcon {
+    font-size: 16px;
+  }
+
+  #identityAction {
+    margin-left: 2px;
+    padding: 4px 6px;
+  }
+}
+</style>
+
 </head>
 <body>
 
@@ -19,6 +224,12 @@
     </label>
     <button id="voiceBtn" type="button" title="Guía por voz">🔊</button>
     <a class="cert-link" href="/certificado" target="_blank">🏆 Certificado</a>
+    <div id="identityBox" class="identity-box">
+      <span id="identityIcon">👤</span>
+      <span id="identityName">Cargando...</span>
+      <span id="identityKind"></span>
+      <button id="identityAction" type="button" hidden></button>
+    </div>
     <button id="sync" type="button">↻ SYNC</button>
   </div>
 </header>

@@ -7,6 +7,103 @@ let currentActivity = null;
 let actVideoTimer = null;
 let sharedVideoTimer = null;
 let videosMeta = null;
+let identity = null;
+
+/* ---------------- IDENTIDAD ---------------- */
+async function loadIdentity() {
+  try {
+    const data = await getJSON("/api/me");
+    identity = data.user || null;
+    renderIdentity();
+  } catch (err) {
+    console.error("No se pudo cargar la identidad:", err);
+  }
+}
+
+function renderIdentity() {
+  const box = $("#identityBox");
+  const icon = $("#identityIcon");
+  const name = $("#identityName");
+  const kind = $("#identityKind");
+  const action = $("#identityAction");
+
+  if (!box || !identity) return;
+
+  const guest = identity.kind === "guest";
+
+  icon.textContent = guest ? "👋" : "🔐";
+  name.textContent = identity.display_name || identity.username || "Usuario";
+  kind.textContent = guest
+    ? "Explorador de VIDA"
+    : "Aprendiz · Progreso guardado";
+
+  action.hidden = false;
+  action.textContent = guest ? "CREAR CUENTA" : "CERRAR SESIÓN";
+
+  action.onclick = guest ? registerIdentity : logoutIdentity;
+
+  box.title = guest
+    ? "El progreso del invitado es temporal. Crea una cuenta para conservarlo."
+    : "Sesión de usuario persistente.";
+}
+
+async function registerIdentity() {
+  const username = prompt("Nombre de usuario:");
+  if (!username) return;
+
+  const displayName = prompt("Nombre para mostrar:");
+  if (!displayName) return;
+
+  const password = prompt("Contraseña (mínimo 8 caracteres):");
+  if (!password) return;
+
+  try {
+    const data = await getJSON("/api/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username,
+        display_name: displayName,
+        password
+      })
+    });
+
+    identity = {
+      user_id: data.user_id,
+      username: data.username,
+      display_name: data.display_name,
+      kind: data.kind
+    };
+
+    renderIdentity();
+
+    await load();
+
+    refresh();
+
+    alert("✅ Cuenta creada. Tu progreso se conservó.");
+  } catch (err) {
+    alert("❌ No se pudo crear la cuenta: " + err.message);
+  }
+}
+
+async function logoutIdentity() {
+  try {
+    await getJSON("/api/logout", {
+      method: "POST"
+    });
+
+    identity = null;
+
+    await loadIdentity();
+    await load();
+    refresh();
+
+    alert("👤 Sesión cerrada. Ahora estás como invitado.");
+  } catch (err) {
+    alert("❌ No se pudo cerrar sesión: " + err.message);
+  }
+}
 
 const MIME = {
   pdf: "📕 PDF", png: "🖼 Imagen", jpg: "🖼 Imagen", jpeg: "🖼 Imagen",
@@ -901,6 +998,7 @@ setVoiceBtn();
   initDropzone();
   tickClock();
   setInterval(tickClock, 1000);
+  loadIdentity();
   load();
   setInterval(() => { if (document.visibilityState === "visible") refresh(); }, 20000);
 });
