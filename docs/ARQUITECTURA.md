@@ -86,7 +86,25 @@ Aprendiz sube entrega → evidencia_engine
 5. **CERTIFICATE_IS_ISSUED_ONCE_PER_COURSE** — por curso y por aprendiz.
 6. **USER_CONFIRMATION_IS_FINAL** — el aprendiz confirma antes de certificar.
 
-## 7. Documentos relacionados
+## 7. Seguridad
+
+Política de robustez del código (aunque sea público en GitHub y Vercel):
+
+- **Claves y tokens nunca se versionan**: `.env*`, `data/.cert_token` y demás
+  secretos están fuera del repo vía `.gitignore`; se inyectan como variables de
+  entorno en producción.
+- **Mínima exposición del perfil**: nombre y cédula se usan solo al emitir el
+  certificado; los tableros no los muestran.
+- **Cifrado del perfil (identidad)**: la información identificable (nombre, cédula)
+  se **encripta en reposo** antes de persistirse y se descifra únicamente en el
+  momento de firmar el certificado (ver `crypto` helpers en `vida.py` y `vida_db.py`).
+- **Código público ≠ código vulnerable**: la lógica de reglas y certificación es
+  abierta y explicable, pero la verificación de la emisión depende de la clave
+  privada y de la base, no del código fuente.
+- **Revisión por difusión**: cualquier cambio sensible se revisa antes de `push` y
+  `deploy`; la operación `vercel --prod` solo corre tras `git push` verificado.
+
+## 8. Documentos relacionados
 
 - [`ADAPTACION.md`](ADAPTACION.md) — cómo agregar la siguiente fuente de conocimiento.
 - `README.md` — visión, características y arranque.

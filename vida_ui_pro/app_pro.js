@@ -31,7 +31,7 @@ function renderIdentity() {
   if (!box || !identity) return;
 
   const guest = identity.kind === "guest";
-  const profileReady = !!(identity.full_name && identity.cedula);
+  const profileReady = !!(identity.profile && identity.profile.complete);
 
   icon.textContent = guest ? "👋" : "🔐";
   name.textContent = identity.display_name || identity.username || "Usuario";
@@ -83,7 +83,15 @@ async function completeProfile() {
       body: JSON.stringify({ full_name: fullName, cedula })
     });
 
-    identity = data.user || identity;
+    identity = {
+      ...(identity || {}),
+      profile: data.profile || {
+        complete: true,
+        has_full_name: true,
+        has_cedula: true,
+        masked_cedula: ""
+      }
+    };
     renderIdentity();
 
     await load();

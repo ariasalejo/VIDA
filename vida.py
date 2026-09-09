@@ -2,8 +2,11 @@
 from __future__ import annotations
 
 import argparse
+import base64
+import hashlib
 import json
 import os
+import re
 import secrets
 import sqlite3
 import tempfile
@@ -53,6 +56,75 @@ DEFAULT_COURSE_ID = "sena_ciberseguridad"
 REGISTRY = DATA / "registry.json"
 COURSES_DIR = DATA / "courses"
 PROFILES_DIR = DATA / "profiles"
+
+# ---------------------------------------------------------------------------
+# Protección del perfil: nombre y cédula se cifran (Fernet) en reposo.
+# La llave NO vive en el código: viene de la variable VIDA_DATA_KEY.
+# La API NUNCA devuelve estos valores en claro; solo expone estado y máscara.
+# ---------------------------------------------------------------------------
+DATA_KEY_ENV = "VIDA_DATA_KEY"
+
+
+def _profile_key() -> bytes:
+    secret = os.environ.get(DATA_KEY_ENV, "").strip()
+    if not secret:
+        raise RuntimeError(
+            "Falta la variable de entorno "
+            f"{DATA_KEY_ENV} para proteger el perfil."
+        )
+    return base64.urlsafe_b64encode(
+        hashlib.sha256(secret.encode("utf-8")).digest()
+    )
+
+
+def _profile_cipher():
+    from cryptography.fernet import Fernet
+
+    return Fernet(_profile_key())
+
+
+def encrypt_profile_value(value: str) -> str:
+    if not value:
+        return ""
+    return _profile_cipher().encrypt(
+        str(value).encode("utf-8")
+    ).decode("ascii")
+
+
+def decrypt_profile_value(value: str) -> str:
+    if not value:
+        return ""
+    try:
+        return _profile_cipher().decrypt(
+            value.encode("ascii")
+        ).decode("utf-8")
+    except Exception:
+        return value
+
+
+def _masked_cedula(value: str) -> str:
+    digits = re.sub(r"\D", "", decrypt_profile_value(value) or "")
+    if len(digits) >= 4:
+        return "••••••" + digits[-4:]
+    return "••••"
+
+
+def profile_payload(row) -> dict:
+    """Estado del perfil SIN exponer el contenido real.
+
+    Devuelve únicamente si está completo, qué campos hay y una máscara
+    de la cédula (últimos 4 dígitos) para confirmación visual segura.
+    """
+    full_name = str(row["full_name"] or "").strip() if row else ""
+    cedula = str(row["cedula"] or "").strip() if row else ""
+    has_full = bool(full_name)
+    has_ced = bool(cedula)
+    return {
+        "complete": has_full and has_ced,
+        "has_full_name": has_full,
+        "has_cedula": has_ced,
+        "masked_cedula": _masked_cedula(cedula) if has_ced else "",
+    }
 
 console = Console()
 
@@ -1891,6 +1963,15 @@ def create_app() -> Flask:
             "Configura VIDA_SECRET_KEY como variable de entorno.[/bold yellow]"
         )
 
+    @app.after_request
+    def _hardened_headers(resp):
+        resp.headers.setdefault("X-Content-Type-Options", "nosniff")
+        resp.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+        resp.headers.setdefault("Referrer-Policy", "no-referrer")
+        resp.headers.setdefault("X-XSS-Protection", "1; mode=block")
+        resp.headers.setdefault("Permissions-Policy", "geolocation=(), camera=(), microphone=()")
+        return resp
+
     @app.post("/api/voice")
     def api_voice():
         """Sintetiza voz con Piper manteniendo el modelo cargado en memoria."""
@@ -2006,9 +2087,14 @@ def create_app() -> Flask:
 
         connection.close()
 
+        user = dict(row)
+        user.pop("full_name", None)
+        user.pop("cedula", None)
+        user["profile"] = profile_payload(row)
+
         return jsonify({
             "ok": True,
-            "user": dict(row),
+            "user": user,
         })
 
 
@@ -2044,6 +2130,15 @@ def create_app() -> Flask:
                 "error": "Número de cédula obligatorio."
             }), 400
 
+        try:
+            enc_full_name = encrypt_profile_value(full_name)
+            enc_cedula = encrypt_profile_value(cedula)
+        except RuntimeError as exc:
+            return jsonify({
+                "ok": False,
+                "error": str(exc),
+            }), 503
+
         connection = conn()
         connection.execute(
             """
@@ -2051,7 +2146,7 @@ def create_app() -> Flask:
             SET full_name = ?, cedula = ?
             WHERE user_id = ?
             """,
-            (full_name, cedula, uid),
+            (enc_full_name, enc_cedula, uid),
         )
         connection.commit()
 
@@ -2073,7 +2168,7 @@ def create_app() -> Flask:
 
         return jsonify({
             "ok": True,
-            "user": dict(row),
+            "profile": profile_payload(row),
         })
 
 
@@ -2210,6 +2305,15 @@ def create_app() -> Flask:
         old_uid = current_user_id()
         new_uid = "user-" + secrets.token_urlsafe(12)
 
+        try:
+            enc_full_name = encrypt_profile_value(full_name)
+            enc_cedula = encrypt_profile_value(cedula)
+        except RuntimeError as exc:
+            return jsonify({
+                "ok": False,
+                "error": str(exc),
+            }), 503
+
         connection = conn()
 
         try:
@@ -2238,8 +2342,8 @@ def create_app() -> Flask:
                     username,
                     display_name,
                     generate_password_hash(password),
-                    full_name,
-                    cedula,
+                    enc_full_name,
+                    enc_cedula,
                 ),
             )
 
@@ -2296,8 +2400,12 @@ def create_app() -> Flask:
             "kind": "user",
             "username": username,
             "display_name": display_name,
-            "full_name": full_name,
-            "cedula": cedula,
+            "profile": {
+                "complete": True,
+                "has_full_name": True,
+                "has_cedula": True,
+                "masked_cedula": _masked_cedula(enc_cedula),
+            },
         }), 201
 
 
@@ -2341,8 +2449,7 @@ def create_app() -> Flask:
             "kind": row["kind"],
             "username": row["username"],
             "display_name": row["display_name"],
-            "full_name": row["full_name"] or "",
-            "cedula": row["cedula"] or "",
+            "profile": profile_payload(row),
         })
 
 
@@ -2591,7 +2698,9 @@ def create_app() -> Flask:
         connection.close()
 
         full_name = (
-            str(user_row["full_name"] or "").strip()
+            decrypt_profile_value(
+                str(user_row["full_name"] or "").strip()
+            )
             if user_row
             else ""
         )
@@ -2601,7 +2710,9 @@ def create_app() -> Flask:
             else ""
         )
         cedula = (
-            str(user_row["cedula"] or "").strip()
+            decrypt_profile_value(
+                str(user_row["cedula"] or "").strip()
+            )
             if user_row
             else ""
         )

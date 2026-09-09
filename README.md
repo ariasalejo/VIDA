@@ -3,6 +3,13 @@
 
 > **Observar · verificar · comprender · demostrar · avanzar.**
 
+![Licencia](https://img.shields.io/badge/Licencia-Apache_2.0-blue)
+![Estado](https://img.shields.io/badge/Estado-En_marcha-green)
+![Backend](https://img.shields.io/badge/Backend-Flask_Python_3-blueviolet)
+![Frontend](https://img.shields.io/badge/Frontend-HTML_CSS_JS-ff9e0a)
+![Deploy](https://img.shields.io/badge/Deploy-Vercel-black)
+![Pruebas](https://img.shields.io/badge/Pruebas-30_passed-brightgreen)
+
 VIDA es un **Command Center Learning**: un centro personal de aprendizaje cuya
 ética es que *solo se registra lo que se demuestra, nunca lo que se asume*.
 
@@ -34,6 +41,38 @@ reescribir la plataforma. Ver [`docs/ADAPTACION.md`](docs/ADAPTACION.md).
 
 ---
 
+## 📑 Contenido
+
+1. [Estado del proyecto](#-estado-del-proyecto)
+2. [Protagonista](#-protagonista)
+3. [Características](#-características)
+4. [Seguridad](#-seguridad)
+5. [Stack](#-stack)
+6. [Estructura](#-estructura)
+7. [Arranque local](#-arranque-local)
+8. [Sesiones grabadas](#-sesiones-grabadas)
+9. [Certificado y clave](#-clave-del-certificado)
+10. [Guía por voz](#-guía-por-voz)
+11. [Zona en construcción](#-zona-en-construcción)
+12. [Filosofía](#-filosofía)
+13. [Documentación](#-documentación)
+14. [Licencia](#-licencia)
+15. [Pruebas](#-pruebas)
+16. [Hoja de ruta](#-hoja-de-ruta)
+
+---
+
+## 🛰 Estado del proyecto
+
+| Aspecto | Valor |
+|---|---|
+| 🌐 **Producción (en vivo)** | https://vida-seven-self.vercel.app |
+| 🔀 **Fuente de conocimiento** | SENA · Zajuna · Ciberseguridad (48 h) |
+| ✅ **Evidencias en servidor** | AA1 (2 entregas trazables con PDF) |
+| 🧪 **Pruebas** | 30/30 en verde (`pytest`) |
+
+---
+
 ## 👤 Protagonista
 
 | | |
@@ -61,6 +100,26 @@ reescribir la plataforma. Ver [`docs/ADAPTACION.md`](docs/ADAPTACION.md).
 - 🛰 **Multi-curso adaptativo**: selector en tiempo real (el perfil se ajusta solo).
 - 📟 Tres interfaces: **web** (Flask), **TUI** (Textual) y **CLI**.
 - 🎛 **Dashboard pro**: desglose por componente, señales del motor (OBSERVADO/INFERIDO/PREDICHO), próximos pasos y ruta curricular.
+
+---
+
+## 🔒 Seguridad
+
+VIDA trata la identidad y la evidencia como datos sensibles:
+
+- **Autenticación real** por sesión (`api/me`, `api/login`) con perfil de aprendiz
+  (nombre completo y cédula) que se usa solo para el certificado.
+- **Cédula y nombre nunca se exponen** en el dashboard ni en los tableros públicos.
+- **Evidencias trazables**: cada entrega tiene id, fecha, método y estado (OBSERVADO),
+  y se persiste en Blob sin inventar ni reescribir la historia.
+- **Certificado por curso y por aprendiz**, emitido una sola vez y protegido por la
+  clave de solo lectura (`VIDA_CERT_KEY`); se verifica por id sin revelar el resto.
+- **Sin credenciales de terceros**: VIDA nunca guarda contraseñas de Zajuna ni tokens
+  remotos en el repo (`.env*` está excluido por `.gitignore`).
+
+> 🛡 La *política de robustez* (blindaje del código público y cifrado del perfil) se
+> documenta en [`docs/ARQUITECTURA.md`](docs/ARQUITECTURA.md), sección *Seguridad*,
+> y evoluciona con cada release.
 
 ---
 

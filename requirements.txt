@@ -3,3 +3,4 @@ rich>=14,<15
 piper-tts>=1.8,<2
 vercel>=0.10,<1
 pg8000>=1.31,<2
+cryptography>=42,<46
