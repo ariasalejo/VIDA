@@ -1200,8 +1200,8 @@ function renderConceptModal(concept) {
 
         state = await getJSON("/api/dashboard");
         await renderKnowledge();
-        renderConceptModal(concept);
         refresh();
+        closeConcept();
       } catch (error) {
         message.textContent = "⚠ " + esc(error.message);
         verifyBtn.disabled = false;
