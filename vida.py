@@ -389,6 +389,279 @@ def register_course(manifest: dict, activate: bool = True) -> str:
 # Las respuestas correctas viven exclusivamente en backend.
 # Nunca se envían al navegador mediante GET.
 KNOWLEDGE_CHECKS = {
+    "concepto_ciberseguridad": {
+        "version": 1,
+        "required_score": 0.67,
+        "questions": [
+            {
+                "id": "cib-q1",
+                "question": "¿Qué conjunto de elementos protege principalmente la ciberseguridad?",
+                "options": [
+                    "Sistemas, redes, aplicaciones, dispositivos y datos frente a amenazas.",
+                    "Únicamente las contraseñas de los usuarios.",
+                    "Solo el hardware físico de la organización.",
+                    "Exclusivamente los archivos impresos."
+                ],
+                "correct": 0,
+            },
+            {
+                "id": "cib-q2",
+                "question": "¿Qué dimensiones incluye la ciberseguridad según el concepto?",
+                "options": [
+                    "Personas, procesos y tecnología.",
+                    "Ventas, marketing y publicidad.",
+                    "Contratos, facturas y nómina.",
+                    "Presupuesto, gastos e ingresos."
+                ],
+                "correct": 0,
+            },
+            {
+                "id": "cib-q3",
+                "question": "¿Cuál es un ejemplo de práctica de ciberseguridad?",
+                "options": [
+                    "Actualización y parcheo de software.",
+                    "Eliminar los respaldos de información.",
+                    "Compartir credenciales de acceso.",
+                    "Deshabilitar los controles de acceso."
+                ],
+                "correct": 0,
+            },
+        ],
+    },
+    "concepto_activo": {
+        "version": 1,
+        "required_score": 0.67,
+        "questions": [
+            {
+                "id": "act-q1",
+                "question": "¿Qué es un activo de información?",
+                "options": [
+                    "Un recurso que posee valor para la organización y debe ser protegido.",
+                    "Una amenaza que ataca los sistemas.",
+                    "Una debilidad presente en el software.",
+                    "El impacto económico de un incidente."
+                ],
+                "correct": 0,
+            },
+            {
+                "id": "act-q2",
+                "question": "¿Cuál de los siguientes es un ejemplo de activo de información?",
+                "options": [
+                    "Base de datos de clientes.",
+                    "Una amenaza de phishing.",
+                    "Una vulnerabilidad del navegador.",
+                    "El impacto reputacional."
+                ],
+                "correct": 0,
+            },
+            {
+                "id": "act-q3",
+                "question": "¿Para qué sirve identificar y valorar los activos?",
+                "options": [
+                    "Para determinar qué debe protegerse primero.",
+                    "Para eliminar todos los controles de seguridad.",
+                    "Para aumentar la cantidad de vulnerabilidades.",
+                    "Para evitar el uso de respaldos."
+                ],
+                "correct": 0,
+            },
+        ],
+    },
+    "concepto_confidencialidad": {
+        "version": 1,
+        "required_score": 0.67,
+        "questions": [
+            {
+                "id": "conf-q1",
+                "question": "¿Qué garantiza la confidencialidad?",
+                "options": [
+                    "Que la información solo sea accesible para personas, procesos o sistemas autorizados.",
+                    "Que la información nunca pueda ser modificada.",
+                    "Que los servicios estén siempre disponibles.",
+                    "Que el riesgo siempre sea eliminado por completo."
+                ],
+                "correct": 0,
+            },
+            {
+                "id": "conf-q2",
+                "question": "¿Cuál es un ejemplo de pérdida de confidencialidad?",
+                "options": [
+                    "Filtración de información.",
+                    "Caída de un servidor.",
+                    "Alteración de una base de datos.",
+                    "Pérdida económica por un ciberataque."
+                ],
+                "correct": 0,
+            },
+            {
+                "id": "conf-q3",
+                "question": "¿Qué control protege la confidencialidad?",
+                "options": [
+                    "Cifrado.",
+                    "Cortes eléctricos.",
+                    "Desastres naturales.",
+                    "Redundancia de almacenamiento."
+                ],
+                "correct": 0,
+            },
+        ],
+    },
+    "concepto_integridad": {
+        "version": 1,
+        "required_score": 0.67,
+        "questions": [
+            {
+                "id": "int-q1",
+                "question": "¿Qué garantiza la integridad de la información?",
+                "options": [
+                    "Que mantenga su exactitud, completitud y consistencia y no sea modificada sin autorización.",
+                    "Que sea accesible solo para los autorizados.",
+                    "Que los servicios estén disponibles todo el tiempo.",
+                    "Que las amenazas desaparezcan."
+                ],
+                "correct": 0,
+            },
+            {
+                "id": "int-q2",
+                "question": "¿Cuál es un ejemplo de afectación a la integridad?",
+                "options": [
+                    "Manipulación de registros.",
+                    "Robo de contraseñas.",
+                    "Interrupción del servicio.",
+                    "Daño reputacional."
+                ],
+                "correct": 0,
+            },
+            {
+                "id": "int-q3",
+                "question": "¿Qué control ayuda a verificar la integridad?",
+                "options": [
+                    "Hashes.",
+                    "Redundancia.",
+                    "Planes de continuidad.",
+                    "Alta disponibilidad."
+                ],
+                "correct": 0,
+            },
+        ],
+    },
+    "concepto_disponibilidad": {
+        "version": 1,
+        "required_score": 0.67,
+        "questions": [
+            {
+                "id": "disp-q1",
+                "question": "¿Qué garantiza la disponibilidad?",
+                "options": [
+                    "Que la información y los servicios estén disponibles y utilizables cuando sean necesarios.",
+                    "Que la información solo la vean los autorizados.",
+                    "Que los datos no puedan modificarse.",
+                    "Que no existan amenazas."
+                ],
+                "correct": 0,
+            },
+            {
+                "id": "disp-q2",
+                "question": "¿Qué puede afectar la disponibilidad?",
+                "options": [
+                    "Ataque de denegación de servicio.",
+                    "Cifrado de información.",
+                    "Firmas digitales.",
+                    "Control de acceso."
+                ],
+                "correct": 0,
+            },
+            {
+                "id": "disp-q3",
+                "question": "¿Qué control favorece la disponibilidad?",
+                "options": [
+                    "Redundancia.",
+                    "Hashes.",
+                    "Gestión de privilegios.",
+                    "Permisos de escritura."
+                ],
+                "correct": 0,
+            },
+        ],
+    },
+    "concepto_amenaza": {
+        "version": 1,
+        "required_score": 0.67,
+        "questions": [
+            {
+                "id": "ame-q1",
+                "question": "¿Qué es una amenaza?",
+                "options": [
+                    "Una circunstancia, evento, actor o acción con capacidad potencial de causar daño a un activo.",
+                    "Un recurso que debe ser protegido.",
+                    "Un control que previene incidentes.",
+                    "El efecto de un riesgo materializado."
+                ],
+                "correct": 0,
+            },
+            {
+                "id": "ame-q2",
+                "question": "¿Cuál es un ejemplo de amenaza?",
+                "options": [
+                    "Ransomware.",
+                    "Backup de información.",
+                    "Cifrado de datos.",
+                    "Firewall."
+                ],
+                "correct": 0,
+            },
+            {
+                "id": "ame-q3",
+                "question": "¿Qué se requiere normalmente para que una amenaza produzca un incidente?",
+                "options": [
+                    "Que exista una condición que permita que la amenaza afecte un activo.",
+                    "Que la organización no tenga activos.",
+                    "Que el riesgo sea aceptado por la dirección.",
+                    "Que no existan controles de seguridad documentados."
+                ],
+                "correct": 0,
+            },
+        ],
+    },
+    "concepto_vulnerabilidad": {
+        "version": 1,
+        "required_score": 0.67,
+        "questions": [
+            {
+                "id": "vul-q1",
+                "question": "¿Qué es una vulnerabilidad?",
+                "options": [
+                    "Una debilidad o condición que puede ser aprovechada por una amenaza.",
+                    "Un atacante que busca dañar un activo.",
+                    "Una medida para reducir el riesgo.",
+                    "El valor de un activo para la organización."
+                ],
+                "correct": 0,
+            },
+            {
+                "id": "vul-q2",
+                "question": "¿Cuál es un ejemplo de vulnerabilidad?",
+                "options": [
+                    "Contraseña débil.",
+                    "Ransomware.",
+                    "Phishing.",
+                    "Robo de credenciales."
+                ],
+                "correct": 0,
+            },
+            {
+                "id": "vul-q3",
+                "question": "¿Dónde pueden encontrarse las vulnerabilidades?",
+                "options": [
+                    "En software, hardware, configuraciones, procesos o personas.",
+                    "Únicamente en los servidores de almacenamiento.",
+                    "Solo en los dispositivos móviles.",
+                    "Exclusivamente en los atacantes externos."
+                ],
+                "correct": 0,
+            },
+        ],
+    },
     "concepto_riesgo": {
         "version": 1,
         "required_score": 0.67,
@@ -423,6 +696,240 @@ KNOWLEDGE_CHECKS = {
                     "Usuario y contraseña.",
                     "Hardware y software.",
                     "Disponibilidad y ancho de banda."
+                ],
+                "correct": 0,
+            },
+        ],
+    },
+    "concepto_impacto": {
+        "version": 1,
+        "required_score": 0.67,
+        "questions": [
+            {
+                "id": "imp-q1",
+                "question": "¿Qué es el impacto?",
+                "options": [
+                    "La consecuencia o efecto producido cuando un riesgo se materializa.",
+                    "La posibilidad de que surja una amenaza.",
+                    "Una debilidad aprovechable por un atacante.",
+                    "Un control que corrige los efectos del riesgo."
+                ],
+                "correct": 0,
+            },
+            {
+                "id": "imp-q2",
+                "question": "¿Cuál es un ejemplo de impacto?",
+                "options": [
+                    "Pérdida económica.",
+                    "Firewall activo.",
+                    "Contraseña cifrada.",
+                    "Copia de seguridad."
+                ],
+                "correct": 0,
+            },
+            {
+                "id": "imp-q3",
+                "question": "¿Sobre qué aspectos puede afectar el impacto?",
+                "options": [
+                    "Operaciones, finanzas, reputación, cumplimiento legal o confianza de los usuarios.",
+                    "Únicamente el rendimiento de los equipos.",
+                    "Solo el inventario de activos.",
+                    "Exclusivamente los permisos de escritura."
+                ],
+                "correct": 0,
+            },
+        ],
+    },
+    "concepto_control": {
+        "version": 1,
+        "required_score": 0.67,
+        "questions": [
+            {
+                "id": "ctl-q1",
+                "question": "¿Qué es un control de seguridad?",
+                "options": [
+                    "Una medida utilizada para prevenir, detectar, corregir o reducir los efectos de un riesgo.",
+                    "Un evento con capacidad de causar daño.",
+                    "El valor de un activo para la organización.",
+                    "Una debilidad presente en los procesos."
+                ],
+                "correct": 0,
+            },
+            {
+                "id": "ctl-q2",
+                "question": "¿Cuál es un ejemplo de control técnico?",
+                "options": [
+                    "Firewall.",
+                    "Contraseña débil.",
+                    "Ransomware.",
+                    "Filtración de información."
+                ],
+                "correct": 0,
+            },
+            {
+                "id": "ctl-q3",
+                "question": "¿Qué tipos de controles existen?",
+                "options": [
+                    "Técnicos, administrativos, físicos o relacionados con las personas y los procesos.",
+                    "Solo preventivos y punitivos.",
+                    "Únicamente digitales y manuales.",
+                    "Exclusivamente automáticos."
+                ],
+                "correct": 0,
+            },
+        ],
+    },
+    "concepto_tratamiento": {
+        "version": 1,
+        "required_score": 0.67,
+        "questions": [
+            {
+                "id": "trat-q1",
+                "question": "¿Qué es el tratamiento del riesgo?",
+                "options": [
+                    "El proceso mediante el cual la organización decide qué hacer frente a un riesgo identificado.",
+                    "La herramienta que organiza la probabilidad y el impacto.",
+                    "El riesgo que permanece después de los controles.",
+                    "La debilidad aprovechada por una amenaza."
+                ],
+                "correct": 0,
+            },
+            {
+                "id": "trat-q2",
+                "question": "¿Qué opciones de tratamiento puede decidir una organización?",
+                "options": [
+                    "Evitarlo, reducirlo, compartirlo o transferirlo, o aceptarlo.",
+                    "Ignorarlo, ocultarlo, aumentarlo y financiarlo.",
+                    "Negarlo, postergarlo, duplicarlo y archivarlo.",
+                    "Eliminarlo, borrarlo, olvidarlo y sustituirlo."
+                ],
+                "correct": 0,
+            },
+            {
+                "id": "trat-q3",
+                "question": "¿Cuándo se acepta un riesgo?",
+                "options": [
+                    "Cuando se encuentra dentro de los criterios establecidos por la organización.",
+                    "Cuando no existe ningún activo que proteger.",
+                    "Cuando la amenaza desaparece por completo.",
+                    "Cuando el impacto no se ha materializado nunca."
+                ],
+                "correct": 0,
+            },
+        ],
+    },
+    "concepto_riesgo_residual": {
+        "version": 1,
+        "required_score": 0.67,
+        "questions": [
+            {
+                "id": "rr-q1",
+                "question": "¿Qué es el riesgo residual?",
+                "options": [
+                    "El riesgo que permanece después de aplicar controles o medidas de tratamiento.",
+                    "El riesgo aceptado antes de identificar amenazas.",
+                    "El impacto causado cuando se materializa una amenaza.",
+                    "Un control que elimina todos los riesgos."
+                ],
+                "correct": 0,
+            },
+            {
+                "id": "rr-q2",
+                "question": "¿Por qué es importante volver a evaluar el riesgo después del tratamiento?",
+                "options": [
+                    "Porque los controles reducen el riesgo pero no necesariamente lo eliminan por completo.",
+                    "Porque el riesgo siempre desaparece al aplicar controles.",
+                    "Porque el riesgo nunca cambia con el tiempo.",
+                    "Porque los activos no requieren valoración."
+                ],
+                "correct": 0,
+            },
+            {
+                "id": "rr-q3",
+                "question": "¿Qué afirma correctamente el concepto de riesgo residual?",
+                "options": [
+                    "Tras aplicar controles, queda un riesgo que debe seguir siendo monitoreado.",
+                    "Los controles eliminan totalmente el riesgo y no queda nada por evaluar.",
+                    "El riesgo residual es mayor antes de aplicar controles.",
+                    "El riesgo residual no depende de las amenazas."
+                ],
+                "correct": 0,
+            },
+        ],
+    },
+    "concepto_matriz_riesgo": {
+        "version": 1,
+        "required_score": 0.67,
+        "questions": [
+            {
+                "id": "mr-q1",
+                "question": "¿Qué es la matriz de riesgos?",
+                "options": [
+                    "Una herramienta para organizar y visualizar riesgos considerando principalmente probabilidad e impacto.",
+                    "Una amenaza que afecta varios activos.",
+                    "Un control que elimina todas las vulnerabilidades.",
+                    "El proceso de aceptar un riesgo."
+                ],
+                "correct": 0,
+            },
+            {
+                "id": "mr-q2",
+                "question": "¿Qué factores considera principalmente la matriz de riesgos?",
+                "options": [
+                    "Probabilidad e impacto.",
+                    "Contraseña y usuario.",
+                    "Hardware y software.",
+                    "Costo y ubicación."
+                ],
+                "correct": 0,
+            },
+            {
+                "id": "mr-q3",
+                "question": "¿Para qué sirve la matriz de riesgos?",
+                "options": [
+                    "Para priorizar riesgos y facilitar la toma de decisiones sobre controles y acciones de tratamiento.",
+                    "Para aumentar la probabilidad de incidentes.",
+                    "Para eliminar la necesidad de controles.",
+                    "Para sustituir la valoración de activos."
+                ],
+                "correct": 0,
+            },
+        ],
+    },
+    "concepto_gestion_seguridad": {
+        "version": 1,
+        "required_score": 0.67,
+        "questions": [
+            {
+                "id": "gs-q1",
+                "question": "¿Qué es la gestión de la seguridad de la información?",
+                "options": [
+                    "Un conjunto organizado de procesos mediante los cuales la organización protege su información y gestiona los riesgos asociados.",
+                    "Una herramienta que solo organiza probabilidad e impacto.",
+                    "Un control único que elimina todos los riesgos.",
+                    "El acto de instalar un firewall."
+                ],
+                "correct": 0,
+            },
+            {
+                "id": "gs-q2",
+                "question": "¿Qué requiere la gestión de la seguridad de la información?",
+                "options": [
+                    "Identificar activos, comprender amenazas y vulnerabilidades, evaluar riesgos, establecer controles, verificar resultados y mejorar continuamente.",
+                    "Solo comprar más software de seguridad.",
+                    "Únicamente capacitar a un empleado.",
+                    "Exclusivamente respaldar la información."
+                ],
+                "correct": 0,
+            },
+            {
+                "id": "gs-q3",
+                "question": "¿Qué afirma correctamente el concepto de gestión de la seguridad?",
+                "options": [
+                    "La seguridad no consiste solamente en instalar herramientas.",
+                    "La seguridad queda resuelta con un firewall.",
+                    "Los controles técnicos reemplazan todo el proceso.",
+                    "La gestión solo se hace una vez al año."
                 ],
                 "correct": 0,
             },

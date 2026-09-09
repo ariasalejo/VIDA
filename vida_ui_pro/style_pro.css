@@ -748,6 +748,81 @@ video.offline{opacity:.18;filter:grayscale(.7)}
   font-size: 12px;
 }
 
+.concept-check-panel {
+  margin-top: 12px;
+  padding: 14px 15px;
+  border: 1px solid rgba(69, 230, 255, 0.22);
+  border-radius: 12px;
+  background: rgba(6, 17, 29, 0.55);
+}
+
+.concept-check-submit {
+  margin-top: 10px;
+}
+
+.concept-check-head {
+  color: var(--cyan);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.concept-check-q {
+  margin: 0 0 13px;
+}
+
+.concept-check-prompt {
+  color: #dceaf1;
+  font-size: 13px;
+  margin-bottom: 7px;
+  line-height: 1.55;
+}
+
+.concept-check-opt {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 7px 9px;
+  margin-bottom: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.concept-check-opt input {
+  margin-top: 2px;
+  accent-color: var(--cyan);
+}
+
+.concept-check-opt span {
+  color: #c8d8e2;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.concept-check-result {
+  margin-top: 10px;
+  font-size: 12px;
+}
+
+.concept-check-pass {
+  color: #47e0b7;
+  font-weight: 800;
+}
+
+.concept-check-fail {
+  color: #ffcf70;
+  font-weight: 700;
+}
+
+.concept-check-empty {
+  color: #9ed9e8;
+  font-size: 12px;
+}
+
 .concept-modal-footer {
   display: flex;
   justify-content: flex-end;

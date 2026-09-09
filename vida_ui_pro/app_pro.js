@@ -1110,6 +1110,7 @@ function renderConceptModal(concept) {
           </section>` : ""}
 
         <div class="concept-modal-message" id="conceptModalMessage"></div>
+        <div class="concept-check-panel" id="conceptCheckPanel" hidden></div>
       </div>
 
       <footer class="concept-modal-footer">
@@ -1175,39 +1176,200 @@ function renderConceptModal(concept) {
       }
     });
 
-    verifyBtn.addEventListener("click", async () => {
-      verifyBtn.disabled = true;
-      verifyBtn.textContent = "VERIFICANDO…";
-
-      try {
-        const response = await fetch(
-          "/api/concept/" + encodeURIComponent(concept.id) + "/verify",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({})
-          }
-        );
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error || "No se pudo verificar el concepto.");
-        }
-
-        message.textContent =
-          "✓ Concepto verificado. Actualizando Mastery…";
-
-        state = await getJSON("/api/dashboard");
-        await renderKnowledge();
-        refresh();
-        closeConcept();
-      } catch (error) {
-        message.textContent = "⚠ " + esc(error.message);
-        verifyBtn.disabled = false;
-        verifyBtn.textContent = "✓ VERIFICAR CONCEPTO";
-      }
+    verifyBtn.addEventListener("click", () => {
+      requestConceptVerify(concept, message, verifyBtn);
     });
+  }
+}
+
+async function requestConceptVerify(concept, messageEl, verifyBtn) {
+  verifyBtn.disabled = true;
+  verifyBtn.textContent = "VERIFICANDO…";
+
+  try {
+    const response = await fetch(
+      "/api/concept/" + encodeURIComponent(concept.id) + "/verify",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({})
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      if (data && data.knowledge_check_passed === false) {
+        messageEl.textContent =
+          "Antes de verificar, aprueba el Knowledge Check:";
+        loadKnowledgeCheck(concept.id, "conceptCheckPanel", async () => {
+          messageEl.textContent =
+            "✓ Knowledge Check aprobado. Verificando concepto…";
+          await requestConceptVerify(concept, messageEl, verifyBtn);
+        });
+        return;
+      }
+      throw new Error(data.error || "No se pudo verificar el concepto.");
+    }
+
+    messageEl.textContent =
+      "✓ Concepto verificado. Actualizando Mastery…";
+
+    state = await getJSON("/api/dashboard");
+    await renderKnowledge();
+    refresh();
+    closeConcept();
+  } catch (error) {
+    messageEl.textContent = "⚠ " + esc(error.message);
+    verifyBtn.disabled = false;
+    verifyBtn.textContent = "✓ VERIFICAR CONCEPTO";
+  }
+}
+
+async function loadKnowledgeCheck(conceptId, holderId, onPassed) {
+  const holder = document.getElementById(holderId);
+  if (!holder) return;
+
+  try {
+    const resp = await fetch(
+      "/api/concept/" + encodeURIComponent(conceptId) + "/check"
+    );
+    const data = await resp.json();
+
+    if (!resp.ok || !data.check) {
+      holder.innerHTML =
+        '<div class="concept-check-empty">⚠ Este concepto todavía no tiene Knowledge Check.</div>';
+      holder.hidden = false;
+      return;
+    }
+
+    const qs = data.check.questions || [];
+
+    holder.innerHTML =
+      '<div class="concept-check-head">🧠 KNOWLEDGE CHECK</div>' +
+      qs
+        .map(
+          (q, qi) =>
+            '<div class="concept-check-q">' +
+            '<div class="concept-check-prompt">' +
+            (qi + 1) +
+            ". " +
+            esc(q.question || q.prompt || "") +
+            "</div>" +
+            '<div class="concept-check-opts">' +
+            (q.options || [])
+              .map(
+                (o, oi) =>
+                  '<label class="concept-check-opt"><input type="radio" name="kc_' +
+                  esc(q.id || qi) +
+                  '" value="' +
+                  oi +
+                  '"><span>' +
+                  esc(o) +
+                  "</span></label>"
+              )
+              .join("") +
+            "</div></div>"
+        )
+        .join("") +
+      '<button class="btn-primary concept-check-submit" type="button" id="kcSubmit" ' +
+      (qs.length ? "" : "disabled") +
+      '>CALIFICAR CONOCIMIENTO</button>' +
+      '<div class="concept-check-result" id="kcResult"></div>';
+
+    const sub = document.getElementById("kcSubmit");
+    if (sub) {
+      sub.addEventListener("click", () => {
+        gradeKnowledgeCheck(conceptId, qs, onPassed);
+      });
+    }
+
+    holder.hidden = false;
+  } catch (e) {
+    holder.innerHTML =
+      '<div class="concept-check-empty">⚠ No se pudo cargar el Knowledge Check.</div>';
+    holder.hidden = false;
+  }
+}
+
+async function gradeKnowledgeCheck(conceptId, qs, onPassed) {
+  const answers = {};
+  qs.forEach((q) => {
+    const sel = document.querySelector(
+      'input[name="kc_' + esc(q.id || "") + '"]:checked'
+    );
+    if (sel) answers[String(q.id)] = parseInt(sel.value, 10);
+  });
+
+  const res = document.getElementById("kcResult");
+
+  if (Object.keys(answers).length !== qs.length) {
+    if (res) res.innerHTML = "⚠ Responde todas las preguntas.";
+    return;
+  }
+
+  const sub = document.getElementById("kcSubmit");
+  if (sub) {
+    sub.disabled = true;
+    sub.textContent = "CALIFICANDO…";
+  }
+
+  try {
+    const resp = await fetch(
+      "/api/concept/" + encodeURIComponent(conceptId) + "/check",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ answers })
+      }
+    );
+    const data = await resp.json();
+    if (!res) return;
+
+    if (data.passed) {
+      res.innerHTML =
+        '<div class="concept-check-pass">✓ Knowledge Check aprobado: ' +
+        data.correct +
+        "/" +
+        data.total +
+        ". Ahora verifica el concepto.</div>";
+      if (typeof onPassed === "function") onPassed();
+    } else {
+      res.innerHTML =
+        '<div class="concept-check-fail">✗ No aprobado: ' +
+        data.correct +
+        "/" +
+        data.total +
+        ". Necesitas al menos " +
+        Math.round((data.required_score || 0) * 100) +
+        "%. Revisa las preguntas marcadas y vuelve a intentar.</div>";
+
+      (data.results || []).forEach((r) => {
+        const el = document.querySelector(
+          'input[name="kc_' + esc(r.id || "") + '"]:checked'
+        );
+        const label = el ? el.closest("label") : null;
+        if (label) {
+          label.style.borderColor = r.correct
+            ? "rgba(71,224,183,.7)"
+            : "rgba(247,198,90,.7)";
+          label.style.background = r.correct
+            ? "rgba(71,224,183,.08)"
+            : "rgba(247,198,90,.08)";
+        }
+      });
+
+      if (sub) {
+        sub.disabled = false;
+        sub.textContent = "CALIFICAR CONOCIMIENTO";
+      }
+    }
+  } catch (e) {
+    if (res) res.innerHTML = "⚠ " + esc(e.message || e);
+    if (sub) {
+      sub.disabled = false;
+      sub.textContent = "CALIFICAR CONOCIMIENTO";
+    }
   }
 }
 
