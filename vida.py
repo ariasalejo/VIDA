@@ -2747,12 +2747,21 @@ def create_app() -> Flask:
 
             activity_id = item["id"]
 
-            if _vercel_blob_enabled():
-                records = _vercel_blob_records(activity_id)
-                files = _vercel_blob_files(activity_id)
-            else:
-                records = _evidence_for(activity_id)
-                files = _uploaded_files(activity_id)
+            try:
+                if _vercel_blob_enabled():
+                    records = _vercel_blob_records(activity_id)
+                    files = _vercel_blob_files(activity_id)
+                else:
+                    records = _evidence_for(activity_id)
+                    files = _uploaded_files(activity_id)
+            except Exception as exc:
+                app.logger.exception(
+                    "Error leyendo evidencia activity=%s: %s",
+                    activity_id,
+                    exc,
+                )
+                records = []
+                files = []
 
             result.append(
                 {
