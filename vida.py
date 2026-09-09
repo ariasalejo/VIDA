@@ -380,6 +380,79 @@ def register_course(manifest: dict, activate: bool = True) -> str:
 
 
 
+
+# ---------------------------------------------------------------------------
+# KNOWLEDGE VERIFICATION V2
+# ---------------------------------------------------------------------------
+# Las respuestas correctas viven exclusivamente en backend.
+# Nunca se envían al navegador mediante GET.
+KNOWLEDGE_CHECKS = {
+    "concepto_riesgo": {
+        "version": 1,
+        "required_score": 0.67,
+        "questions": [
+            {
+                "id": "riesgo-q1",
+                "question": "¿Qué describe mejor el concepto de riesgo?",
+                "options": [
+                    "La posibilidad de que una amenaza aproveche una vulnerabilidad y produzca consecuencias sobre un activo.",
+                    "La existencia de cualquier activo dentro de una organización.",
+                    "Una medida utilizada únicamente para eliminar vulnerabilidades.",
+                    "Un inventario de controles de seguridad."
+                ],
+                "correct": 0,
+            },
+            {
+                "id": "riesgo-q2",
+                "question": "¿Cuál es una relación correcta dentro de la cadena conceptual del riesgo?",
+                "options": [
+                    "Activo → Amenaza → Vulnerabilidad → Probabilidad → Impacto → Riesgo",
+                    "Riesgo → Activo → Control → Amenaza",
+                    "Impacto → Activo → Riesgo → Vulnerabilidad",
+                    "Control → Riesgo → Activo → Amenaza"
+                ],
+                "correct": 0,
+            },
+            {
+                "id": "riesgo-q3",
+                "question": "¿Qué factores se relacionan directamente en la estimación básica del riesgo?",
+                "options": [
+                    "Probabilidad e impacto.",
+                    "Usuario y contraseña.",
+                    "Hardware y software.",
+                    "Disponibilidad y ancho de banda."
+                ],
+                "correct": 0,
+            },
+        ],
+    },
+}
+
+
+def knowledge_check_definition(concept_id: str):
+    """Obtiene la definición privada del Knowledge Check."""
+    return KNOWLEDGE_CHECKS.get(str(concept_id))
+
+
+def public_knowledge_check(concept_id: str):
+    """Devuelve preguntas sin exponer las respuestas correctas."""
+    definition = knowledge_check_definition(concept_id)
+    if not definition:
+        return None
+
+    return {
+        "version": definition["version"],
+        "required_score": definition["required_score"],
+        "questions": [
+            {
+                "id": question["id"],
+                "question": question["question"],
+                "options": list(question["options"]),
+            }
+            for question in definition["questions"]
+        ],
+    }
+
 LEGACY_USER_ID = "local-owner"
 
 
@@ -2019,15 +2092,203 @@ def create_app() -> Flask:
         })
 
 
+    
+    @app.get("/api/concept/<concept_id>/check")
+    def get_knowledge_check(concept_id: str):
+        """
+        Devuelve el Knowledge Check público de un concepto.
+
+        Las respuestas correctas permanecen exclusivamente en backend.
+        """
+        course_data = course()
+
+        concept = next(
+            (
+                c
+                for c in course_data.get("concepts", [])
+                if str(c.get("id")) == str(concept_id)
+            ),
+            None,
+        )
+
+        if concept is None:
+            return jsonify({
+                "ok": False,
+                "error": "Concepto no encontrado.",
+            }), 404
+
+        check = public_knowledge_check(concept_id)
+
+        if check is None:
+            return jsonify({
+                "ok": False,
+                "error": "Este concepto todavía no tiene Knowledge Check.",
+                "concept_id": str(concept_id),
+            }), 404
+
+        return jsonify({
+            "ok": True,
+            "concept_id": str(concept_id),
+            "check": check,
+        })
+
+
+    @app.post("/api/concept/<concept_id>/check")
+    def submit_knowledge_check(concept_id: str):
+        """
+        Corrige el Knowledge Check exclusivamente en backend.
+
+        El navegador envía únicamente los índices seleccionados.
+        El servidor determina las respuestas correctas.
+        """
+        course_data = course()
+
+        concept = next(
+            (
+                c
+                for c in course_data.get("concepts", [])
+                if str(c.get("id")) == str(concept_id)
+            ),
+            None,
+        )
+
+        if concept is None:
+            return jsonify({
+                "ok": False,
+                "error": "Concepto no encontrado.",
+            }), 404
+
+        definition = knowledge_check_definition(concept_id)
+
+        if definition is None:
+            return jsonify({
+                "ok": False,
+                "error": "Este concepto todavía no tiene Knowledge Check.",
+                "concept_id": str(concept_id),
+            }), 404
+
+        payload = request.get_json(silent=True) or {}
+        answers = payload.get("answers")
+
+        if not isinstance(answers, dict):
+            return jsonify({
+                "ok": False,
+                "error": "answers debe ser un objeto.",
+            }), 400
+
+        questions = definition["questions"]
+
+        expected_ids = {str(q["id"]) for q in questions}
+        received_ids = {str(k) for k in answers.keys()}
+
+        missing = sorted(expected_ids - received_ids)
+        unknown = sorted(received_ids - expected_ids)
+
+        if missing:
+            return jsonify({
+                "ok": False,
+                "error": "Faltan respuestas.",
+                "missing": missing,
+            }), 400
+
+        if unknown:
+            return jsonify({
+                "ok": False,
+                "error": "Se recibieron preguntas no válidas.",
+                "unknown": unknown,
+            }), 400
+
+        correct_count = 0
+        results = []
+
+        for question in questions:
+            question_id = str(question["id"])
+            selected = answers.get(question_id)
+
+            try:
+                selected_index = int(selected)
+            except (TypeError, ValueError):
+                return jsonify({
+                    "ok": False,
+                    "error": f"Respuesta inválida para {question_id}.",
+                }), 400
+
+            valid_range = range(len(question["options"]))
+
+            if selected_index not in valid_range:
+                return jsonify({
+                    "ok": False,
+                    "error": f"Opción inválida para {question_id}.",
+                }), 400
+
+            is_correct = selected_index == int(question["correct"])
+
+            if is_correct:
+                correct_count += 1
+
+            results.append({
+                "id": question_id,
+                "correct": is_correct,
+            })
+
+        total = len(questions)
+        score = correct_count / total if total else 0.0
+        required_score = float(definition["required_score"])
+        passed = score >= required_score
+
+        connection = conn()
+        cid = active_course_id()
+        uid = current_user_id()
+
+        knowledge_item_id = f"knowledge:{concept_id}"
+
+        if passed:
+            connection.execute(
+                """
+                INSERT INTO item_progress (
+                    user_id,
+                    item_id,
+                    course_id,
+                    completed
+                )
+                VALUES (?, ?, ?, 1)
+                ON CONFLICT(user_id, item_id, course_id)
+                DO UPDATE SET
+                    completed = 1,
+                    updated_at = CURRENT_TIMESTAMP
+                """,
+                (
+                    uid,
+                    knowledge_item_id,
+                    cid,
+                ),
+            )
+
+            connection.commit()
+
+        connection.close()
+
+        return jsonify({
+            "ok": True,
+            "concept_id": str(concept_id),
+            "version": definition["version"],
+            "score": round(score, 4),
+            "correct": correct_count,
+            "total": total,
+            "required_score": required_score,
+            "passed": passed,
+            "results": results,
+        })
+
+
     @app.post("/api/concept/<concept_id>/verify")
     def verify_concept(concept_id: str):
         """
-        Verificación explícita de un concepto.
+        Verificación final de un concepto.
 
-        La verificación no se concede por abrir la pantalla:
-        exige que exista estudio registrado previamente para
-        ese concepto y después crea el mismo estado que VIDA
-        ya utiliza internamente: item_id = concept:<id>.
+        Flujo obligatorio:
+
+        estudio → Knowledge Check aprobado → concepto verificado
         """
         course_data = course()
 
@@ -2049,6 +2310,9 @@ def create_app() -> Flask:
         cid = active_course_id()
         uid = current_user_id()
 
+        # ---------------------------------------------------------------
+        # 1. Debe existir estudio registrado.
+        # ---------------------------------------------------------------
         study_row = connection.execute(
             """
             SELECT COALESCE(SUM(minutes), 0) AS minutes
@@ -2072,6 +2336,40 @@ def create_app() -> Flask:
                 "studied_minutes": studied_minutes,
             }), 409
 
+        # ---------------------------------------------------------------
+        # 2. Debe existir Knowledge Check aprobado.
+        # ---------------------------------------------------------------
+        knowledge_item_id = f"knowledge:{concept_id}"
+
+        knowledge_row = connection.execute(
+            """
+            SELECT completed
+            FROM item_progress
+            WHERE user_id = ?
+              AND item_id = ?
+              AND course_id = ?
+            """,
+            (uid, knowledge_item_id, cid),
+        ).fetchone()
+
+        knowledge_passed = bool(
+            knowledge_row
+            and int(knowledge_row["completed"] or 0) == 1
+        )
+
+        if not knowledge_passed:
+            connection.close()
+            return jsonify({
+                "ok": False,
+                "error": "Primero aprueba el Knowledge Check del concepto.",
+                "concept_id": str(concept_id),
+                "knowledge_check_passed": False,
+                "studied_minutes": studied_minutes,
+            }), 409
+
+        # ---------------------------------------------------------------
+        # 3. Crear la verificación final del concepto.
+        # ---------------------------------------------------------------
         item_id = f"concept:{concept_id}"
 
         connection.execute(
@@ -2099,6 +2397,7 @@ def create_app() -> Flask:
             "concept_id": str(concept_id),
             "item_id": item_id,
             "verified": True,
+            "knowledge_check_passed": True,
             "studied_minutes": studied_minutes,
         })
 
