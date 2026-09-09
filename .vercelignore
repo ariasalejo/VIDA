@@ -21,3 +21,7 @@ os
 # Pruebas y configuración local
 tests
 .vercel
+# Backups locales de desarrollo
+*.backup*
+*.bak
+*.old

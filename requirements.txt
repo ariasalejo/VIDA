@@ -1,3 +1,4 @@
 Flask>=3.1,<4
 rich>=14,<15
 piper-tts>=1.8,<2
+vercel>=0.10,<1

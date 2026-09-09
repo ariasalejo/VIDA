@@ -2076,22 +2076,188 @@ def create_app() -> Flask:
 
         return jsonify(result)
 
+
+    # === VIDA VERCEL BLOB EVIDENCE PATCH ===
+    def _vercel_blob_enabled() -> bool:
+        """Activa Blob cuando Vercel proporciona su token."""
+        return bool(os.getenv("BLOB_READ_WRITE_TOKEN"))
+
+
+    def _vercel_blob_client():
+        """Carga el SDK solo cuando Blob está habilitado."""
+        from vercel.blob import BlobClient
+        return BlobClient()
+
+
+    def _vercel_blob_prefix(activity_id: str) -> str:
+        """Aísla evidencias por usuario, curso y actividad."""
+        uid = str(current_user_id())
+        cid = str(active_course_id())
+        return f"vida/evidence/{uid}/{cid}/{activity_id}/"
+
+
+    def _vercel_blob_read(pathname: str) -> bytes:
+        client = _vercel_blob_client()
+        result = client.get(pathname, access="private")
+
+        if (
+            result is None
+            or result.status_code != 200
+            or result.stream is None
+        ):
+            raise FileNotFoundError(pathname)
+
+        return b"".join(result.stream)
+
+
+    def _vercel_blob_list(activity_id: str) -> list:
+        client = _vercel_blob_client()
+        prefix = _vercel_blob_prefix(activity_id)
+
+        blobs = []
+        cursor = None
+
+        while True:
+            page = client.list_objects(
+                prefix=prefix,
+                limit=1000,
+                cursor=cursor,
+            )
+
+            blobs.extend(page.blobs)
+
+            if not page.has_more:
+                break
+
+            cursor = page.cursor
+
+        return blobs
+
+
+    def _vercel_blob_records(activity_id: str) -> list[dict]:
+        records = []
+
+        for blob in _vercel_blob_list(activity_id):
+            pathname = blob.pathname
+
+            if not pathname.endswith(".json"):
+                continue
+
+            try:
+                payload = json.loads(
+                    _vercel_blob_read(pathname).decode("utf-8")
+                )
+            except (
+                OSError,
+                ValueError,
+                UnicodeDecodeError,
+            ):
+                continue
+
+            if isinstance(payload, dict):
+                records.append(payload)
+
+        records.sort(
+            key=lambda item: item.get("observed_at", "")
+        )
+
+        return records
+
+
+    def _vercel_blob_files(activity_id: str) -> list[dict]:
+        files = []
+
+        for blob in _vercel_blob_list(activity_id):
+            pathname = blob.pathname
+
+            if pathname.endswith(".json"):
+                continue
+
+            name = pathname.rsplit("/", 1)[-1]
+
+            files.append(
+                {
+                    "name": name,
+                    "size": int(blob.size or 0),
+                    "url": (
+                        f"/media/evidence/"
+                        f"{activity_id}/{name}"
+                    ),
+                }
+            )
+
+        files.sort(
+            key=lambda item: item["name"]
+        )
+
+        return files
+
+
+    def _vercel_blob_store_evidence(
+        activity_id: str,
+        stored_name: str,
+        body: bytes,
+        content_type: str | None,
+        record: dict,
+    ) -> None:
+        client = _vercel_blob_client()
+        prefix = _vercel_blob_prefix(activity_id)
+
+        client.put(
+            prefix + stored_name,
+            body,
+            access="private",
+            content_type=(
+                content_type
+                or "application/octet-stream"
+            ),
+            add_random_suffix=False,
+        )
+
+        client.put(
+            prefix + str(record["evidence_id"]) + ".json",
+            json.dumps(
+                record,
+                indent=2,
+                ensure_ascii=False,
+            ).encode("utf-8"),
+            access="private",
+            content_type="application/json",
+            add_random_suffix=False,
+        )
+
+    # === FIN VIDA VERCEL BLOB EVIDENCE PATCH ===
+
     @app.get("/api/evidence")
     def evidence_overview():
         course_data = course()
         result = []
+
         for item in course_data.get("items", []):
             if item.get("kind") != "activity":
                 continue
+
             activity_id = item["id"]
+
+            if _vercel_blob_enabled():
+                records = _vercel_blob_records(activity_id)
+                files = _vercel_blob_files(activity_id)
+            else:
+                records = _evidence_for(activity_id)
+                files = _uploaded_files(activity_id)
+
             result.append(
                 {
                     "activity_id": activity_id,
-                    "title": item.get("title", activity_id),
-                    "records": _evidence_for(activity_id),
-                    "files": _uploaded_files(activity_id),
+                    "title": item.get(
+                        "title",
+                        activity_id,
+                    ),
+                    "records": records,
+                    "files": files,
                 }
             )
+
         return jsonify(result)
 
     @app.post("/api/evidence/<activity_id>")
@@ -2100,16 +2266,26 @@ def create_app() -> Flask:
 
         if "file" not in request.files:
             return jsonify(
-                {"ok": False, "error": "No se recibió archivo."}
+                {
+                    "ok": False,
+                    "error": "No se recibió archivo.",
+                }
             ), 400
 
         upload = request.files["file"]
+
         if not upload or not upload.filename:
             return jsonify(
-                {"ok": False, "error": "Archivo vacío."}
+                {
+                    "ok": False,
+                    "error": "Archivo vacío.",
+                }
             ), 400
 
-        safe = secure_filename(upload.filename).lower()
+        safe = secure_filename(
+            upload.filename
+        ).lower()
+
         allowed = {
             "pdf",
             "png",
@@ -2126,7 +2302,11 @@ def create_app() -> Flask:
             "txt",
             "zip",
         }
-        if "." not in safe or safe.rsplit(".", 1)[1] not in allowed:
+
+        if (
+            "." not in safe
+            or safe.rsplit(".", 1)[1] not in allowed
+        ):
             return jsonify(
                 {
                     "ok": False,
@@ -2134,33 +2314,188 @@ def create_app() -> Flask:
                 }
             ), 400
 
-        evidence_dir = evidence_root() / activity_id
+        stamp = datetime.now(
+            timezone.utc
+        ).strftime(
+            "%Y%m%d_%H%M%S_%f"
+        )
+
+        stored_name = (
+            f"{stamp}_{safe}"
+        )
+
+        if _vercel_blob_enabled():
+            try:
+                body = upload.read()
+
+                if not body:
+                    return jsonify(
+                        {
+                            "ok": False,
+                            "error": "Archivo vacío.",
+                        }
+                    ), 400
+
+                from vida_engines import EvidenceEngine
+
+                evidence = EvidenceEngine(
+                    evidence_root()
+                    / "evidence.json"
+                )
+
+                record = evidence.record(
+                    source=(
+                        f"work/{activity_id}"
+                    ),
+                    method="evidence_upload",
+                    event_type=(
+                        "ACTIVITY_COMPLETE"
+                    ),
+                    result="DELIVERED",
+                    context={
+                        "activity_id": activity_id,
+                        "user_id": (
+                            current_user_id()
+                        ),
+                        "course_id": (
+                            active_course_id()
+                        ),
+                        "file": stored_name,
+                        "size": len(body),
+                        "note": str(
+                            request.form.get(
+                                "note",
+                                "",
+                            )
+                        ),
+                    },
+                )
+
+                _vercel_blob_store_evidence(
+                    activity_id=activity_id,
+                    stored_name=stored_name,
+                    body=body,
+                    content_type=upload.mimetype,
+                    record=record.to_dict(),
+                )
+
+            except Exception as exc:
+                app.logger.exception(
+                    "Error guardando evidencia "
+                    "en Vercel Blob"
+                )
+
+                return jsonify(
+                    {
+                        "ok": False,
+                        "error": (
+                            "No se pudo guardar "
+                            "la evidencia en Blob: "
+                            f"{exc}"
+                        ),
+                    }
+                ), 503
+
+            try:
+                connection = conn()
+                cid = active_course_id()
+                uid = current_user_id()
+
+                connection.execute(
+                    """
+                    INSERT INTO item_progress
+                        (
+                            user_id,
+                            item_id,
+                            course_id,
+                            completed
+                        )
+                    VALUES (?, ?, ?, 1)
+                    ON CONFLICT(
+                        user_id,
+                        item_id,
+                        course_id
+                    )
+                    DO UPDATE SET
+                        completed = 1,
+                        updated_at = CURRENT_TIMESTAMP
+                    """,
+                    (
+                        uid,
+                        activity_id,
+                        cid,
+                    ),
+                )
+
+                connection.commit()
+                connection.close()
+
+            except Exception:
+                app.logger.exception(
+                    "No se pudo actualizar "
+                    "item_progress"
+                )
+
+            return jsonify(
+                {
+                    "ok": True,
+                    "evidence_id": (
+                        record.evidence_id
+                    ),
+                    "file": stored_name,
+                    "url": (
+                        f"/media/evidence/"
+                        f"{activity_id}/"
+                        f"{stored_name}"
+                    ),
+                    "storage": "vercel_blob",
+                }
+            ), 201
+
+        # ============================
+        # MODO LOCAL
+        # ============================
+
+        evidence_dir = (
+            evidence_root()
+            / activity_id
+        )
+
         try:
-            evidence_dir.mkdir(parents=True, exist_ok=True)
+            evidence_dir.mkdir(
+                parents=True,
+                exist_ok=True,
+            )
+
         except OSError:
             return jsonify(
                 {
                     "ok": False,
                     "error": (
-                        "No se pudo escribir en el almacén de evidencias "
-                        "de este despliegue."
+                        "No se pudo escribir "
+                        "en el almacén de "
+                        "evidencias de este "
+                        "despliegue."
                     ),
                 }
             ), 503
 
-        stamp = datetime.now(timezone.utc).strftime(
-            "%Y%m%d_%H%M%S"
+        path = (
+            evidence_dir
+            / stored_name
         )
-        stored_name = f"{stamp}_{safe}"
-        path = evidence_dir / stored_name
+
         try:
             upload.save(path)
+
         except OSError:
             return jsonify(
                 {
                     "ok": False,
                     "error": (
-                        "No se pudo guardar la evidencia en este despliegue."
+                        "No se pudo guardar "
+                        "la evidencia en este "
+                        "despliegue."
                     ),
                 }
             ), 503
@@ -2168,21 +2503,34 @@ def create_app() -> Flask:
         from vida_engines import EvidenceEngine
 
         evidence = EvidenceEngine(
-            evidence_root() / "evidence.json"
+            evidence_root()
+            / "evidence.json"
         )
+
         record = evidence.record(
-            source=f"work/{activity_id}",
+            source=(
+                f"work/{activity_id}"
+            ),
             method="evidence_upload",
-            event_type="ACTIVITY_COMPLETE",
+            event_type=(
+                "ACTIVITY_COMPLETE"
+            ),
             result="DELIVERED",
             context={
                 "activity_id": activity_id,
-                "user_id": current_user_id(),
-                "course_id": active_course_id(),
+                "user_id": (
+                    current_user_id()
+                ),
+                "course_id": (
+                    active_course_id()
+                ),
                 "file": stored_name,
                 "size": path.stat().st_size,
                 "note": str(
-                    request.form.get("note", "")
+                    request.form.get(
+                        "note",
+                        "",
+                    )
                 ),
             },
         )
@@ -2193,38 +2541,120 @@ def create_app() -> Flask:
 
         connection.execute(
             """
-            INSERT INTO item_progress (
+            INSERT INTO item_progress
+                (
+                    user_id,
+                    item_id,
+                    course_id,
+                    completed
+                )
+            VALUES (?, ?, ?, 1)
+            ON CONFLICT(
                 user_id,
                 item_id,
-                course_id,
-                completed
+                course_id
             )
-            VALUES (?, ?, ?, 1)
-            ON CONFLICT(user_id, item_id, course_id) DO UPDATE SET
+            DO UPDATE SET
                 completed = 1,
                 updated_at = CURRENT_TIMESTAMP
             """,
-            (uid, activity_id, cid),
+            (
+                uid,
+                activity_id,
+                cid,
+            ),
         )
+
         connection.commit()
         connection.close()
 
         return jsonify(
             {
                 "ok": True,
-                "evidence_id": record.evidence_id,
+                "evidence_id": (
+                    record.evidence_id
+                ),
                 "file": stored_name,
                 "url": (
-                    f"/media/evidence/{activity_id}/"
+                    f"/media/evidence/"
+                    f"{activity_id}/"
                     f"{stored_name}"
                 ),
+                "storage": "filesystem",
             }
         ), 201
 
     @app.get("/media/evidence/<activity_id>/<path:name>")
-    def media_evidence(activity_id: str, name: str):
+    def media_evidence(
+        activity_id: str,
+        name: str,
+    ):
+        if _vercel_blob_enabled():
+            pathname = (
+                _vercel_blob_prefix(
+                    activity_id
+                )
+                + name
+            )
+
+            try:
+                result = (
+                    _vercel_blob_client()
+                    .get(
+                        pathname,
+                        access="private",
+                    )
+                )
+
+            except Exception:
+                app.logger.exception(
+                    "Error leyendo evidencia "
+                    "desde Vercel Blob"
+                )
+
+                return jsonify(
+                    {
+                        "ok": False,
+                        "error": (
+                            "No se pudo leer "
+                            "la evidencia."
+                        ),
+                    }
+                ), 503
+
+            if (
+                result is None
+                or result.status_code != 200
+                or result.stream is None
+            ):
+                return jsonify(
+                    {
+                        "ok": False,
+                        "error": (
+                            "Evidencia no encontrada."
+                        ),
+                    }
+                ), 404
+
+            headers = {
+                "Cache-Control": (
+                    "private, no-store"
+                )
+            }
+
+            if result.blob.content_type:
+                headers["Content-Type"] = (
+                    result.blob.content_type
+                )
+
+            return Response(
+                result.stream,
+                headers=headers,
+            )
+
         return send_from_directory(
-            evidence_root() / activity_id,
+            evidence_root()
+            / activity_id,
             name,
             as_attachment=False,
         )
