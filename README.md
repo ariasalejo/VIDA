@@ -3,9 +3,34 @@
 
 > **Observar · verificar · comprender · demostrar · avanzar.**
 
-Centro personal de aprendizaje del curso SENA **«Apropiación de los Conceptos en Ciberseguridad»**
-(48 horas · plataforma **Zajuna**). VIDA no es un gestor de tareas: es un **motor de evidencia
-e inteligencia adaptativa** que solo registra lo que se demuestra, nunca lo que se asume.
+VIDA es un **Command Center Learning**: un centro personal de aprendizaje cuya
+ética es que *solo se registra lo que se demuestra, nunca lo que se asume*.
+
+Se entrega con el curso SENA **«Apropiación de los Conceptos en Ciberseguridad»**
+(48 horas · plataforma **Zajuna**) como su primera fuente de conocimiento, pero
+**no está anclada a ese curso**: su **núcleo es estable** y su **perfil es adaptable**
+a la siguiente fuente de conocimiento que decidas estudiar.
+
+---
+
+## 🧭 La idea en una frase
+
+> El **núcleo de VIDA no varía** de una materia a otra: solo se **adapta en
+> infraestructura y diseño** según lo que vayas a estudiar, y se **mejora en
+> profundidad** — nunca se reconstruye desde cero.
+
+VIDA separa lo que **siempre se mantiene** de lo que **cambia por curso**:
+
+| 🔒 Núcleo estable (no varía) | 🧩 Capa adaptable (cambia por curso) |
+|---|---|
+| Motor de **evidencia** con trazabilidad verificable | Manifiesto del curso: objetivos, actividades, entregables |
+| Motor de **inteligencia** determinista y explicable | Conceptos y pesos de valoración (skill profile) |
+| Reglas de **certificación** y emisión única | Reglas y condiciones del curso |
+| Progreso ponderado por componente | Materiales, sesiones grabadas y fechas |
+| Interfaces web / TUI / CLI y la dedicatoria al docente | Identidad del aprendiz, instructor y dedicación |
+
+Así, cambiar de carrera o de asignatura es **aportar un nuevo curso**, no
+reescribir la plataforma. Ver [`docs/ADAPTACION.md`](docs/ADAPTACION.md).
 
 ---
 
@@ -16,7 +41,7 @@ e inteligencia adaptativa** que solo registra lo que se demuestra, nunca lo que 
 | 🎓 **Aprendiz** | Eduar Alejandro Arias Londoño |
 | 🏛 **Institución** | SENA · Zajuna |
 | ⏱ **Horas** | 48 |
-| 🌐 **Fuente del curso** | [zajuna.sena.edu.co](https://zajuna.sena.edu.co/) |
+| 🌐 **Fuente de conocimiento (2026)** | [zajuna.sena.edu.co](https://zajuna.sena.edu.co/) |
 
 > ✦ Al final del dashboard, VIDA lleva una **dedicatoria al docente y al SENA**, en letra cursiva. ✦
 
@@ -24,18 +49,18 @@ e inteligencia adaptativa** que solo registra lo que se demuestra, nunca lo que 
 
 ## 🚀 Características
 
-- 📈 **Progreso operativo** ponderado: actividades, sesiones grabadas y conceptos.
+- 📈 **Progreso operativo ponderado**: actividades, sesiones grabadas y conceptos.
 - 🧠 **Intelligence Engine**: señales observadas vs. inferidas vs. predichas (sin inventar evidencia).
 - 🎬 **Media Engine**: reproducción de sesiones sincrónicas con registro de posición, duración y completitud.
 - 📤 **Evidencias reales**: subida de entregas (PDF, imágenes, XLSX…) con trazabilidad verificable.
 - ⚖️ **Reglas transparentes**: quién califica, con qué pesos y bajo qué condiciones se certifica.
-- 🏆 **Certificado verificable**, protegido con clave privada.
+- 🏆 **Certificado verificable por curso y por aprendiz**, protegido con clave privada y nombre + cédula.
+- 🔑 **Autenticación real** con perfil completo (nombre y cédula) mediante `api_me` / `PATCH /api/profile`.
 - 🔊 **Guía por voz** en español (preferencia de **voz femenina**).
 - 🚧 **Zona en construcción**: lo que está por llegar, sin engaños.
 - 🛰 **Multi-curso adaptativo**: selector en tiempo real (el perfil se ajusta solo).
 - 📟 Tres interfaces: **web** (Flask), **TUI** (Textual) y **CLI**.
-- 🎛 **Dashboard pro**: desglose de progreso por componente, señales del motor (OBSERVADO/INFERIDO/PREDICHO), próximos pasos y ruta curricular con las actividades reales.
-- ✦ **Dedicatoria final** al docente y al SENA, en letra cursiva.
+- 🎛 **Dashboard pro**: desglose por componente, señales del motor (OBSERVADO/INFERIDO/PREDICHO), próximos pasos y ruta curricular.
 
 ---
 
@@ -46,24 +71,33 @@ e inteligencia adaptativa** que solo registra lo que se demuestra, nunca lo que 
 | Backend | Python 3 · Flask |
 | UI web | HTML · CSS · JS (SPA ligera por hash) |
 | TUI | Textual |
-| Datos | SQLite (`vida.db`) + manifiestos JSON |
+| Datos | SQLite (`vida.db`) / PostgreSQL (Neon) + manifiestos JSON |
+| Storage de evidencias | Vercel Blob (blobs `vida/evidence/…` y `vida/certificates/…`) |
 | Inteligencia | Motor determinista y explicable (`IntelligenceEngine`) |
-| Deploy | Vercel (`@vercel/python`) |
+| Deploy | Vercel (`@vercel/python` → `api/index.py`) |
 
 ---
 
 ## 📂 Estructura
 
 ```
-vida.py                # Núcleo: app Flask, motor, comandos CLI
-vida_engines/          # Motores: progreso, evidencia, inteligencia, certificado…
-vida_ui_pro/           # UI web profesional (index_pro, app_pro, estilos)  ← la que ves en Vercel
+vida.py                # Núcleo: app Flask, motor, comandos CLI, API
+vida_db.py             # Capa de datos (SQLite local / PostgreSQL en Neon)
+vida_engines/          # Motores estables: progreso, evidencia, inteligencia,
+                       #   conocimiento, curso, medios, eventos, perfil, reglas, certificado
+vida_ui_pro/           # UI web profesional (dashboard pro en Vercel)
 vida_core/             # UI web clásica (templates/static)
 vida_ui.py             # Interfaz TUI (terminal)
 api/index.py           # Punto de entrada para Vercel
 data/                  # Manifiestos, perfil, reglas y base SQLite
+  course.json          #   ↓ fuente de conocimiento actual
+  courses/<id>.json    #   → cursos disponibles
+  profiles/<id>.json   #   → pesos + componentes por curso
+  registry.json        #   → curso activo
+data/evidence/, data/certificates/   # Evidencias y certificados locales
 media/videos/          # 🎬 Sesiones grabadas (MP4)
 media/materials/       # 📚 Material de aprendizaje
+docs/                  # 📖 Documentación del proyecto
 tests/                 # Suites de prueba (pytest)
 ```
 
@@ -101,14 +135,13 @@ Coloca el MP4 de la sesión en `media/videos/` y regístralo en `data/course.jso
 | AA3 · Matriz de riesgo | `aa3_matriz_riesgo.mp4` | `aa3` |
 | AA4 · Mapa mental | `aa4_mapa_mental.mp4` | `aa4` |
 
-VIDA guarda **posición, duración, porcentaje y completitud** en SQLite.
-No guarda credenciales de Zajuna. La sesión del dashboard es un clip de ~12 MB.
+VIDA guarda **posición, duración, porcentaje y completitud** en SQLite/Postgres.
+No guarda credenciales de la plataforma del curso. La sesión del dashboard es un clip de ~12 MB.
 
 > ⚠️ **Sobre el deploy del video:** las cinco sesiones quedaron comprimidas por debajo
 > del límite de 100 MB por archivo de GitHub (dashboard ~12 MB, AA1 ~64 MB, AA2 ~81 MB,
-> AA3 ~95 MB, AA4 ~90 MB), por lo que sí pueden subirse al repo. El problema de tamaño
-> se resuelve, pero **Vercel** (límite de función ~250 MB) no puede servir ~340 MB de
-> videos de modo fiable; para una versión completa en el servidor, múdalo a un
+> AA3 ~95 MB, AA4 ~90 MB). Vercel (límite de función ~250 MB) no puede servir ~340 MB
+> de videos de modo fiable; para una versión completa en el servidor, múdalo a un
 > bucket/streaming y cambia `file` por una URL pública.
 
 ---
@@ -150,9 +183,16 @@ Nada se marca como hecho sin evidencia. *El motor no adivina.*
 
 - La **evidencia observada** es la única que alimenta el progreso.
 - La **predicción** nunca se convierte en hecho.
-- El **certificado** se emite una sola vez, con reglas explícitas y verificables ante el instructor.
+- El **certificado** se emite una sola vez por curso y por aprendiz, con reglas explícitas y verificables ante el instructor.
 
 BLUMCL, BLUMELIX y VIDA son proyectos con responsabilidades separadas.
+
+---
+
+## 📖 Documentación
+
+- [`docs/ARQUITECTURA.md`](docs/ARQUITECTURA.md) — núcleo estable, capa adaptable, motores y flujo de datos.
+- [`docs/ADAPTACION.md`](docs/ADAPTACION.md) — cómo llevar VIDA a tu próxima fuente de conocimiento.
 
 ---
 
@@ -175,13 +215,17 @@ pytest -q
 
 ## 🏗 Hoja de ruta
 
-- [x] Motor de progreso, evidencia, inteligencia y certificados
+- [x] Núcleo estable: progreso, evidencia, inteligencia y certificados
+- [x] Capa adaptable por curso (manifiesto, perfil, reglas, registro)
 - [x] UI web profesional responsive + multi-curso
+- [x] Autenticación con nombre y cédula + certificado por aprendiz
 - [x] Guía por voz en español (voz femenina)
 - [x] Sesión grabada integrada y desplegada en Vercel
 - [x] Dedicatoria especial al docente y al SENA (final del dashboard, en cursiva)
 - [x] Sesiones por actividad (AA1–AA4) más video del dashboard
+- [x] Evidencias AA1 en el servidor (trazables y verificables)
 - [ ] Material de aprendizaje por actividad
+- [ ] Evidencias AA2–AA4 en el servidor
 - [ ] Certificado final emitido
 
 🚧 *VIDA es obra viva: crece con cada sesión, cada entrega y cada concepto demostrado.* 🚧
