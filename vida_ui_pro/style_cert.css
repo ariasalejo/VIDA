@@ -66,10 +66,14 @@ h1{
 .learner-zone{margin-top:40px;position:relative;z-index:1}
 .given{font-family:Inter,system-ui,sans-serif;letter-spacing:.14em;font-size:12px;color:var(--muted);text-transform:uppercase}
 .name{
-  margin:14px auto 22px;
+  margin:14px auto 8px;
   font-size:40px;font-weight:700;color:#ffffff;
   letter-spacing:.02em;
   text-shadow:0 2px 0 rgba(212,175,55,.35);
+}
+.cedula{
+  font-family:ui-monospace,monospace;font-size:15px;
+  color:var(--muted);margin-bottom:22px;letter-spacing:.12em;
 }
 .course{font-family:Inter,system-ui,sans-serif;font-size:19px;color:var(--text);font-weight:600;max-width:680px;margin:0 auto}
 .meta{font-family:Inter,system-ui,sans-serif;font-size:12px;color:var(--muted);margin-top:10px;letter-spacing:.08em}

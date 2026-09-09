@@ -43,11 +43,12 @@ h1{margin-top:18px;font-size:26px;letter-spacing:.02em}
   <div class="hash">{{ record.verification_hash }}</div>
   <div class="detail">
     Aprendiz: <b>{{ record.learner }}</b><br>
+    {% if record.cedula %}C.C.: <b>{{ record.cedula }}</b><br>{% endif %}
     Curso: <b>{{ record.course }}</b><br>
     Emitido: <b>{{ record.issued_at }}</b><br>
     Estado: <b>PERSONAL_VERIFIED</b>
   </div>
-  <div class="stamp">✓ AUTENTICADO · UNA EMISIÓN POR CURSO</div>
+  <div class="stamp">✓ AUTENTICADO · UNA EMISIÓN POR CURSO Y APRENDIZ</div>
   {% else %}
   <div class="hash">{{ certificate_id }}</div>
   <div class="stamp">✕ NO VERIFICADO</div>

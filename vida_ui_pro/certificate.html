@@ -31,6 +31,9 @@
   <section class="learner-zone">
     <div class="given">Se otorga a</div>
     <div class="name">{{ learner }}</div>
+    {% if cedula %}
+    <div class="cedula">C.C. · {{ cedula }}</div>
+    {% endif %}
     <div class="given">por haber completado y demostrado dominio de</div>
     <div class="course">{{ course }}</div>
     <div class="meta">{{ provider }} · {{ hours }} horas · {{ platform }}</div>

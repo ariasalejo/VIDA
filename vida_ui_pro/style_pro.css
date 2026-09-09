@@ -814,8 +814,21 @@ video.offline{opacity:.18;filter:grayscale(.7)}
 }
 
 .concept-check-fail {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
   color: #ffcf70;
   font-weight: 700;
+}
+
+.concept-check-fail-ic {
+  font-size: 18px;
+  line-height: 1.3;
+  flex: 0 0 auto;
+}
+
+.concept-check-fail-actions {
+  margin-top: 10px;
 }
 
 .concept-check-empty {

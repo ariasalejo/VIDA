@@ -172,8 +172,13 @@ CREATE TABLE IF NOT EXISTS users (
     username TEXT UNIQUE,
     display_name TEXT NOT NULL,
     password_hash TEXT,
+    full_name TEXT,
+    cedula TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS full_name TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS cedula TEXT;
 
 CREATE TABLE IF NOT EXISTS video_progress (
     user_id TEXT NOT NULL DEFAULT 'local-owner',

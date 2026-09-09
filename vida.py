@@ -1105,6 +1105,8 @@ def conn() -> sqlite3.Connection:
             username TEXT UNIQUE,
             display_name TEXT NOT NULL,
             password_hash TEXT,
+            full_name TEXT,
+            cedula TEXT,
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
         """
@@ -1112,6 +1114,7 @@ def conn() -> sqlite3.Connection:
 
     _migrate_existing_db(connection)
     _migrate_identity_db(connection)
+    _ensure_learner_columns(connection)
 
     connection.execute(
         """
@@ -1192,6 +1195,23 @@ def _migrate_existing_db(connection: sqlite3.Connection) -> None:
         connection.execute(f"DROP TABLE {table}")
         connection.execute(f"ALTER TABLE {table}__mig RENAME TO {table}")
 
+
+
+def _ensure_learner_columns(connection: sqlite3.Connection) -> None:
+    """Añade nombre completo y cédula al perfil del aprendiz (idempotente)."""
+    cols = {
+        row["name"]
+        for row in connection.execute("PRAGMA table_info(users)")
+    }
+    if "full_name" not in cols:
+        connection.execute(
+            "ALTER TABLE users ADD COLUMN full_name TEXT"
+        )
+    if "cedula" not in cols:
+        connection.execute(
+            "ALTER TABLE users ADD COLUMN cedula TEXT"
+        )
+    connection.commit()
 
 
 def _migrate_identity_db(connection: sqlite3.Connection) -> None:
@@ -1497,9 +1517,64 @@ def engine_state(course_id: str | None = None) -> dict:
     }
 
 
+def _blob_evidence_count(uid: str, cid: str) -> int:
+    """Cuenta las evidencias persistentes del usuario en Blob.
+
+    En el deploy los registros viven en Blob (sobreviven al reinicio de
+    la instancia), mientras que evidence.json es efímero.
+    """
+    if not _cert_blob_enabled():
+        return 0
+
+    from vercel.blob import BlobClient
+
+    client = BlobClient()
+    total = 0
+    cursor = None
+    try:
+        while True:
+            page = client.list_objects(
+                prefix="vida/evidence/",
+                limit=1000,
+                cursor=cursor,
+            )
+            for blob in page.blobs:
+                pathname = blob.pathname
+                if not pathname.endswith(".json"):
+                    continue
+                try:
+                    result = client.get(pathname, access="private")
+                    if result is None or result.status_code != 200:
+                        continue
+                    body = _blob_body(result)
+                    if body is None:
+                        continue
+                    payload = json.loads(body.decode("utf-8"))
+                except (OSError, ValueError, UnicodeDecodeError):
+                    continue
+                if not isinstance(payload, dict):
+                    continue
+                context = payload.get("context") or {}
+                if (
+                    str(context.get("user_id", "")) == uid
+                    and str(context.get("course_id", "")) == cid
+                ):
+                    total += 1
+            if not page.has_more:
+                break
+            cursor = page.cursor
+    except Exception:
+        return 0
+    return total
+
+
 def _evidence_count() -> int:
     uid = current_user_id()
     cid = active_course_id()
+
+    blob_total = _blob_evidence_count(uid, cid)
+    if blob_total > 0:
+        return blob_total
 
     evidence_dir = evidence_root()
     if not evidence_dir.exists():
@@ -1573,36 +1648,152 @@ def _cert_blob_client():
     return BlobClient()
 
 
-def _cert_blob_path(course_id: str) -> str:
+def _cert_blob_path(course_id: str, user_id: str | None = None) -> str:
     safe = str(course_id).strip().replace(" ", "_")
+    if user_id:
+        return f"vida/certificates/{user_id}/{safe}.issued.json"
     return f"vida/certificates/{safe}.issued.json"
 
 
-def _load_issued(certificate_engine: CertificateEngine, course_id: str) -> dict | None:
+def _blob_body(result) -> bytes | None:
+    """Extrae el cuerpo de un BlobGetResult sin depender de la versión del SDK.
+
+    Las versiones nuevas del SDK de Vercel devuelven el cuerpo en ``content``
+    (bytes); las anteriores lo exponían como ``stream``.
+    """
+    if result is None:
+        return None
+
+    stream = getattr(result, "stream", None)
+    if stream is not None:
+        try:
+            return b"".join(stream)
+        except (TypeError, ValueError):
+            pass
+
+    content = getattr(result, "content", None)
+    if isinstance(content, (bytes, bytearray)):
+        return bytes(content)
+    if content is not None:
+        try:
+            return b"".join(content)
+        except (TypeError, ValueError):
+            return None
+
+    return None
+
+
+def _load_issued(
+    certificate_engine: CertificateEngine,
+    course_id: str,
+    user_id: str | None = None,
+) -> dict | None:
     # En el deploy, el certificado queda en Blob para sobrevivir
     # entre instancias y redespliegues.
     if _cert_blob_enabled():
         try:
             client = _cert_blob_client()
-            result = client.get(_cert_blob_path(course_id), access="private")
-            if (
-                result is not None
-                and result.status_code == 200
-                and result.stream is not None
-            ):
-                payload = json.loads(
-                    b"".join(result.stream).decode("utf-8")
-                )
-                if isinstance(payload, dict):
-                    return payload
+            result = client.get(
+                _cert_blob_path(course_id, user_id),
+                access="private",
+            )
+            if result is not None and result.status_code == 200:
+                payload_bytes = _blob_body(result)
+                if payload_bytes is not None:
+                    payload = json.loads(
+                        payload_bytes.decode("utf-8")
+                    )
+                    if isinstance(payload, dict):
+                        return payload
         except Exception:
             pass
 
-    record = certificate_engine._course_record(course_id)
+        if user_id:
+            # Retrocompatibilidad: el certificado histórico emitido por
+            # curso (sin identidad) sigue siendo válido para verificación.
+            try:
+                client = _cert_blob_client()
+                result = client.get(
+                    _cert_blob_path(course_id, None),
+                    access="private",
+                )
+                if result is not None and result.status_code == 200:
+                    payload_bytes = _blob_body(result)
+                    if payload_bytes is not None:
+                        payload = json.loads(
+                            payload_bytes.decode("utf-8")
+                        )
+                        if isinstance(payload, dict):
+                            return payload
+            except Exception:
+                pass
+
+    record = certificate_engine._course_record(course_id, user_id)
     if not record.exists():
-        return None
+        if user_id:
+            record = certificate_engine._course_record(course_id, None)
+        if not record.exists():
+            return None
     import json as _json
     return _json.loads(record.read_text(encoding="utf-8"))
+
+
+def _load_issued_by_id(
+    certificate_engine: CertificateEngine,
+    certificate_id: str,
+) -> dict | None:
+    """Busca un certificado emitido por su identificador, sin importar
+    a qué usuario pertenezca (persistencia en Blob o local)."""
+    candidates: list[str] = []
+
+    if _cert_blob_enabled():
+        try:
+            client = _cert_blob_client()
+            cursor = None
+            while True:
+                page = client.list_objects(
+                    prefix="vida/certificates/",
+                    limit=1000,
+                    cursor=cursor,
+                )
+                candidates.extend(
+                    blob.pathname
+                    for blob in page.blobs
+                    if blob.pathname.endswith(".issued.json")
+                )
+                if not page.has_more:
+                    break
+                cursor = page.cursor
+        except Exception:
+            pass
+
+    root = Path(certificate_engine.out_dir)
+    if root.exists():
+        for record in root.rglob("*.issued.json"):
+            candidates.append(str(record.resolve()))
+
+    for candidate in candidates:
+        try:
+            if candidate.startswith("vida/"):
+                client = _cert_blob_client()
+                result = client.get(candidate, access="private")
+                if result is None or result.status_code != 200:
+                    continue
+                payload_bytes = _blob_body(result)
+                if payload_bytes is None:
+                    continue
+                payload = json.loads(payload_bytes.decode("utf-8"))
+            else:
+                payload = json.loads(
+                    Path(candidate).read_text(encoding="utf-8")
+                )
+        except (OSError, ValueError, UnicodeDecodeError):
+            continue
+
+        if isinstance(payload, dict) and payload.get("certificate_id") == certificate_id:
+            return payload
+
+    return None
 
 
 def _resolve_video_file(file_ref: str) -> tuple[bool, int]:
@@ -1786,7 +1977,7 @@ def create_app() -> Flask:
         connection = conn()
         row = connection.execute(
             """
-            SELECT user_id, kind, username, display_name, created_at
+            SELECT user_id, kind, username, display_name, full_name, cedula, created_at
             FROM users
             WHERE user_id = ?
             """,
@@ -1806,7 +1997,7 @@ def create_app() -> Flask:
             connection.commit()
             row = connection.execute(
                 """
-                SELECT user_id, kind, username, display_name, created_at
+                SELECT user_id, kind, username, display_name, full_name, cedula, created_at
                 FROM users
                 WHERE user_id = ?
                 """,
@@ -1814,6 +2005,71 @@ def create_app() -> Flask:
             ).fetchone()
 
         connection.close()
+
+        return jsonify({
+            "ok": True,
+            "user": dict(row),
+        })
+
+
+    @app.patch("/api/profile")
+    def api_update_profile():
+        """Actualiza el perfil identificable del aprendiz (nombre y cédula)."""
+        payload = request.get_json(silent=True) or {}
+
+        uid = str(current_user_id())
+        if session.get("user_kind") == "guest":
+            return jsonify(
+                {
+                    "ok": False,
+                    "error": (
+                        "El perfil personal requiere una cuenta "
+                        "registrada."
+                    ),
+                }
+            ), 403
+
+        full_name = str(payload.get("full_name", "")).strip()
+        cedula = str(payload.get("cedula", "")).strip()
+
+        if not full_name:
+            return jsonify({
+                "ok": False,
+                "error": "Nombre y apellidos obligatorios."
+            }), 400
+
+        if not cedula:
+            return jsonify({
+                "ok": False,
+                "error": "Número de cédula obligatorio."
+            }), 400
+
+        connection = conn()
+        connection.execute(
+            """
+            UPDATE users
+            SET full_name = ?, cedula = ?
+            WHERE user_id = ?
+            """,
+            (full_name, cedula, uid),
+        )
+        connection.commit()
+
+        row = connection.execute(
+            """
+            SELECT user_id, kind, username, display_name, full_name, cedula, created_at
+            FROM users
+            WHERE user_id = ?
+            """,
+            (uid,),
+        ).fetchone()
+        connection.close()
+
+        if row is None:
+            return jsonify({
+                "ok": False,
+                "error": "No se encontró tu perfil."
+            }), 404
 
         return jsonify({
             "ok": True,
@@ -1912,6 +2168,8 @@ def create_app() -> Flask:
             payload.get("display_name") or username
         ).strip()
         password = str(payload.get("password", ""))
+        full_name = str(payload.get("full_name", "")).strip()
+        cedula = str(payload.get("cedula", "")).strip()
 
         if len(username) < 3:
             return jsonify({
@@ -1929,6 +2187,24 @@ def create_app() -> Flask:
             return jsonify({
                 "ok": False,
                 "error": "El nombre es obligatorio."
+            }), 400
+
+        if not full_name:
+            return jsonify({
+                "ok": False,
+                "error": (
+                    "Escribe tus nombres y apellidos: son los que "
+                    "aparecerán en tu certificado."
+                ),
+            }), 400
+
+        if not cedula:
+            return jsonify({
+                "ok": False,
+                "error": (
+                    "Escribe tu número de cédula: aparecerá en tu "
+                    "certificado."
+                ),
             }), 400
 
         old_uid = current_user_id()
@@ -1954,14 +2230,16 @@ def create_app() -> Flask:
             connection.execute(
                 """
                 INSERT INTO users
-                (user_id, kind, username, display_name, password_hash)
-                VALUES (?, 'user', ?, ?, ?)
+                (user_id, kind, username, display_name, password_hash, full_name, cedula)
+                VALUES (?, 'user', ?, ?, ?, ?, ?)
                 """,
                 (
                     new_uid,
                     username,
                     display_name,
                     generate_password_hash(password),
+                    full_name,
+                    cedula,
                 ),
             )
 
@@ -2018,6 +2296,8 @@ def create_app() -> Flask:
             "kind": "user",
             "username": username,
             "display_name": display_name,
+            "full_name": full_name,
+            "cedula": cedula,
         }), 201
 
 
@@ -2031,7 +2311,7 @@ def create_app() -> Flask:
         connection = conn()
         row = connection.execute(
             """
-            SELECT user_id, kind, username, display_name, password_hash
+            SELECT user_id, kind, username, display_name, full_name, cedula, password_hash
             FROM users
             WHERE username = ?
             """,
@@ -2061,6 +2341,8 @@ def create_app() -> Flask:
             "kind": row["kind"],
             "username": row["username"],
             "display_name": row["display_name"],
+            "full_name": row["full_name"] or "",
+            "cedula": row["cedula"] or "",
         })
 
 
@@ -2282,13 +2564,56 @@ def create_app() -> Flask:
             payload.get("user_confirmation", False)
         )
 
-        # Emisión por el propio aprendiz con su confirmación explícita.
-        # La clave del sistema solo se exige para emisión administrativa.
-        if not _cert_allowed(request) and not user_confirmation:
+        # El certificado es personal: cada aprendiz registrado emite el suyo.
+        uid = str(current_user_id())
+        kind = session.get("user_kind", "guest")
+
+        if kind == "guest":
             return jsonify(
                 {
                     "ok": False,
-                    "error": "Acceso denegado. Se requiere permiso del sistema.",
+                    "error": (
+                        "El certificado es personal: crea una cuenta "
+                        "con tu nombre y cédula para emitir el tuyo."
+                    ),
+                }
+            ), 403
+
+        connection = conn()
+        user_row = connection.execute(
+            """
+            SELECT user_id, kind, username, display_name, full_name, cedula
+            FROM users
+            WHERE user_id = ?
+            """,
+            (uid,),
+        ).fetchone()
+        connection.close()
+
+        full_name = (
+            str(user_row["full_name"] or "").strip()
+            if user_row
+            else ""
+        )
+        display_name = (
+            str(user_row["display_name"] or "").strip()
+            if user_row
+            else ""
+        )
+        cedula = (
+            str(user_row["cedula"] or "").strip()
+            if user_row
+            else ""
+        )
+
+        if user_row is None:
+            return jsonify(
+                {
+                    "ok": False,
+                    "error": (
+                        "No se encontró tu perfil. "
+                        "Vuelve a iniciar sesión."
+                    ),
                 }
             ), 403
 
@@ -2308,14 +2633,14 @@ def create_app() -> Flask:
         )
         required_concepts = len(course_data.get("concepts", []))
 
-        # El certificado ya emitido persiste en Blob: evita duplicar
-        # entre instancias del deploy incluso si /tmp se reinicia.
-        already = _load_issued(engine, profile.course_id)
+        # El certificado personal ya emitido persiste en Blob: evita
+        # duplicar entre instancias del deploy incluso si /tmp se reinicia.
+        already = _load_issued(engine, profile.course_id, uid)
         if already:
             return jsonify(
                 {
                     "ok": False,
-                    "error": "Este curso ya tiene certificado emitido.",
+                    "error": "Ya tienes un certificado emitido para este curso.",
                     "certificate_id": already.get("certificate_id"),
                     "verification_url": (
                         f"/verificar/{already.get('certificate_id')}"
@@ -2325,15 +2650,17 @@ def create_app() -> Flask:
                 }
             ), 409
 
+        learner = full_name or display_name or str(
+            course_data.get(
+                "learner",
+                "Aprendiz VIDA",
+            )
+        )
+
         try:
             cert = engine.issue_once(
                 course_id=profile.course_id,
-                learner=str(
-                    course_data.get(
-                        "learner",
-                        "Aprendiz VIDA",
-                    )
-                ),
+                learner=learner,
                 course=str(
                     course_data.get(
                         "title",
@@ -2351,11 +2678,14 @@ def create_app() -> Flask:
                 verified_concepts=state["verified_concepts"],
                 unknown_count=state["unknown_count"],
                 user_confirmation=user_confirmation,
+                user_id=uid,
+                cedula=cedula,
             )
         except CertificateAlreadyIssued as exc:
             issued = _load_issued(
                 engine,
                 profile.course_id,
+                uid,
             )
             return jsonify(
                 {
@@ -2412,7 +2742,7 @@ def create_app() -> Flask:
             try:
                 client = _cert_blob_client()
                 client.put(
-                    _cert_blob_path(profile.course_id),
+                    _cert_blob_path(profile.course_id, uid),
                     json.dumps(
                         cert.to_dict(), ensure_ascii=False
                     ).encode("utf-8"),
@@ -2439,8 +2769,7 @@ def create_app() -> Flask:
     @app.get("/verificar/<certificate_id>")
     def verify_certificate(certificate_id: str):
         engine = CertificateEngine(certificates_root())
-        profile = ProfileEngine(profile_path()).load()
-        record = _load_issued(engine, profile.course_id)
+        record = _load_issued_by_id(engine, certificate_id)
 
         valid = bool(
             record
@@ -2457,8 +2786,7 @@ def create_app() -> Flask:
     @app.get("/api/verify/<certificate_id>")
     def verify_certificate_api(certificate_id: str):
         engine = CertificateEngine(certificates_root())
-        profile = ProfileEngine(profile_path()).load()
-        record = _load_issued(engine, profile.course_id)
+        record = _load_issued_by_id(engine, certificate_id)
         valid = bool(
             record
             and record.get("certificate_id") == certificate_id
@@ -2481,9 +2809,16 @@ def create_app() -> Flask:
             ), 403
 
         course_data = course()
+        snapshot_cert = api_snapshot()["certificate"] or {}
         return render_template(
             "certificate.html",
-            learner=course_data.get("learner", "Aprendiz VIDA"),
+            learner=(
+                course_data.get(
+                    "learner",
+                    "Aprendiz VIDA",
+                )
+                or "Aprendiz VIDA"
+            ),
             dedication=course_data.get(
                 "dedication",
                 "Dedicatoria del aprendiz.",
@@ -2496,14 +2831,18 @@ def create_app() -> Flask:
             hours=course_data.get("hours", 48),
             platform=course_data.get("platform", "Zajuna"),
             source=course_data.get("source", ""),
-            cert=api_snapshot()["certificate"],
+            cert=snapshot_cert,
         )
 
     @app.get("/mi-certificado")
     def my_certificate_page():
         engine = CertificateEngine(certificates_root())
         profile = ProfileEngine(profile_path()).load()
-        cert = _load_issued(engine, profile.course_id)
+        cert = _load_issued(
+            engine,
+            profile.course_id,
+            str(current_user_id()),
+        )
 
         if not cert or not cert.get("certificate_id"):
             return render_template(
@@ -2514,7 +2853,15 @@ def create_app() -> Flask:
         course_data = course()
         return render_template(
             "certificate.html",
-            learner=course_data.get("learner", "Aprendiz VIDA"),
+            learner=(
+                cert.get("learner")
+                or course_data.get(
+                    "learner",
+                    "Aprendiz VIDA",
+                )
+                or "Aprendiz VIDA"
+            ),
+            cedula=cert.get("cedula") or "",
             dedication=course_data.get(
                 "dedication",
                 "Dedicatoria del aprendiz.",
@@ -3263,11 +3610,14 @@ def create_app() -> Flask:
         if (
             result is None
             or result.status_code != 200
-            or result.stream is None
         ):
             raise FileNotFoundError(pathname)
 
-        return b"".join(result.stream)
+        body = _blob_body(result)
+        if body is None:
+            raise FileNotFoundError(pathname)
+
+        return body
 
 
     def _vercel_blob_list(activity_id: str) -> list:
@@ -3866,7 +4216,7 @@ def create_app() -> Flask:
             if (
                 result is not None
                 and result.status_code == 200
-                and result.stream is not None
+                and _blob_body(result) is not None
             ):
                 return result
         except Exception:
@@ -3927,7 +4277,7 @@ def create_app() -> Flask:
                     if (
                         result is not None
                         and result.status_code == 200
-                        and result.stream is not None
+                        and _blob_body(result) is not None
                     ):
                         return result
                 except Exception:
@@ -3972,8 +4322,19 @@ def create_app() -> Flask:
             if (
                 result is None
                 or result.status_code != 200
-                or result.stream is None
             ):
+                return jsonify(
+                    {
+                        "ok": False,
+                        "error": (
+                            "Evidencia no encontrada."
+                        ),
+                    }
+                ), 404
+
+            body = _blob_body(result)
+
+            if body is None:
                 return jsonify(
                     {
                         "ok": False,
@@ -3995,7 +4356,7 @@ def create_app() -> Flask:
                 )
 
             return Response(
-                result.stream,
+                body,
                 headers=headers,
             )
 

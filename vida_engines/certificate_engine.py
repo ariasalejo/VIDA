@@ -26,6 +26,8 @@ class Certificate:
     verified_concepts: int
     status: str
     verification_hash: str
+    user_id: str = ""
+    cedula: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -36,7 +38,7 @@ class CertificateNotEligible(RuntimeError):
 
 
 class CertificateAlreadyIssued(RuntimeError):
-    """Exactly one certificate is allowed per course."""
+    """Exactly one certificate is allowed per course per user."""
 
 
 class CertificateEngine:
@@ -55,13 +57,15 @@ class CertificateEngine:
         self.out_dir = Path(out_dir)
         self.out_dir.mkdir(parents=True, exist_ok=True)
 
-    def _course_record(self, course_id: str) -> Path:
+    def _course_record(self, course_id: str, user_id: str | None = None) -> Path:
         safe = "".join(ch for ch in course_id if ch.isalnum() or ch in "-_ .")
         safe = safe.strip().replace(" ", "_") or "course"
+        if user_id:
+            return self.out_dir / str(user_id) / f"{safe}.issued.json"
         return self.out_dir / f"{safe}.issued.json"
 
-    def is_issued(self, course_id: str) -> bool:
-        return self._course_record(course_id).exists()
+    def is_issued(self, course_id: str, user_id: str | None = None) -> bool:
+        return self._course_record(course_id, user_id).exists()
 
     def eligibility_report(
         self,
@@ -110,8 +114,10 @@ class CertificateEngine:
         verified_concepts: int,
         unknown_count: int,
         user_confirmation: bool,
+        user_id: str | None = None,
+        cedula: str = "",
     ) -> Certificate:
-        record = self._course_record(course_id)
+        record = self._course_record(course_id, user_id)
 
         if record.exists():
             raise CertificateAlreadyIssued(
@@ -155,6 +161,8 @@ class CertificateEngine:
             "required_concepts": required_concepts,
             "verified_concepts": verified_concepts,
             "status": self.STATUS,
+            "user_id": user_id or "",
+            "cedula": cedula or "",
         }
         digest = hashlib.sha256(
             json.dumps(payload, sort_keys=True, ensure_ascii=False).encode("utf-8")
@@ -178,6 +186,8 @@ class CertificateEngine:
             verified_concepts=verified_concepts,
             status=self.STATUS,
             verification_hash=digest,
+            user_id=user_id or "",
+            cedula=cedula or "",
         )
 
         # Atomic create: if another process wins the race, issuance fails.

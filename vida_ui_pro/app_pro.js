@@ -31,12 +31,15 @@ function renderIdentity() {
   if (!box || !identity) return;
 
   const guest = identity.kind === "guest";
+  const profileReady = !!(identity.full_name && identity.cedula);
 
   icon.textContent = guest ? "👋" : "🔐";
   name.textContent = identity.display_name || identity.username || "Usuario";
   kind.textContent = guest
     ? "Explorador de VIDA"
-    : "Aprendiz · Progreso guardado";
+    : (profileReady
+        ? "Aprendiz · Progreso guardado"
+        : "Completa tu perfil para certificarte");
 
   action.hidden = false;
   login.hidden = true;
@@ -54,7 +57,42 @@ function renderIdentity() {
     action.textContent = "CERRAR SESIÓN";
     action.onclick = logoutIdentity;
 
-    box.title = "Sesión de usuario persistente.";
+    if (!profileReady) {
+      login.hidden = false;
+      login.textContent = "✎ COMPLETAR PERFIL";
+      login.onclick = completeProfile;
+    }
+
+    box.title = profileReady
+      ? "Sesión de usuario persistente."
+      : "Agrega tu nombre completo y cédula para emitir tu certificado.";
+  }
+}
+
+async function completeProfile() {
+  const fullName = prompt("Nombres y apellidos (así aparecen en el certificado):");
+  if (!fullName) return;
+
+  const cedula = prompt("Número de cédula:");
+  if (!cedula) return;
+
+  try {
+    const data = await getJSON("/api/profile", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ full_name: fullName, cedula })
+    });
+
+    identity = data.user || identity;
+    renderIdentity();
+
+    await load();
+
+    refresh();
+
+    alert("✅ Perfil actualizado. Tu nombre y cédula aparecerán en tu certificado.");
+  } catch (err) {
+    alert("❌ " + err.message);
   }
 }
 
@@ -76,7 +114,9 @@ async function loginIdentity() {
       user_id: data.user_id,
       username: data.username,
       display_name: data.display_name,
-      kind: data.kind
+      kind: data.kind,
+      full_name: data.full_name || "",
+      cedula: data.cedula || ""
     };
 
     renderIdentity();
@@ -95,8 +135,11 @@ async function registerIdentity() {
   const username = prompt("Nombre de usuario:");
   if (!username) return;
 
-  const displayName = prompt("Nombre para mostrar:");
-  if (!displayName) return;
+  const fullName = prompt("Nombres y apellidos (así aparecen en el certificado):");
+  if (!fullName) return;
+
+  const cedula = prompt("Número de cédula:");
+  if (!cedula) return;
 
   const password = prompt("Contraseña (mínimo 8 caracteres):");
   if (!password) return;
@@ -107,7 +150,9 @@ async function registerIdentity() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         username,
-        display_name: displayName,
+        display_name: fullName.split(/\s+/)[0] || fullName,
+        full_name: fullName,
+        cedula,
         password
       })
     });
@@ -116,7 +161,9 @@ async function registerIdentity() {
       user_id: data.user_id,
       username: data.username,
       display_name: data.display_name,
-      kind: data.kind
+      kind: data.kind,
+      full_name: data.full_name || "",
+      cedula: data.cedula || ""
     };
 
     renderIdentity();
@@ -590,7 +637,22 @@ async function emitCertificate() {
         popup.close();
       } catch (e) {}
     }
-    alert("⏳ No se pudo emitir el certificado: " + (err.message || err));
+
+    const msg = (err && err.message) || String(err);
+    alert("⏳ No se pudo emitir el certificado: " + msg);
+
+    if (
+      msg.indexOf("cuenta") !== -1 ||
+      msg.indexOf("perfil") !== -1 ||
+      msg.indexOf("cédula") !== -1
+    ) {
+      if (!identity || identity.kind === "guest") {
+        registerIdentity();
+      } else {
+        completeProfile();
+      }
+    }
+
     if (btn) {
       btn.disabled = false;
       btn.textContent = "EMITIR CERTIFICADO";
@@ -1280,7 +1342,7 @@ async function loadKnowledgeCheck(conceptId, holderId, onPassed) {
     const sub = document.getElementById("kcSubmit");
     if (sub) {
       sub.addEventListener("click", () => {
-        gradeKnowledgeCheck(conceptId, qs, onPassed);
+        gradeKnowledgeCheck(conceptId, qs, onPassed, holder.id);
       });
     }
 
@@ -1292,7 +1354,7 @@ async function loadKnowledgeCheck(conceptId, holderId, onPassed) {
   }
 }
 
-async function gradeKnowledgeCheck(conceptId, qs, onPassed) {
+async function gradeKnowledgeCheck(conceptId, qs, onPassed, holderId) {
   const answers = {};
   qs.forEach((q) => {
     const sel = document.querySelector(
@@ -1336,13 +1398,19 @@ async function gradeKnowledgeCheck(conceptId, qs, onPassed) {
       if (typeof onPassed === "function") onPassed();
     } else {
       res.innerHTML =
-        '<div class="concept-check-fail">✗ No aprobado: ' +
+        '<div class="concept-check-fail">' +
+        '<span class="concept-check-fail-ic">😥</span>' +
+        '<span><strong>Perdiste.</strong> Obtuviste ' +
         data.correct +
         "/" +
         data.total +
-        ". Necesitas al menos " +
+        " y necesitas al menos " +
         Math.round((data.required_score || 0) * 100) +
-        "%. Revisa las preguntas marcadas y vuelve a intentar.</div>";
+        "%. Vuelve a intentarlo.</span></div>" +
+        '<div class="concept-check-fail-actions">' +
+        '<button class="btn-primary concept-check-submit" type="button" id="kcRetry">' +
+        "🔄 VOLVER A INTENTARLO</button>" +
+        "</div>";
 
       (data.results || []).forEach((r) => {
         const el = document.querySelector(
@@ -1358,6 +1426,13 @@ async function gradeKnowledgeCheck(conceptId, qs, onPassed) {
             : "rgba(247,198,90,.08)";
         }
       });
+
+      const retry = document.getElementById("kcRetry");
+      if (retry && holderId) {
+        retry.addEventListener("click", () => {
+          loadKnowledgeCheck(conceptId, holderId, onPassed);
+        });
+      }
 
       if (sub) {
         sub.disabled = false;
