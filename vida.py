@@ -1110,12 +1110,15 @@ def create_app() -> Flask:
     )
 
     app.secret_key = os.environ.get(
-        "VIDA_SESSION_SECRET",
-        "vida-local-development-secret-change-me",
+        "VIDA_SECRET_KEY",
+        os.environ.get(
+            "VIDA_SESSION_SECRET",
+            "vida-local-development-secret-change-me",
+        ),
     )
     app.config["SESSION_COOKIE_HTTPONLY"] = True
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
-    app.config["SESSION_COOKIE_SECURE"] = False
+    app.config["SESSION_COOKIE_SECURE"] = True
 
     @app.post("/api/voice")
     def api_voice():
