@@ -153,6 +153,60 @@
   transform: translateY(0);
 }
 
+#identityLogin {
+  margin-left: 5px;
+
+  padding: 5px 10px;
+
+  border: 1px solid rgba(150, 199, 255, 0.45);
+  border-radius: 9px;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(150, 199, 255, 0.12),
+      rgba(150, 199, 255, 0.045)
+    );
+
+  color: #bcdcff;
+
+  font-family:
+    Georgia,
+    "Times New Roman",
+    serif;
+
+  font-style: italic;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+#identityLogin:hover {
+  background:
+    linear-gradient(
+      135deg,
+      rgba(150, 199, 255, 0.22),
+      rgba(150, 199, 255, 0.08)
+    );
+
+  border-color: rgba(150, 199, 255, 0.75);
+
+  box-shadow:
+    0 0 14px rgba(150, 199, 255, 0.18);
+
+  transform: translateY(-1px);
+}
+
+#identityLogin:active {
+  transform: translateY(0);
+}
+
 /* =========================================================
    INVITADO
    ========================================================= */
@@ -183,6 +237,11 @@
     padding: 4px 8px;
     font-size: 10px;
   }
+
+  #identityLogin {
+    padding: 4px 8px;
+    font-size: 10px;
+  }
 }
 
 @media (max-width: 700px) {
@@ -207,6 +266,110 @@
     margin-left: 2px;
     padding: 4px 6px;
   }
+
+  #identityLogin {
+    margin-left: 2px;
+    padding: 4px 6px;
+  }
+}
+
+/* =========================================================
+   CERTIFICADO · CTA
+   ========================================================= */
+
+.cert-cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 14px;
+  flex-wrap: wrap;
+
+  margin: 14px 0 4px;
+  padding: 14px 18px;
+
+  border: 1px solid rgba(71, 224, 183, 0.45);
+  border-radius: 14px;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(71, 224, 183, 0.10),
+      rgba(71, 224, 183, 0.03)
+    );
+
+  box-shadow:
+    0 0 20px rgba(71, 224, 183, 0.08);
+}
+
+.cert-cta.issued {
+  border-color: rgba(212, 175, 55, 0.5);
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(212, 175, 55, 0.12),
+      rgba(212, 175, 55, 0.03)
+    );
+}
+
+.cert-cta-txt b {
+  color: var(--green);
+  font-size: 16px;
+}
+
+.cert-cta-txt small {
+  display: block;
+  color: #8aa8ba;
+  margin-top: 4px;
+}
+
+.cert-cta button {
+  padding: 10px 18px;
+
+  border: 1px solid rgba(71, 224, 183, 0.55);
+  border-radius: 10px;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(71, 224, 183, 0.16),
+      rgba(71, 224, 183, 0.06)
+    );
+
+  color: #9df0d0;
+
+  font-family:
+    Georgia,
+    "Times New Roman",
+    serif;
+
+  font-style: italic;
+  font-weight: 700;
+
+  cursor: pointer;
+  white-space: nowrap;
+
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.cert-cta button:hover {
+  background:
+    linear-gradient(
+      135deg,
+      rgba(71, 224, 183, 0.26),
+      rgba(71, 224, 183, 0.10)
+    );
+
+  transform: translateY(-1px);
+}
+
+.cert-cta button:disabled {
+  opacity: 0.6;
+  cursor: default;
+  transform: none;
 }
 </style>
 
@@ -228,6 +391,7 @@
       <span id="identityIcon">👤</span>
       <span id="identityName">Cargando...</span>
       <span id="identityKind"></span>
+      <button id="identityLogin" type="button" hidden></button>
       <button id="identityAction" type="button" hidden></button>
     </div>
     <button id="sync" type="button">↻ SYNC</button>
@@ -269,6 +433,8 @@
         </div>
         <div class="logo">VIDA<small>01 · SENA</small></div>
       </div>
+
+      <div id="certCta" hidden></div>
 
       <div class="kpis">
         <div class="kpi"><small>OPERATIVE PROGRESS</small><strong id="overall">0%</strong><div class="bar"><i id="overallbar"></i></div><p id="overallSub">actividades+video</p></div>

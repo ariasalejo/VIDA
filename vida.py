@@ -33,6 +33,8 @@ from vida_engines import (
     CertificateAlreadyIssued,
 )
 
+import vida_db
+
 ROOT = Path(__file__).resolve().parent
 
 # VIDA Local · Piper persistente en memoria
@@ -548,6 +550,11 @@ def current_user_id() -> str:
 
 
 def conn() -> sqlite3.Connection:
+    # En Vercel/serverless el filesystem es efímero: si hay credenciales
+    # de Neon/Postgres se usa la base remota persistente. En local, SQLite.
+    if vida_db.postgres_enabled():
+        return vida_db.pg_conn()
+
     ensure_dirs()
 
     db_file = runtime_root() / "vida.db"
@@ -922,6 +929,20 @@ def engine_state(course_id: str | None = None) -> dict:
     course_id = profile.course_id
     issued_record = _load_issued(certificate, course_id)
 
+    eligibility = certificate.eligibility_report(
+        operational=snapshot.operational,
+        mastery=snapshot.mastery,
+        evidence_count=snapshot.evidence_count,
+        required_videos=len(videos_cfg),
+        completed_videos=len(completed_video_ids),
+        required_activities=len(activities_cfg),
+        completed_activities=len(completed_activity_ids),
+        required_concepts=len(concepts_cfg),
+        verified_concepts=len(verified_concepts),
+        unknown_count=unknown_count,
+        user_confirmation=True,
+    )
+
     return {
         "overall": snapshot.operational,
         "mastery": snapshot.mastery,
@@ -965,6 +986,7 @@ def engine_state(course_id: str | None = None) -> dict:
                 else "PENDING"
             ),
         },
+        "certificate_eligible": bool(eligibility["eligible"]),
     }
 
 
@@ -1119,6 +1141,23 @@ def create_app() -> Flask:
     app.config["SESSION_COOKIE_HTTPONLY"] = True
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
     app.config["SESSION_COOKIE_SECURE"] = True
+
+    if os.environ.get("VERCEL") and not vida_db.postgres_enabled():
+        console.print(
+            "[bold yellow]⚠️  VERCEL sin DATABASE_URL: la base de datos "
+            "será efímera y las cuentas/progreso se perderán al refrescar. "
+            "Crea una base Neon/Postgres desde el tab Storage de Vercel y "
+            "configura DATABASE_URL.[/bold yellow]"
+        )
+
+    if (
+        os.environ.get("VERCEL")
+        and app.secret_key == "vida-local-development-secret-change-me"
+    ):
+        console.print(
+            "[bold yellow]⚠️  VERCEL usa el secret_key por defecto. "
+            "Configura VIDA_SECRET_KEY como variable de entorno.[/bold yellow]"
+        )
 
     @app.post("/api/voice")
     def api_voice():
@@ -1414,7 +1453,7 @@ def create_app() -> Flask:
 
             connection.commit()
 
-        except sqlite3.IntegrityError:
+        except (sqlite3.IntegrityError, vida_db.IntegrityError):
             connection.rollback()
             connection.close()
             return jsonify({
@@ -1696,19 +1735,21 @@ def create_app() -> Flask:
 
     @app.post("/api/certificate")
     def issue_certificate():
-        if not _cert_allowed(request):
+        payload = request.get_json(silent=True) or {}
+
+        user_confirmation = bool(
+            payload.get("user_confirmation", False)
+        )
+
+        # Emisión por el propio aprendiz con su confirmación explícita.
+        # La clave del sistema solo se exige para emisión administrativa.
+        if not _cert_allowed(request) and not user_confirmation:
             return jsonify(
                 {
                     "ok": False,
                     "error": "Acceso denegado. Se requiere permiso del sistema.",
                 }
             ), 403
-
-        payload = request.get_json(silent=True) or {}
-
-        user_confirmation = bool(
-            payload.get("user_confirmation", False)
-        )
 
         state = api_snapshot()
 

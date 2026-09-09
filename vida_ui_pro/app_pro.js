@@ -26,6 +26,7 @@ function renderIdentity() {
   const name = $("#identityName");
   const kind = $("#identityKind");
   const action = $("#identityAction");
+  const login = $("#identityLogin");
 
   if (!box || !identity) return;
 
@@ -38,13 +39,56 @@ function renderIdentity() {
     : "Aprendiz · Progreso guardado";
 
   action.hidden = false;
-  action.textContent = guest ? "CREAR CUENTA" : "CERRAR SESIÓN";
+  login.hidden = true;
 
-  action.onclick = guest ? registerIdentity : logoutIdentity;
+  if (guest) {
+    action.textContent = "CREAR CUENTA";
+    action.onclick = registerIdentity;
 
-  box.title = guest
-    ? "El progreso del invitado es temporal. Crea una cuenta para conservarlo."
-    : "Sesión de usuario persistente.";
+    login.hidden = false;
+    login.textContent = "INICIAR SESIÓN";
+    login.onclick = loginIdentity;
+
+    box.title = "El progreso del invitado es temporal. Crea una cuenta para conservarlo.";
+  } else {
+    action.textContent = "CERRAR SESIÓN";
+    action.onclick = logoutIdentity;
+
+    box.title = "Sesión de usuario persistente.";
+  }
+}
+
+async function loginIdentity() {
+  const username = prompt("Usuario:");
+  if (!username) return;
+
+  const password = prompt("Contraseña:");
+  if (!password) return;
+
+  try {
+    const data = await getJSON("/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password })
+    });
+
+    identity = {
+      user_id: data.user_id,
+      username: data.username,
+      display_name: data.display_name,
+      kind: data.kind
+    };
+
+    renderIdentity();
+
+    await load();
+
+    refresh();
+
+    alert("✅ Sesión iniciada. Tu progreso está aquí.");
+  } catch (err) {
+    alert("❌ " + err.message);
+  }
 }
 
 async function registerIdentity() {
