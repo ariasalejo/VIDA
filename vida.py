@@ -2672,6 +2672,68 @@ def create_app() -> Flask:
         return records
 
 
+    def _vercel_blob_records_recover(activity_id: str) -> list[dict]:
+        """
+        Recupera evidencias históricas aunque hayan quedado bajo
+        un prefijo de usuario distinto. La identidad se valida
+        contra el contexto almacenado dentro del registro JSON.
+        """
+        records = []
+        uid = str(current_user_id())
+        cid = str(active_course_id())
+
+        client = _vercel_blob_client()
+        prefix = "vida/evidence/"
+        cursor = None
+
+        while True:
+            page = client.list_objects(
+                prefix=prefix,
+                limit=1000,
+                cursor=cursor,
+            )
+
+            for blob in page.blobs:
+                pathname = blob.pathname
+
+                if not pathname.endswith(".json"):
+                    continue
+
+                try:
+                    payload = json.loads(
+                        _vercel_blob_read(pathname).decode("utf-8")
+                    )
+                except (
+                    OSError,
+                    ValueError,
+                    UnicodeDecodeError,
+                ):
+                    continue
+
+                if not isinstance(payload, dict):
+                    continue
+
+                context = payload.get("context") or {}
+
+                if (
+                    str(context.get("user_id", "")) == uid
+                    and str(context.get("course_id", "")) == cid
+                    and str(context.get("activity_id", "")) == str(activity_id)
+                ):
+                    records.append(payload)
+
+            if not page.has_more:
+                break
+
+            cursor = page.cursor
+
+        records.sort(
+            key=lambda item: item.get("observed_at", "")
+        )
+
+        return records
+
+
     def _vercel_blob_files(activity_id: str) -> list[dict]:
         files = []
 
@@ -2750,7 +2812,38 @@ def create_app() -> Flask:
             try:
                 if _vercel_blob_enabled():
                     records = _vercel_blob_records(activity_id)
+
+                    # Recuperación de evidencias históricas:
+                    # si no aparecen bajo el prefijo actual,
+                    # buscar los JSON existentes y validar su
+                    # identidad desde context.user_id/course_id.
+                    if not records:
+                        records = _vercel_blob_records_recover(
+                            activity_id
+                        )
+
                     files = _vercel_blob_files(activity_id)
+
+                    # Si los archivos están bajo un prefijo histórico,
+                    # reconstruirlos desde los registros recuperados.
+                    if records:
+                        files = []
+                        for record in records:
+                            context = record.get("context") or {}
+                            name = context.get("file")
+                            if not name:
+                                continue
+
+                            files.append(
+                                {
+                                    "name": str(name),
+                                    "size": int(context.get("size") or 0),
+                                    "url": (
+                                        f"/media/evidence/"
+                                        f"{activity_id}/{name}"
+                                    ),
+                                }
+                            )
                 else:
                     records = _evidence_for(activity_id)
                     files = _uploaded_files(activity_id)
