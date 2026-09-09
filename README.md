@@ -156,6 +156,14 @@ BLUMCL, BLUMELIX y VIDA son proyectos con responsabilidades separadas.
 
 ---
 
+## 📜 Licencia
+
+Proyecto de **Eduar Alejandro Arias Londoño**, publicado bajo
+**Apache License 2.0**. Ver [`LICENSE`](LICENSE) y [`COPYRIGHT`](COPYRIGHT)
+para los términos completos.
+
+---
+
 ## 🧪 Pruebas
 
 ```bash
