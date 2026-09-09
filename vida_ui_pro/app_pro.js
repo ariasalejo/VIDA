@@ -967,25 +967,75 @@ function tickClock() {
   el.textContent = `${days[d.getDay()]} ${p(d.getDate())}.${p(d.getMonth() + 1)} · ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
 }
 document.addEventListener("DOMContentLoaded", () => {
-  $("#sync").addEventListener("click", () => { loadVideosMeta(); refresh(); });
-  $("#actBack").addEventListener("click", () => { location.hash = "#/actividades"; });
+  console.log("[VIDA] DOMContentLoaded");
+
+  const sync = $("#sync");
+  if (sync) {
+    sync.addEventListener("click", async () => {
+      try {
+        await loadVideosMeta();
+        await refresh();
+      } catch (err) {
+        console.error("[VIDA] Error en sincronización:", err);
+      }
+    });
+  }
+
+  const actBack = $("#actBack");
+  if (actBack) {
+    actBack.addEventListener("click", () => {
+      location.hash = "#/actividades";
+    });
+  }
+
   const vb = $("#voiceBtn");
-  if (vb) vb.addEventListener("click", () => {
-    voiceOn = !voiceOn;
-setVoiceBtn();
-    if (voiceOn) speak(GUIDES[parseHash().name] || GUIDES.dashboard);
-  });
+  if (vb) {
+    vb.addEventListener("click", () => {
+      voiceOn = !voiceOn;
+      setVoiceBtn();
+      if (voiceOn) speak(GUIDES[parseHash().name] || GUIDES.dashboard);
+    });
+  }
+
   const cs = $("#courseSel");
-  if (cs) cs.addEventListener("change", () => {
-    if (!cs.value) return;
-    if (cs.value === cs.dataset.last) return;
-    activateCourse(cs.value);
-  });
-  setVoiceBtn();
-  initDropzone();
+  if (cs) {
+    cs.addEventListener("change", () => {
+      if (!cs.value) return;
+      if (cs.value === cs.dataset.last) return;
+      activateCourse(cs.value);
+    });
+  }
+
+  try {
+    setVoiceBtn();
+  } catch (err) {
+    console.error("[VIDA] Error setVoiceBtn:", err);
+  }
+
+  try {
+    initDropzone();
+  } catch (err) {
+    console.error("[VIDA] Error initDropzone:", err);
+  }
+
   tickClock();
   setInterval(tickClock, 1000);
-  loadIdentity();
-  load();
-  setInterval(() => { if (document.visibilityState === "visible") refresh(); }, 20000);
+
+  loadIdentity().catch(err => {
+    console.error("[VIDA] Error loadIdentity:", err);
+  });
+
+  load().then(() => {
+    console.log("[VIDA] LOAD OK");
+  }).catch(err => {
+    console.error("[VIDA] LOAD ERROR:", err);
+  });
+
+  setInterval(() => {
+    if (document.visibilityState === "visible") {
+      refresh().catch(err => {
+        console.error("[VIDA] REFRESH ERROR:", err);
+      });
+    }
+  }, 20000);
 });
