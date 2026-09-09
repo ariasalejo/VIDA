@@ -1,46 +1,62 @@
-# Entorno virtual y paquetes
-.venv/
+# Bytecode Python
 __pycache__/
 *.py[cod]
-*.egg-info/
-.pytest_cache/
+*$py.class
+*.so
 
-# Copias de seguridad locales
-.vida_backup_*/
-*.backup*
-*.bak*
+# Caché
+.pytest_cache
+.mypy_cache
+*.egg-info
+dist
+build
 
-# Datos generados (base local, evidencias, eventos, informes)
-data/vida.db
-data/.cert_token
-data/evidence/
-data/events/*.json
-data/reports/*.json
+# Entornos virtuales
+.venv
+venv
+ENV
+env
+
+# Variables de entorno
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode
+.idea
+*.sublime-project
+*.sublime-workspace
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+*.tmp
+
+# Datos locales no deben versionarse
+data/*.db
+data/*.sqlite
+data/backups
 certificates/*.issued.json
-!certificates/.gitkeep
 
-# Multimedia (materiales se sirven localmente; videos se versionan por deploy)
+# Multimedia grande
 media/materials/*
-!media/materials/.gitkeep
+media/temp/*
+*.mp4
+*.avi
+*.mov
+*.wav
+*.mp3
 
-# SQLite temporales
-*.db-journal
-*.db-wal
-*.db-shm
+# Backups y temporales
+*.backup*
+*.bak
+*.old
+*.swp
+*.swo
 
 # Vercel
-.vercel/
-
-# Artefactos accidentales
-os
-*.ps
 .vercel
-.env*
-# Archivos multimedia grandes
-media/videos/*.mp4
-media/videos/*.webm
-voices/piper/*.onnx
-voices/piper/*.json
-*.mp4
-*.wav
-*.onnx

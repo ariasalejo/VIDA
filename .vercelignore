@@ -6,22 +6,38 @@ __pycache__
 
 # Multimedia: la sesión grabada se despliega; los materiales se sirven localmente
 media/materials/*
+media/temp/*
+*.mp4
+*.avi
+*.mov
+*.wav
+*.mp3
 
 # Datos generados en runtime
 data/*.db
+data/*.sqlite
 data/evidence
 data/events
 data/reports
+data/backups
 certificates/*.issued.json
 
 # Artefactos accidentales
 os
 *.ps
+*.log
+*.tmp
 
 # Pruebas y configuración local
 tests
 .vercel
+.git
+.gitignore
+.github
+
 # Backups locales de desarrollo
 *.backup*
 *.bak
 *.old
+*.swp
+*.swo

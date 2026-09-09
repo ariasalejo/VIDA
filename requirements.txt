@@ -4,3 +4,5 @@ piper-tts>=1.8,<2
 vercel>=0.10,<1
 pg8000>=1.31,<2
 cryptography>=42,<46
+Flask-CORS>=4.0,<5
+certifi>=2024.0.0
