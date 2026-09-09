@@ -110,6 +110,8 @@ def _masked_cedula(value: str) -> str:
 
 
 def profile_payload(row) -> dict:
+    if row is not None and isinstance(row, sqlite3.Row):
+        row = dict(row)
     """Estado del perfil SIN exponer el contenido real.
 
     Devuelve únicamente si está completo, qué campos hay y una máscara
@@ -4874,3 +4876,14 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+@app.route('/descargar-certificado/<clave>')
+def descargar_certificado(clave):
+    cert = get_certificado(clave)
+    if not cert:
+        return jsonify({"error": "Certificado no encontrado"}), 404
+    # Generar archivo PDF o texto (ejemplo simple)
+    from flask import send_file, make_response
+    import io
+    # Aquí se puede generar PDF, por ahora devolvemos un JSON con los datos
+    return jsonify(cert)

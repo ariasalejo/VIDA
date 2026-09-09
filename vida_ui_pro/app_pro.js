@@ -1,3 +1,22 @@
+
+// Fallback de voz con Web Speech API
+function speakWithWebSpeech(text, rate = 0.85) {
+    if (!window.speechSynthesis) {
+        alert("Tu navegador no soporta síntesis de voz.");
+        return;
+    }
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'es-ES';
+    utterance.rate = rate;
+    utterance.pitch = 1;
+    utterance.volume = 1;
+    // Buscar voz femenina en español
+    const voices = speechSynthesis.getVoices();
+    const femaleVoice = voices.find(v => v.lang.startsWith('es') && v.name.includes('Female'));
+    if (femaleVoice) utterance.voice = femaleVoice;
+    speechSynthesis.speak(utterance);
+}
+// Reemplazar llamadas a Piper por speakWithWebSpeech
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
 

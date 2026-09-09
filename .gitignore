@@ -36,3 +36,11 @@ os
 *.ps
 .vercel
 .env*
+# Archivos multimedia grandes
+media/videos/*.mp4
+media/videos/*.webm
+voices/piper/*.onnx
+voices/piper/*.json
+*.mp4
+*.wav
+*.onnx
