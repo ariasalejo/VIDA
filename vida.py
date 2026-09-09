@@ -3020,93 +3020,92 @@ def create_app() -> Flask:
         )
 
     @app.post("/api/progress/<vid>")
-def set_video_progress(vid: str):
-    payload = request.get_json(silent=True) or {}
-
-    try:
-        position = float(payload.get("position", 0))
-        duration = float(payload.get("duration", 0))
-    except (TypeError, ValueError):
-        return jsonify(
-            {
-                "ok": False,
-                "error": "position o duration inválidos",
-            }
-        ), 400
-
-    completed = int(bool(payload.get("completed", False)))
-
-    connection = conn()
-    cid = active_course_id()
-    uid = current_user_id()
-
-    try:
-        updated = connection.execute(
-            """
-            UPDATE video_progress
-            SET position = ?,
-                duration = ?,
-                completed = ?,
-                updated_at = CURRENT_TIMESTAMP
-            WHERE user_id = ?
-              AND video_id = ?
-              AND course_id = ?
-            """,
-            (
-                position,
-                duration,
-                completed,
-                uid,
-                vid,
-                cid,
-            ),
-        )
-
-        rowcount = getattr(updated, "rowcount", 0) or 0
-
-        if rowcount == 0:
-            connection.execute(
+    def set_video_progress(vid: str):
+        payload = request.get_json(silent=True) or {}
+    
+        try:
+            position = float(payload.get("position", 0))
+            duration = float(payload.get("duration", 0))
+        except (TypeError, ValueError):
+            return jsonify(
+                {
+                    "ok": False,
+                    "error": "position o duration inválidos",
+                }
+            ), 400
+    
+        completed = int(bool(payload.get("completed", False)))
+    
+        connection = conn()
+        cid = active_course_id()
+        uid = current_user_id()
+    
+        try:
+            updated = connection.execute(
                 """
-                INSERT INTO video_progress (
-                    user_id,
-                    video_id,
-                    course_id,
-                    position,
-                    duration,
-                    completed
-                )
-                VALUES (?, ?, ?, ?, ?, ?)
+                UPDATE video_progress
+                SET position = ?,
+                    duration = ?,
+                    completed = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE user_id = ?
+                  AND video_id = ?
+                  AND course_id = ?
                 """,
                 (
-                    uid,
-                    vid,
-                    cid,
                     position,
                     duration,
                     completed,
+                    uid,
+                    vid,
+                    cid,
                 ),
             )
-
-        connection.commit()
-
-    except Exception:
-        connection.rollback()
-        raise
-
-    finally:
-        connection.close()
-
-    return jsonify(
-        {
-            "ok": True,
-            "video_id": vid,
-            "course_id": cid,
-            "position": position,
-            "duration": duration,
-            "completed": completed,
-        }
-    )
-
+    
+            rowcount = getattr(updated, "rowcount", 0) or 0
+    
+            if rowcount == 0:
+                connection.execute(
+                    """
+                    INSERT INTO video_progress (
+                        user_id,
+                        video_id,
+                        course_id,
+                        position,
+                        duration,
+                        completed
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        uid,
+                        vid,
+                        cid,
+                        position,
+                        duration,
+                        completed,
+                    ),
+                )
+    
+            connection.commit()
+    
+        except Exception:
+            connection.rollback()
+            raise
+    
+        finally:
+            connection.close()
+    
+        return jsonify(
+            {
+                "ok": True,
+                "video_id": vid,
+                "course_id": cid,
+                "position": position,
+                "duration": duration,
+                "completed": completed,
+            }
+        )
     @app.post("/api/item/<item_id>")
     def set_item(item_id: str):
         payload = request.get_json(silent=True) or {}
