@@ -1167,8 +1167,63 @@ def create_app() -> Flask:
 
     @app.post("/api/guest")
     def api_guest():
+        """
+        Activa la identidad Invitado de la sesión actual.
+
+        IMPORTANTE:
+        - No genera un nuevo invitado si ya existe uno.
+        - No borra la sesión existente.
+        - Conserva el progreso asociado al invitado actual.
+        """
+        existing_uid = session.get("user_id")
+        existing_kind = session.get("user_kind")
+
+        if existing_uid and existing_kind == "guest":
+            uid = str(existing_uid)
+
+            connection = conn()
+            row = connection.execute(
+                """
+                SELECT user_id, kind, username, display_name, created_at
+                FROM users
+                WHERE user_id = ?
+                """,
+                (uid,),
+            ).fetchone()
+
+            if row is None:
+                connection.execute(
+                    """
+                    INSERT INTO users
+                    (user_id, kind, display_name)
+                    VALUES (?, 'guest', 'Invitado')
+                    """,
+                    (uid,),
+                )
+                connection.commit()
+                row = connection.execute(
+                    """
+                    SELECT user_id, kind, username, display_name, created_at
+                    FROM users
+                    WHERE user_id = ?
+                    """,
+                    (uid,),
+                ).fetchone()
+
+            connection.close()
+
+            return jsonify({
+                "ok": True,
+                "user_id": row["user_id"],
+                "kind": row["kind"],
+                "display_name": row["display_name"] or "Invitado",
+            })
+
+        # Si había otra identidad activa, iniciar una nueva sesión de Invitado.
         session.clear()
+
         uid = "guest-" + secrets.token_urlsafe(12)
+
         session["user_id"] = uid
         session["user_kind"] = "guest"
 
@@ -1893,6 +1948,160 @@ def create_app() -> Flask:
                 "completed": completed,
             }
         )
+
+    @app.post("/api/concept/<concept_id>/study")
+    def concept_study(concept_id: str):
+        """Registra estudio explícito de un concepto existente."""
+        course_data = course()
+        concept = next(
+            (
+                c for c in course_data.get("concepts", [])
+                if str(c.get("id")) == str(concept_id)
+            ),
+            None,
+        )
+
+        if concept is None:
+            return jsonify({
+                "ok": False,
+                "error": "Concepto no encontrado.",
+            }), 404
+
+        payload = request.get_json(silent=True) or {}
+
+        try:
+            minutes = float(payload.get("minutes", 1))
+        except (TypeError, ValueError):
+            return jsonify({
+                "ok": False,
+                "error": "minutes inválidos",
+            }), 400
+
+        if minutes <= 0 or minutes > 120:
+            return jsonify({
+                "ok": False,
+                "error": "minutes inválidos",
+            }), 400
+
+        connection = conn()
+        cid = active_course_id()
+        uid = current_user_id()
+
+        connection.execute(
+            """
+            INSERT INTO study_log (
+                user_id,
+                course_id,
+                kind,
+                ref_id,
+                minutes,
+                note
+            )
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                uid,
+                cid,
+                "concept",
+                str(concept_id),
+                minutes,
+                f"Estudio del concepto: {concept.get('title', concept_id)}",
+            ),
+        )
+
+        connection.commit()
+        connection.close()
+
+        return jsonify({
+            "ok": True,
+            "concept_id": str(concept_id),
+            "minutes": minutes,
+        })
+
+
+    @app.post("/api/concept/<concept_id>/verify")
+    def verify_concept(concept_id: str):
+        """
+        Verificación explícita de un concepto.
+
+        La verificación no se concede por abrir la pantalla:
+        exige que exista estudio registrado previamente para
+        ese concepto y después crea el mismo estado que VIDA
+        ya utiliza internamente: item_id = concept:<id>.
+        """
+        course_data = course()
+
+        concept = next(
+            (
+                c for c in course_data.get("concepts", [])
+                if str(c.get("id")) == str(concept_id)
+            ),
+            None,
+        )
+
+        if concept is None:
+            return jsonify({
+                "ok": False,
+                "error": "Concepto no encontrado.",
+            }), 404
+
+        connection = conn()
+        cid = active_course_id()
+        uid = current_user_id()
+
+        study_row = connection.execute(
+            """
+            SELECT COALESCE(SUM(minutes), 0) AS minutes
+            FROM study_log
+            WHERE user_id = ?
+              AND course_id = ?
+              AND kind = 'concept'
+              AND ref_id = ?
+            """,
+            (uid, cid, str(concept_id)),
+        ).fetchone()
+
+        studied_minutes = float(study_row["minutes"] or 0)
+
+        if studied_minutes <= 0:
+            connection.close()
+            return jsonify({
+                "ok": False,
+                "error": "Primero registra estudio del concepto.",
+                "concept_id": str(concept_id),
+                "studied_minutes": studied_minutes,
+            }), 409
+
+        item_id = f"concept:{concept_id}"
+
+        connection.execute(
+            """
+            INSERT INTO item_progress (
+                user_id,
+                item_id,
+                course_id,
+                completed
+            )
+            VALUES (?, ?, ?, 1)
+            ON CONFLICT(user_id, item_id, course_id)
+            DO UPDATE SET
+                completed = 1,
+                updated_at = CURRENT_TIMESTAMP
+            """,
+            (uid, item_id, cid),
+        )
+
+        connection.commit()
+        connection.close()
+
+        return jsonify({
+            "ok": True,
+            "concept_id": str(concept_id),
+            "item_id": item_id,
+            "verified": True,
+            "studied_minutes": studied_minutes,
+        })
+
 
     @app.post("/api/study")
     def study():

@@ -827,23 +827,283 @@ async function uploadEvidence(file) {
 async function renderKnowledge() {
   const box = $("#conceptFullList");
   if (!box) return;
-  box.innerHTML = "";
+
   if (!state) state = await getJSON("/api/dashboard");
+
   const verified = new Set(state.verified_concept_ids || []);
   const total = (course.concepts || []).length;
+  const verifiedCount = (course.concepts || []).filter(c => verified.has(c.id)).length;
+
   const cnt = $("#conceptCount");
-  if (cnt) cnt.textContent = (course.concepts || []).filter(c => verified.has(c.id)).length + "/" + total + " VERIFICADOS";
+  if (cnt) {
+    cnt.textContent = verifiedCount + "/" + total + " VERIFICADOS";
+  }
+
+  box.innerHTML = "";
+
   (course.concepts || []).forEach(c => {
     const ok = verified.has(c.id);
     const el = document.createElement("article");
-    el.className = "concept" + (ok ? " verified" : "");
+
+    el.className = "concept knowledge-card" + (ok ? " verified" : "");
+    el.tabIndex = 0;
+    el.setAttribute("role", "button");
+    el.setAttribute("aria-label", "Abrir concepto " + c.title);
+
+    const extras = [];
+
+    if (Array.isArray(c.examples) && c.examples.length) {
+      extras.push(`<div class="knowledge-mini"><b>Ejemplos:</b> ${c.examples.slice(0, 3).map(esc).join(" · ")}</div>`);
+    }
+
+    if (Array.isArray(c.controls) && c.controls.length) {
+      extras.push(`<div class="knowledge-mini"><b>Controles:</b> ${c.controls.slice(0, 3).map(esc).join(" · ")}</div>`);
+    }
+
+    if (c.formula) {
+      extras.push(`<div class="knowledge-formula">${esc(c.formula)}</div>`);
+    }
+
     el.innerHTML =
-      `<div class="concept-head"><strong>◈ ${esc(c.title)}</strong>` +
-      `<span class="status-chip ${ok ? "on" : "off"}">${ok ? "VERIFICADO" : "PENDIENTE"}</span></div>` +
-      `<p>${esc(c.definition)}</p>` +
-      (c.content ? `<p class="concept-det">${esc(c.content)}</p>` : "");
+      `<div class="concept-head">` +
+        `<strong>◈ ${esc(c.title)}</strong>` +
+        `<span class="status-chip ${ok ? "on" : "off"}">${ok ? "VERIFICADO" : "PENDIENTE"}</span>` +
+      `</div>` +
+      `<p>${esc(c.definition || "")}</p>` +
+      (c.content ? `<p class="concept-det">${esc(c.content)}</p>` : "") +
+      extras.join("") +
+      `<div class="knowledge-open">ABRIR CONCEPTO →</div>`;
+
+    el.addEventListener("click", () => openConcept(c.id));
+    el.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        openConcept(c.id);
+      }
+    });
+
     box.appendChild(el);
   });
+}
+
+function conceptById(id) {
+  return (course.concepts || []).find(c => String(c.id) === String(id)) || null;
+}
+
+function closeConcept() {
+  const modal = $("#conceptModal");
+  if (!modal) return;
+
+  modal.hidden = true;
+  document.body.classList.remove("concept-modal-open");
+}
+
+function renderConceptModal(concept) {
+  const modal = $("#conceptModal");
+  if (!modal || !concept) return;
+
+  const verified = new Set((state && state.verified_concept_ids) || []);
+  const isVerified = verified.has(concept.id);
+
+  const examples = Array.isArray(concept.examples)
+    ? `<section class="knowledge-section">
+         <h3>Ejemplos</h3>
+         <ul>${concept.examples.map(x => `<li>${esc(x)}</li>`).join("")}</ul>
+       </section>`
+    : "";
+
+  const controls = Array.isArray(concept.controls)
+    ? `<section class="knowledge-section">
+         <h3>Controles relacionados</h3>
+         <ul>${concept.controls.map(x => `<li>${esc(x)}</li>`).join("")}</ul>
+       </section>`
+    : "";
+
+  const questions = Array.isArray(concept.questions)
+    ? `<section class="knowledge-section">
+         <h3>Preguntas para estudiar</h3>
+         <ul>${concept.questions.map(x => `<li>${esc(x)}</li>`).join("")}</ul>
+       </section>`
+    : "";
+
+  const options = Array.isArray(concept.options)
+    ? `<section class="knowledge-section">
+         <h3>Opciones de tratamiento</h3>
+         <div class="knowledge-tags">${concept.options.map(x => `<span>${esc(x)}</span>`).join("")}</div>
+       </section>`
+    : "";
+
+  const workflow = Array.isArray(concept.workflow)
+    ? `<section class="knowledge-section">
+         <h3>Proceso</h3>
+         <ol>${concept.workflow.map(x => `<li>${esc(x)}</li>`).join("")}</ol>
+       </section>`
+    : "";
+
+  const chain = Array.isArray(concept.chain)
+    ? `<section class="knowledge-section">
+         <h3>Cadena conceptual</h3>
+         <div class="knowledge-chain">${concept.chain.map(x => `<span>${esc(x)}</span>`).join("<b>→</b>")}</div>
+       </section>`
+    : "";
+
+  const formula = concept.formula
+    ? `<div class="knowledge-formula knowledge-formula-big">${esc(concept.formula)}</div>`
+    : "";
+
+  modal.innerHTML = `
+    <div class="concept-modal-backdrop" data-concept-close></div>
+    <div class="concept-modal-panel" role="dialog" aria-modal="true" aria-labelledby="conceptModalTitle">
+      <header class="concept-modal-header">
+        <div>
+          <small>KNOWLEDGE ENGINE · CONCEPTO</small>
+          <h2 id="conceptModalTitle">◈ ${esc(concept.title)}</h2>
+        </div>
+        <button class="concept-close" type="button" id="conceptClose" aria-label="Cerrar">×</button>
+      </header>
+
+      <div class="concept-modal-body">
+        <div class="concept-modal-status ${isVerified ? "verified" : ""}">
+          <span>${isVerified ? "✓ CONCEPTO VERIFICADO" : "○ CONCEPTO PENDIENTE"}</span>
+        </div>
+
+        <section class="knowledge-section">
+          <h3>Definición</h3>
+          <p>${esc(concept.definition || "")}</p>
+        </section>
+
+        ${concept.content ? `
+          <section class="knowledge-section">
+            <h3>Contenido</h3>
+            <p>${esc(concept.content)}</p>
+          </section>` : ""}
+
+        ${formula}
+        ${chain}
+        ${examples}
+        ${controls}
+        ${questions}
+        ${options}
+        ${workflow}
+
+        ${Array.isArray(concept.cycle) ? `
+          <section class="knowledge-section">
+            <h3>Ciclo</h3>
+            <div class="knowledge-chain">${concept.cycle.map(x => `<span>${esc(x)}</span>`).join("<b>→</b>")}</div>
+          </section>` : ""}
+
+        ${Array.isArray(concept.related_activities) ? `
+          <section class="knowledge-section">
+            <h3>Actividades relacionadas</h3>
+            <div class="knowledge-tags">${concept.related_activities.map(x => `<span>${esc(x.toUpperCase())}</span>`).join("")}</div>
+          </section>` : ""}
+
+        <div class="concept-modal-message" id="conceptModalMessage"></div>
+      </div>
+
+      <footer class="concept-modal-footer">
+        ${
+          isVerified
+          ? `<span class="concept-done">✓ Este concepto ya está verificado.</span>`
+          : `
+            <button class="btn-secondary" type="button" id="conceptStudyBtn">
+              📖 REGISTRAR ESTUDIO
+            </button>
+            <button class="btn-primary" type="button" id="conceptVerifyBtn" disabled>
+              ✓ VERIFICAR CONCEPTO
+            </button>
+          `
+        }
+      </footer>
+    </div>
+  `;
+
+  modal.hidden = false;
+  document.body.classList.add("concept-modal-open");
+
+  const close = $("#conceptClose");
+  if (close) close.addEventListener("click", closeConcept);
+
+  const backdrop = modal.querySelector("[data-concept-close]");
+  if (backdrop) backdrop.addEventListener("click", closeConcept);
+
+  const studyBtn = $("#conceptStudyBtn");
+  const verifyBtn = $("#conceptVerifyBtn");
+  const message = $("#conceptModalMessage");
+
+  if (studyBtn && verifyBtn) {
+    studyBtn.addEventListener("click", async () => {
+      studyBtn.disabled = true;
+      studyBtn.textContent = "REGISTRANDO ESTUDIO…";
+
+      try {
+        const response = await fetch(
+          "/api/concept/" + encodeURIComponent(concept.id) + "/study",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ minutes: 1 })
+          }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "No se pudo registrar el estudio.");
+        }
+
+        message.textContent =
+          "✓ Estudio registrado. Ahora puedes verificar este concepto.";
+
+        verifyBtn.disabled = false;
+        studyBtn.textContent = "✓ ESTUDIO REGISTRADO";
+      } catch (error) {
+        message.textContent = "⚠ " + esc(error.message);
+        studyBtn.disabled = false;
+        studyBtn.textContent = "📖 REGISTRAR ESTUDIO";
+      }
+    });
+
+    verifyBtn.addEventListener("click", async () => {
+      verifyBtn.disabled = true;
+      verifyBtn.textContent = "VERIFICANDO…";
+
+      try {
+        const response = await fetch(
+          "/api/concept/" + encodeURIComponent(concept.id) + "/verify",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({})
+          }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "No se pudo verificar el concepto.");
+        }
+
+        message.textContent =
+          "✓ Concepto verificado. Actualizando Mastery…";
+
+        state = await getJSON("/api/dashboard");
+        await renderKnowledge();
+        renderConceptModal(concept);
+        refresh();
+      } catch (error) {
+        message.textContent = "⚠ " + esc(error.message);
+        verifyBtn.disabled = false;
+        verifyBtn.textContent = "✓ VERIFICAR CONCEPTO";
+      }
+    });
+  }
+}
+
+function openConcept(conceptId) {
+  const concept = conceptById(conceptId);
+  if (!concept) return;
+  renderConceptModal(concept);
 }
 
 /* ---------------- REGLAS ---------------- */
