@@ -521,6 +521,7 @@ async function refresh() {
   animNum($("#lscore"), state.learning_score ?? 0, "%", 0);
   $("#lscorebar").style.width = (state.learning_score ?? 0) + "%";
   renderComponents(state);
+  renderCertCta();
   const sm = $("#studyMinutes");
   if (sm) sm.textContent = (state.study_minutes ?? 0) + " MIN";
   renderConcepts();
@@ -528,6 +529,72 @@ async function refresh() {
     renderDashboard();
     renderSignals(state);
     renderNextActions(state);
+  }
+}
+
+function renderCertCta() {
+  const box = $("#certCta");
+  if (!box || !state) return;
+  const cert = state.certificate || {};
+  if (cert.issued && cert.certificate_id) {
+    box.hidden = false;
+    box.innerHTML =
+      '<div class="cert-cta issued">' +
+      '<div class="cert-cta-txt"><b>🎓 Certificado emitido</b>' +
+      "<small>Tu logro ya está registrado y verificable en línea.</small></div>" +
+      '<a class="cert-open" href="/mi-certificado" target="_blank" rel="noopener">VER CERTIFICADO ⇢</a>' +
+      "</div>";
+    return;
+  }
+  if (state.certificate_eligible) {
+    box.hidden = false;
+    box.innerHTML =
+      '<div class="cert-cta">' +
+      '<div class="cert-cta-txt"><b>🎓 ¡Has completado el curso!</b>' +
+      "<small>Emití tu Certificado de Logro Educativo, con dedicatoria personal.</small></div>" +
+      '<button id="emitCertBtn" type="button" onclick="emitCertificate()">EMITIR CERTIFICADO</button>' +
+      "</div>";
+    return;
+  }
+  box.hidden = true;
+  box.innerHTML = "";
+}
+
+async function emitCertificate() {
+  const btn = document.getElementById("emitCertBtn");
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "EMITIENDO…";
+  }
+  const popup = window.open("", "_blank");
+  try {
+    const data = await getJSON("/api/certificate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user_confirmation: true })
+    });
+    const url = data.verification_url || "/mi-certificado";
+    if (popup && popup.location) {
+      try {
+        popup.location.href = url;
+      } catch (e) {
+        window.location.href = url;
+      }
+    } else {
+      window.location.href = url;
+    }
+    await refresh();
+  } catch (err) {
+    if (popup) {
+      try {
+        popup.close();
+      } catch (e) {}
+    }
+    alert("⏳ No se pudo emitir el certificado: " + (err.message || err));
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = "EMITIR CERTIFICADO";
+    }
   }
 }
 

@@ -1056,7 +1056,41 @@ def _uploaded_files(activity_id: str) -> list[dict]:
     return files
 
 
+def _cert_blob_enabled() -> bool:
+    """Persistencia de certificados en Vercel Blob cuando hay token."""
+    return bool(os.getenv("BLOB_READ_WRITE_TOKEN"))
+
+
+def _cert_blob_client():
+    from vercel.blob import BlobClient
+    return BlobClient()
+
+
+def _cert_blob_path(course_id: str) -> str:
+    safe = str(course_id).strip().replace(" ", "_")
+    return f"vida/certificates/{safe}.issued.json"
+
+
 def _load_issued(certificate_engine: CertificateEngine, course_id: str) -> dict | None:
+    # En el deploy, el certificado queda en Blob para sobrevivir
+    # entre instancias y redespliegues.
+    if _cert_blob_enabled():
+        try:
+            client = _cert_blob_client()
+            result = client.get(_cert_blob_path(course_id), access="private")
+            if (
+                result is not None
+                and result.status_code == 200
+                and result.stream is not None
+            ):
+                payload = json.loads(
+                    b"".join(result.stream).decode("utf-8")
+                )
+                if isinstance(payload, dict):
+                    return payload
+        except Exception:
+            pass
+
     record = certificate_engine._course_record(course_id)
     if not record.exists():
         return None
@@ -1767,6 +1801,23 @@ def create_app() -> Flask:
         )
         required_concepts = len(course_data.get("concepts", []))
 
+        # El certificado ya emitido persiste en Blob: evita duplicar
+        # entre instancias del deploy incluso si /tmp se reinicia.
+        already = _load_issued(engine, profile.course_id)
+        if already:
+            return jsonify(
+                {
+                    "ok": False,
+                    "error": "Este curso ya tiene certificado emitido.",
+                    "certificate_id": already.get("certificate_id"),
+                    "verification_url": (
+                        f"/verificar/{already.get('certificate_id')}"
+                        if already.get("certificate_id")
+                        else None
+                    ),
+                }
+            ), 409
+
         try:
             cert = engine.issue_once(
                 course_id=profile.course_id,
@@ -1848,6 +1899,25 @@ def create_app() -> Flask:
                 }
             ), 503
 
+        # Archivar en Blob para que el certificado sobreviva entre
+        # instancias y redespliegues.
+        if _cert_blob_enabled():
+            try:
+                client = _cert_blob_client()
+                client.put(
+                    _cert_blob_path(profile.course_id),
+                    json.dumps(
+                        cert.to_dict(), ensure_ascii=False
+                    ).encode("utf-8"),
+                    access="private",
+                    content_type="application/json",
+                    overwrite=True,
+                )
+            except Exception:
+                app.logger.exception(
+                    "No se pudo archivar el certificado en Blob"
+                )
+
         return jsonify(
             {
                 "ok": True,
@@ -1920,6 +1990,37 @@ def create_app() -> Flask:
             platform=course_data.get("platform", "Zajuna"),
             source=course_data.get("source", ""),
             cert=api_snapshot()["certificate"],
+        )
+
+    @app.get("/mi-certificado")
+    def my_certificate_page():
+        engine = CertificateEngine(certificates_root())
+        profile = ProfileEngine(profile_path()).load()
+        cert = _load_issued(engine, profile.course_id)
+
+        if not cert or not cert.get("certificate_id"):
+            return render_template(
+                "gated.html",
+                target="/mi-certificado",
+            ), 404
+
+        course_data = course()
+        return render_template(
+            "certificate.html",
+            learner=course_data.get("learner", "Aprendiz VIDA"),
+            dedication=course_data.get(
+                "dedication",
+                "Dedicatoria del aprendiz.",
+            ),
+            course=course_data.get(
+                "title",
+                "Curso SENA",
+            ),
+            provider=course_data.get("provider", "SENA"),
+            hours=course_data.get("hours", 48),
+            platform=course_data.get("platform", "Zajuna"),
+            source=course_data.get("source", ""),
+            cert=cert,
         )
 
     @app.get("/api/progress/<vid>")

@@ -301,7 +301,12 @@ class PGConnection:
         if cur.description is None:
             return _Result([])
 
-        cols = [d.name for d in cur.description]
+        cols = []
+        for d in cur.description:
+            if isinstance(d, (tuple, list)):
+                cols.append(d[0])
+            else:
+                cols.append(getattr(d, "name", d[0]))
         rows = cur.fetchall() or []
         return _Result(
             [Row(dict(zip(cols, r))) for r in rows]
