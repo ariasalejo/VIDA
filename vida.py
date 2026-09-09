@@ -2098,6 +2098,62 @@ def create_app() -> Flask:
         })
 
 
+    @app.get("/api/user/profile")
+    def api_user_profile():
+        """Compatibilidad para clientes que solicitan /api/user/profile."""
+        uid = current_user_id()
+        connection = conn()
+
+        try:
+            row = connection.execute(
+                """
+                SELECT user_id, kind, username, display_name,
+                       full_name, cedula, created_at
+                FROM users
+                WHERE user_id = ?
+                """,
+                (uid,),
+            ).fetchone()
+        finally:
+            connection.close()
+
+        if row is None:
+            return jsonify(
+                {
+                    "ok": False,
+                    "error": "Perfil no encontrado.",
+                }
+            ), 404
+
+        display_name = str(
+            row.get("display_name", "") or ""
+        ).strip()
+
+        full_name = str(
+            row.get("full_name", "") or ""
+        ).strip()
+
+        nombre = (
+            display_name
+            or decrypt_profile_value(full_name)
+            or "Invitado"
+        )
+
+        return jsonify(
+            {
+                "ok": True,
+                "nombre": nombre,
+                "user": {
+                    "user_id": row.get("user_id"),
+                    "username": row.get("username"),
+                    "kind": row.get("kind"),
+                    "display_name": display_name,
+                    "profile": profile_payload(row),
+                },
+            }
+        )
+
+
     @app.patch("/api/profile")
     def api_update_profile():
         """Actualiza el perfil identificable del aprendiz (nombre y cédula)."""
