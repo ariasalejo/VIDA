@@ -20,6 +20,7 @@ from __future__ import annotations
 import os
 import re
 import ssl
+import threading
 from urllib.parse import urlparse, unquote
 
 try:
@@ -257,23 +258,20 @@ def _connect() -> "PGConnection":
     return PGConnection(raw)
 
 
-_pg_connection = None
-_schema_applied = False
+_pg_local = threading.local()
 
 
 def pg_conn() -> "PGConnection":
-    """Conexión Postgres compartida en el proceso (reutilizable en Lambda)."""
-    global _pg_connection, _schema_applied
+    """Conexión Postgres aislada por hilo para evitar compartir sockets."""
+    connection = getattr(_pg_local, "connection", None)
 
-    if _pg_connection is None:
-        _pg_connection = _connect()
+    if connection is None:
+        connection = _connect()
+        connection.executescript(REMOTE_SCHEMA)
+        connection.commit()
+        _pg_local.connection = connection
 
-    if not _schema_applied:
-        _pg_connection.executescript(REMOTE_SCHEMA)
-        _pg_connection.commit()
-        _schema_applied = True
-
-    return _pg_connection
+    return connection
 
 
 class PGConnection:
@@ -288,11 +286,12 @@ class PGConnection:
     # Internos
     # ------------------------------------------------------------------
     def _reconnect(self) -> None:
-        global _pg_connection
         fresh = _connect()
+        fresh.executescript(REMOTE_SCHEMA)
+        fresh.commit()
         self._raw = fresh._raw
         self._tx = False
-        _pg_connection = self
+        _pg_local.connection = self
 
     def _run(self, sql: str, params: tuple | list | None):
         pg = _pg8000

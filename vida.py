@@ -115,8 +115,8 @@ def profile_payload(row) -> dict:
     Devuelve únicamente si está completo, qué campos hay y una máscara
     de la cédula (últimos 4 dígitos) para confirmación visual segura.
     """
-    full_name = str(row["full_name"] or "").strip() if row else ""
-    cedula = str(row["cedula"] or "").strip() if row else ""
+    full_name = str(row.get("full_name", "") or "").strip() if row else ""
+    cedula = str(row.get("cedula", "") or "").strip() if row else ""
     has_full = bool(full_name)
     has_ced = bool(cedula)
     return {
@@ -2069,7 +2069,7 @@ def create_app() -> Flask:
             kind = session.get("user_kind", "guest")
             connection.execute(
                 """
-                INSERT INTO users
+                INSERT OR IGNORE INTO users
                 (user_id, kind, display_name)
                 VALUES (?, ?, ?)
                 """,
@@ -3022,7 +3022,7 @@ def create_app() -> Flask:
     @app.post("/api/progress/<vid>")
     def set_video_progress(vid: str):
         payload = request.get_json(silent=True) or {}
-    
+
         try:
             position = float(payload.get("position", 0))
             duration = float(payload.get("duration", 0))
@@ -3033,69 +3033,49 @@ def create_app() -> Flask:
                     "error": "position o duration inválidos",
                 }
             ), 400
-    
+
         completed = int(bool(payload.get("completed", False)))
-    
+
         connection = conn()
         cid = active_course_id()
         uid = current_user_id()
-    
+
         try:
-            updated = connection.execute(
+            connection.execute(
                 """
-                UPDATE video_progress
-                SET position = ?,
-                    duration = ?,
-                    completed = ?,
-                    updated_at = CURRENT_TIMESTAMP
-                WHERE user_id = ?
-                  AND video_id = ?
-                  AND course_id = ?
-                """,
-                (
+                INSERT INTO video_progress (
+                    user_id,
+                    video_id,
+                    course_id,
                     position,
                     duration,
-                    completed,
+                    completed
+                )
+                VALUES (?, ?, ?, ?, ?, ?)
+                ON CONFLICT(user_id, video_id, course_id)
+                DO UPDATE SET
+                    position = excluded.position,
+                    duration = excluded.duration,
+                    completed = excluded.completed,
+                    updated_at = CURRENT_TIMESTAMP
+                """,
+                (
                     uid,
                     vid,
                     cid,
+                    position,
+                    duration,
+                    completed,
                 ),
             )
-    
-            rowcount = getattr(updated, "rowcount", 0) or 0
-    
-            if rowcount == 0:
-                connection.execute(
-                    """
-                    INSERT INTO video_progress (
-                        user_id,
-                        video_id,
-                        course_id,
-                        position,
-                        duration,
-                        completed
-                    )
-                    VALUES (?, ?, ?, ?, ?, ?)
-                    """,
-                    (
-                        uid,
-                        vid,
-                        cid,
-                        position,
-                        duration,
-                        completed,
-                    ),
-                )
-    
+
             connection.commit()
-    
         except Exception:
             connection.rollback()
             raise
-    
         finally:
             connection.close()
-    
+
         return jsonify(
             {
                 "ok": True,
@@ -3106,6 +3086,8 @@ def create_app() -> Flask:
                 "completed": completed,
             }
         )
+
+
     @app.post("/api/item/<item_id>")
     def set_item(item_id: str):
         payload = request.get_json(silent=True) or {}
