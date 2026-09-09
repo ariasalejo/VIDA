@@ -3194,26 +3194,111 @@ def create_app() -> Flask:
             }
         ), 201
 
+    def _vercel_blob_find_file(
+        activity_id: str,
+        name: str,
+    ):
+        """Busca el archivo actual o uno histórico del usuario."""
+        client = _vercel_blob_client()
+
+        current_path = (
+            _vercel_blob_prefix(activity_id)
+            + name
+        )
+
+        try:
+            result = client.get(
+                current_path,
+                access="private",
+            )
+            if (
+                result is not None
+                and result.status_code == 200
+                and result.stream is not None
+            ):
+                return result
+        except Exception:
+            pass
+
+        uid = str(current_user_id())
+        cid = str(active_course_id())
+        cursor = None
+
+        while True:
+            page = client.list_objects(
+                prefix="vida/evidence/",
+                limit=1000,
+                cursor=cursor,
+            )
+
+            for blob in page.blobs:
+                pathname = blob.pathname
+
+                if not pathname.endswith(".json"):
+                    continue
+
+                try:
+                    payload = json.loads(
+                        _vercel_blob_read(pathname).decode("utf-8")
+                    )
+                except (
+                    OSError,
+                    ValueError,
+                    UnicodeDecodeError,
+                ):
+                    continue
+
+                if not isinstance(payload, dict):
+                    continue
+
+                context = payload.get("context") or {}
+
+                if (
+                    str(context.get("user_id", "")) != uid
+                    or str(context.get("course_id", "")) != cid
+                    or str(context.get("activity_id", "")) != str(activity_id)
+                    or str(context.get("file", "")) != str(name)
+                ):
+                    continue
+
+                historical_path = (
+                    pathname.rsplit("/", 1)[0]
+                    + "/"
+                    + name
+                )
+
+                try:
+                    result = client.get(
+                        historical_path,
+                        access="private",
+                    )
+                    if (
+                        result is not None
+                        and result.status_code == 200
+                        and result.stream is not None
+                    ):
+                        return result
+                except Exception:
+                    continue
+
+            if not page.has_more:
+                break
+
+            cursor = page.cursor
+
+        return None
+
+
     @app.get("/media/evidence/<activity_id>/<path:name>")
     def media_evidence(
         activity_id: str,
         name: str,
     ):
         if _vercel_blob_enabled():
-            pathname = (
-                _vercel_blob_prefix(
-                    activity_id
-                )
-                + name
-            )
-
             try:
-                result = (
-                    _vercel_blob_client()
-                    .get(
-                        pathname,
-                        access="private",
-                    )
+                result = _vercel_blob_find_file(
+                    activity_id,
+                    name,
                 )
 
             except Exception:
