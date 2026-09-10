@@ -14,7 +14,11 @@ import subprocess
 import sys
 import threading
 
-from piper import PiperVoice
+try:
+    from piper import PiperVoice
+except ImportError:
+    PiperVoice = None
+    print("⚠️ Piper TTS no disponible (pip install piper-tts)")
 import webbrowser
 from datetime import datetime, timezone
 from pathlib import Path
@@ -4877,13 +4881,3 @@ def main() -> None:
 if __name__ == "__main__":
     main()
 
-@app.route('/descargar-certificado/<clave>')
-def descargar_certificado(clave):
-    cert = get_certificado(clave)
-    if not cert:
-        return jsonify({"error": "Certificado no encontrado"}), 404
-    # Generar archivo PDF o texto (ejemplo simple)
-    from flask import send_file, make_response
-    import io
-    # Aquí se puede generar PDF, por ahora devolvemos un JSON con los datos
-    return jsonify(cert)
