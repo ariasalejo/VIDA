@@ -60,3 +60,4 @@ media/temp/*
 
 # Vercel
 .vercel
+voices/
