@@ -26,6 +26,8 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
+import vida_store
+
 from vida_engines import (
     accounts,
     CourseEngine,
@@ -378,6 +380,9 @@ def register_course(manifest: dict, activate: bool = True) -> str:
     return cid
 
 
+_RESTORED_PG = False
+
+
 def conn() -> sqlite3.Connection:
     ensure_dirs()
 
@@ -421,6 +426,12 @@ def conn() -> sqlite3.Connection:
     _migrate_existing_db(connection)
 
     connection.commit()
+
+    global _RESTORED_PG
+    if vida_store.enabled() and not _RESTORED_PG:
+        vida_store.restore(connection)
+        _RESTORED_PG = True
+
     return connection
 
 
@@ -1261,6 +1272,14 @@ def create_app() -> Flask:
                 }
             ), 503
 
+        try:
+            vida_store.put_kv(
+                f"cert:{profile.course_id}",
+                cert.to_dict(),
+            )
+        except Exception:
+            pass
+
         return jsonify(
             {
                 "ok": True,
@@ -1431,6 +1450,8 @@ def create_app() -> Flask:
         connection.commit()
         connection.close()
 
+        vida_store.upsert_video(vid, cid, position, duration, completed)
+
         return jsonify(
             {
                 "ok": True,
@@ -1478,6 +1499,8 @@ def create_app() -> Flask:
         connection.commit()
         connection.close()
 
+        vida_store.upsert_item(item_id, cid, completed)
+
         return jsonify(
             {
                 "ok": True,
@@ -1524,29 +1547,41 @@ def create_app() -> Flask:
 
         connection = conn()
         cid = active_course_id()
+        created_at = datetime.now(timezone.utc).isoformat()
+        study_id = vida_store.study_stable_id(
+            cid, kind, ref_id, minutes, note
+        )
 
         connection.execute(
             """
             INSERT INTO study_log (
+                id,
                 course_id,
                 kind,
                 ref_id,
                 minutes,
-                note
+                note,
+                created_at
             )
-            VALUES (?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
             (
+                study_id,
                 cid,
                 kind,
                 ref_id,
                 minutes,
                 note,
+                created_at,
             ),
         )
 
         connection.commit()
         connection.close()
+
+        vida_store.add_study(
+            study_id, cid, kind, ref_id, minutes, note, created_at
+        )
 
         return jsonify({"ok": True})
 
@@ -1748,6 +1783,8 @@ def create_app() -> Flask:
                 }
             ), 503
 
+        vida_store.put_file(activity_id, stored_name, path.read_bytes())
+
         from vida_engines import EvidenceEngine
 
         evidence = EvidenceEngine(
@@ -1768,6 +1805,16 @@ def create_app() -> Flask:
             },
         )
 
+        try:
+            ev_path = evidence_root() / "evidence.json"
+            if ev_path.exists():
+                vida_store.put_kv(
+                    "evidence.json",
+                    json.loads(ev_path.read_text(encoding="utf-8")),
+                )
+        except Exception:
+            pass
+
         connection = conn()
         cid = active_course_id()
         connection.execute(
@@ -1782,6 +1829,8 @@ def create_app() -> Flask:
         )
         connection.commit()
         connection.close()
+
+        vida_store.upsert_item(activity_id, cid, 1)
 
         return jsonify(
             {
