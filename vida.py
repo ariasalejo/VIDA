@@ -873,7 +873,7 @@ def create_app() -> Flask:
 
     @app.get("/acceso")
     def acceso():
-        if _logged_in() or _is_guest():
+        if _logged_in():
             return redirect("/")
         return render_template(
             "auth.html",
