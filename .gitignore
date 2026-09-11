@@ -37,3 +37,6 @@ os
 *.ps
 .vercel
 .env*
+
+# Backups y paginas en obra
+portafolio.html

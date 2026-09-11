@@ -8,28 +8,16 @@ import secrets
 import sqlite3
 import tempfile
 import webbrowser
-from datetime import datetime, timedelta, timezone
-from functools import wraps
+from datetime import datetime, timezone
 from pathlib import Path
 from secrets import compare_digest
 
-from flask import (
-    Flask,
-    jsonify,
-    redirect,
-    render_template,
-    request,
-    send_from_directory,
-    session,
-)
+from flask import Flask, jsonify, render_template, request, send_from_directory
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
-import vida_store
-
 from vida_engines import (
-    accounts,
     CourseEngine,
     ProgressEngine,
     IntelligenceEngine,
@@ -380,9 +368,6 @@ def register_course(manifest: dict, activate: bool = True) -> str:
     return cid
 
 
-_RESTORED_PG = False
-
-
 def conn() -> sqlite3.Connection:
     ensure_dirs()
 
@@ -426,12 +411,6 @@ def conn() -> sqlite3.Connection:
     _migrate_existing_db(connection)
 
     connection.commit()
-
-    global _RESTORED_PG
-    if vida_store.enabled() and not _RESTORED_PG:
-        vida_store.restore(connection)
-        _RESTORED_PG = True
-
     return connection
 
 
@@ -763,87 +742,9 @@ def _cert_allowed(req: request) -> bool:
         or req.args.get("clave")
         or req.args.get("token")
     )
-    if supplied and compare_digest(str(supplied).strip(), _cert_token()):
-        session["vida_cert_ok"] = True
-        session.permanent = True
-        return True
-    return bool(session.get("vida_cert_ok"))
-
-
-def _logged_in() -> dict | None:
-    uid = session.get("uid")
-    if not uid:
-        return None
-    try:
-        return accounts.get_user_by_id(str(uid))
-    except Exception:
-        return None
-
-
-def _is_guest() -> bool:
-    return bool(session.get("guest"))
-
-
-def _learner_slug() -> str:
-    return accounts.slugify(course().get("learner", "Aprendiz VIDA"))
-
-
-def _needs_account(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        if not _logged_in():
-            return jsonify(
-                {"ok": False, "error": "Requiere iniciar sesión."}
-            ), 401
-        return func(*args, **kwargs)
-
-    return wrapper
-
-
-def _session_context() -> dict:
-    user = _logged_in()
-    guest = _is_guest()
-    return {
-        "authed": bool(user),
-        "guest": guest,
-        "user": user,
-        "slug": _learner_slug() if (user or guest) else None,
-    }
-
-
-def _public_profile_data() -> dict:
-    course_data = course()
-    state = engine_state()
-    cert = state["certificate"]
-    return {
-        "slug": _learner_slug(),
-        "learner": course_data.get("learner", "Aprendiz VIDA"),
-        "course": course_data.get("title", "Curso SENA"),
-        "provider": course_data.get("provider", "SENA"),
-        "platform": course_data.get("platform", "Zajuna"),
-        "hours": course_data.get("hours", 48),
-        "dedication": course_data.get("dedication", ""),
-        "overall": state["overall"],
-        "mastery": state["mastery"],
-        "evidence_count": state["evidence_count"],
-        "learning_score": state["learning_score"],
-        "video_completed": state["completed_videos"],
-        "video_total": state["video_count"],
-        "activity_completed": state["completed_activities"],
-        "activity_total": state["activity_count"],
-        "concept_verified": state["verified_concepts"],
-        "concept_total": state["concept_count"],
-        "certificate": {
-            "issued": cert.get("issued", False),
-            "certificate_id": cert.get("certificate_id"),
-            "status": cert.get("status"),
-            "verification_url": (
-                f"/verificar/{cert.get('certificate_id')}"
-                if cert.get("certificate_id")
-                else None
-            ),
-        },
-    }
+    if not supplied:
+        return False
+    return compare_digest(str(supplied).strip(), _cert_token())
 
 
 def api_snapshot() -> dict:
@@ -858,134 +759,11 @@ def create_app() -> Flask:
         static_url_path="/static",
     )
 
-    app.secret_key = (
-        os.environ.get("VIDA_SECRET_KEY")
-        or _cert_token()
-        or secrets.token_urlsafe(32)
-    )
-    app.permanent_session_lifetime = timedelta(days=7)
-    app.config.update(
-        SESSION_COOKIE_HTTPONLY=True,
-        SESSION_COOKIE_SAMESITE="Lax",
-        SESSION_COOKIE_SECURE="VERCEL" in os.environ
-        or "NOW_REGION" in os.environ
-        or runtime_root() is not DATA,
-    )
-
     @app.get("/")
     def home():
-        if _logged_in() or _is_guest():
-            return render_template(
-                "index_pro.html",
-                course=course(),
-                ctx=_session_context(),
-            )
         return render_template(
-            "auth.html",
-            slug=_learner_slug(),
-        )
-
-    @app.get("/acceso")
-    def acceso():
-        if _logged_in():
-            return redirect("/")
-        return redirect("/")
-
-    @app.get("/acceso/guest")
-    def acceso_guest():
-        session["guest"] = True
-        session.permanent = True
-        return redirect("/")
-
-    @app.post("/api/auth/signup")
-    def auth_signup():
-        payload = request.get_json(silent=True) or {}
-        try:
-            user = accounts.create_user(
-                payload.get("email", ""),
-                payload.get("name", ""),
-                payload.get("password", ""),
-            )
-        except accounts.AccountError as exc:
-            return jsonify({"ok": False, "error": str(exc)}), 400
-        session.clear()
-        session["uid"] = user["id"]
-        session.permanent = True
-        return jsonify({"ok": True, "user": user}), 201
-
-    @app.post("/api/auth/login")
-    def auth_login():
-        payload = request.get_json(silent=True) or {}
-        if not payload.get("email") or not payload.get("password"):
-            return jsonify(
-                {"ok": False, "error": "Correo y contraseña son obligatorios."}
-            ), 400
-        try:
-            user = accounts.login(
-                payload.get("email", ""),
-                payload.get("password", ""),
-            )
-        except accounts.AccountError as exc:
-            return jsonify({"ok": False, "error": str(exc)}), 401
-        session.clear()
-        session["uid"] = user["id"]
-        session.permanent = True
-        return jsonify({"ok": True, "user": user})
-
-    @app.post("/api/auth/logout")
-    def auth_logout():
-        session.clear()
-        return jsonify({"ok": True})
-
-    @app.post("/api/auth/reset-password")
-    def auth_reset_password():
-        payload = request.get_json(silent=True) or {}
-        key = (
-            request.headers.get("X-Vida-Key")
-            or request.headers.get("X-Cert-Key")
-            or payload.get("clave")
-            or payload.get("token")
-        )
-        expected = os.environ.get("VIDA_CERT_KEY", "").strip()
-        if not expected or key != expected:
-            return jsonify({"ok": False, "error": "Clave del sistema requerida."}), 403
-        email = (payload.get("email") or "").strip().lower()
-        new_pass = payload.get("password", "")
-        if not email or not new_pass:
-            return jsonify({"ok": False, "error": "Correo y contraseña son obligatorios."}), 400
-        if len(new_pass) < 6:
-            return jsonify({"ok": False, "error": "La contraseña debe tener al menos 6 caracteres."}), 400
-        user = accounts.get_user(email)
-        if not user:
-            return jsonify({"ok": False, "error": "No existe una cuenta con ese correo."}), 404
-        accounts.change_password(user["id"], new_pass)
-        return jsonify({"ok": True, "message": "Contraseña actualizada. Ya puedes iniciar sesión."})
-
-    @app.get("/api/auth/me")
-    def auth_me():
-        return jsonify(_session_context())
-
-    @app.get("/api/public/profile")
-    def public_profile():
-        return jsonify(_public_profile_data())
-
-    @app.get("/perfil")
-    def perfil_redirect():
-        return redirect(f"/perfil/{_learner_slug()}")
-
-    @app.get("/perfil/<slug>")
-    def perfil_page(slug: str):
-        data = _public_profile_data()
-        if data["slug"] != slug:
-            return render_template(
-                "perfil.html",
-                data={},
-                not_found=True,
-            ), 404
-        return render_template(
-            "perfil.html",
-            data=data,
-            not_found=False,
+            "index_pro.html",
+            course=course(),
         )
 
     @app.get("/api/dashboard")
@@ -1036,7 +814,6 @@ def create_app() -> Flask:
         )
 
     @app.post("/api/courses")
-    @_needs_account
     def create_course():
         if not _cert_allowed(request):
             return jsonify(
@@ -1055,7 +832,7 @@ def create_app() -> Flask:
                 "ok": True,
                 "active": active_course_id(),
                 "course_id": cid,
-                "courses": courses_index().get_json(),
+                "courses": courses_index()[0].get_json(),
                 "state": engine_state(),
             }
         ), 201
@@ -1296,14 +1073,6 @@ def create_app() -> Flask:
                 }
             ), 503
 
-        try:
-            vida_store.put_kv(
-                f"cert:{profile.course_id}",
-                cert.to_dict(),
-            )
-        except Exception:
-            pass
-
         return jsonify(
             {
                 "ok": True,
@@ -1422,7 +1191,6 @@ def create_app() -> Flask:
         )
 
     @app.post("/api/progress/<vid>")
-    @_needs_account
     def set_video_progress(vid: str):
         payload = request.get_json(silent=True) or {}
 
@@ -1474,8 +1242,6 @@ def create_app() -> Flask:
         connection.commit()
         connection.close()
 
-        vida_store.upsert_video(vid, cid, position, duration, completed)
-
         return jsonify(
             {
                 "ok": True,
@@ -1488,7 +1254,6 @@ def create_app() -> Flask:
         )
 
     @app.post("/api/item/<item_id>")
-    @_needs_account
     def set_item(item_id: str):
         payload = request.get_json(silent=True) or {}
 
@@ -1523,8 +1288,6 @@ def create_app() -> Flask:
         connection.commit()
         connection.close()
 
-        vida_store.upsert_item(item_id, cid, completed)
-
         return jsonify(
             {
                 "ok": True,
@@ -1535,7 +1298,6 @@ def create_app() -> Flask:
         )
 
     @app.post("/api/study")
-    @_needs_account
     def study():
         payload = request.get_json(silent=True) or {}
 
@@ -1571,41 +1333,29 @@ def create_app() -> Flask:
 
         connection = conn()
         cid = active_course_id()
-        created_at = datetime.now(timezone.utc).isoformat()
-        study_id = vida_store.study_stable_id(
-            cid, kind, ref_id, minutes, note
-        )
 
         connection.execute(
             """
             INSERT INTO study_log (
-                id,
                 course_id,
                 kind,
                 ref_id,
                 minutes,
-                note,
-                created_at
+                note
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?)
             """,
             (
-                study_id,
                 cid,
                 kind,
                 ref_id,
                 minutes,
                 note,
-                created_at,
             ),
         )
 
         connection.commit()
         connection.close()
-
-        vida_store.add_study(
-            study_id, cid, kind, ref_id, minutes, note, created_at
-        )
 
         return jsonify({"ok": True})
 
@@ -1736,7 +1486,6 @@ def create_app() -> Flask:
         return jsonify(result)
 
     @app.post("/api/evidence/<activity_id>")
-    @_needs_account
     def upload_evidence(activity_id: str):
         from werkzeug.utils import secure_filename
 
@@ -1807,8 +1556,6 @@ def create_app() -> Flask:
                 }
             ), 503
 
-        vida_store.put_file(activity_id, stored_name, path.read_bytes())
-
         from vida_engines import EvidenceEngine
 
         evidence = EvidenceEngine(
@@ -1829,16 +1576,6 @@ def create_app() -> Flask:
             },
         )
 
-        try:
-            ev_path = evidence_root() / "evidence.json"
-            if ev_path.exists():
-                vida_store.put_kv(
-                    "evidence.json",
-                    json.loads(ev_path.read_text(encoding="utf-8")),
-                )
-        except Exception:
-            pass
-
         connection = conn()
         cid = active_course_id()
         connection.execute(
@@ -1853,8 +1590,6 @@ def create_app() -> Flask:
         )
         connection.commit()
         connection.close()
-
-        vida_store.upsert_item(activity_id, cid, 1)
 
         return jsonify(
             {

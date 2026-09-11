@@ -37,6 +37,9 @@ button.cta:disabled{opacity:.55;cursor:wait}
 .mini a.share{background:rgba(212,175,55,.07);border-color:rgba(212,175,55,.4);color:#f0c867}
 .back{margin-top:22px;text-align:center}
 .back a{color:#8aa8ba;font-size:12.5px;text-decoration:none}
+#welcomeBtn{margin-top:16px;padding:10px 18px;border:1px solid rgba(69,230,255,.4);border-radius:11px;background:rgba(69,230,255,.08);color:#45e6ff;font-size:12.5px;font-weight:700;cursor:pointer;transition:.15s}
+#welcomeBtn:hover{background:rgba(69,230,255,.16)}
+#welcomeBtn.speaking{background:linear-gradient(135deg,#2e8bff,#45e6ff);color:#021018;border-color:transparent}
 </style>
 </head>
 <body>
@@ -45,6 +48,7 @@ button.cta:disabled{opacity:.55;cursor:wait}
   <div class="headline">
     <h1>Bienvenido a tu centro de aprendizaje</h1>
     <p>Observa, verifica, comprende, demuestra y avanza. Accede con tu cuenta o continúa como invitado.</p>
+    <button id="welcomeBtn" type="button" title="Escuchar bienvenida">🔊 Escuchar bienvenida</button>
   </div>
 
   <div class="card">
@@ -122,6 +126,72 @@ button.cta:disabled{opacity:.55;cursor:wait}
 
   forms.login.addEventListener("submit", send("login", "/api/auth/login"));
   forms.signup.addEventListener("submit", send("signup", "/api/auth/signup"));
+
+  /* ---------- BIENVENIDA POR VOZ ---------- */
+  var WELCOME = "¡Hola! Gracias, SENA, por tu ayuda. Bienvenido al centro de mando Vida. Observa, verifica, comprende, demuestra y avanza.";
+
+  var VOZ_FEMENINA = /laura|helena|sabina|paulina|m[oó]nica|camila|marisol|luci|ximena|valentina|isabella|sof[aí]a|elena|paloma|palmira|samantha|karina|nuria|silvia|beatriz|marta|olga|andrea|daniela|mar[íi]a|google español|google espa|milena|alicia|emma|selma|rosa|tessa|linda|allison|aria|siri|eloquence|neural|natural|online|premium/i;
+  var VOZ_MASCULINA = /jorge|pedro|carlos|lucas|pablo|diego|david|miguel|juan|javier|antonio|raul|ram[oó]n|alberto|fernando|andres|andr[eé]s|thomas|alex|male|masculino|hombre/i;
+  var vidaVoice = null;
+
+  function pickVoice() {
+    if (!("speechSynthesis" in window)) return null;
+    var vs = speechSynthesis.getVoices();
+    if (!vs.length) return null;
+    var es = vs.filter(function (v) { return /^(es)(-|_|$)/i.test(v.lang || ""); });
+    var pool = es.length ? es : vs;
+    var female = pool.filter(function (v) { return VOZ_FEMENINA.test(v.name) && !VOZ_MASCULINA.test(v.name); });
+    var neutral = pool.filter(function (v) { return !VOZ_MASCULINA.test(v.name); });
+    vidaVoice = female[0] || neutral[0] || pool[0] || null;
+    return vidaVoice;
+  }
+  if ("speechSynthesis" in window) {
+    speechSynthesis.onvoiceschanged = function () { pickVoice(); };
+  }
+
+  function speak() {
+    var btn = document.getElementById("welcomeBtn");
+    if (!("speechSynthesis" in window)) return;
+    speechSynthesis.cancel();
+    var u = new SpeechSynthesisUtterance(WELCOME);
+    var v = pickVoice() || vidaVoice;
+    if (v) { u.voice = v; u.lang = v.lang || "es-CO"; } else { u.lang = "es-CO"; }
+    u.rate = 0.92;
+    u.pitch = 1.08;
+    u.onstart = function () {
+      if (btn) { btn.classList.add("speaking"); btn.textContent = "🔊 Sonando…"; }
+    };
+    u.onend = function () {
+      if (btn) { btn.classList.remove("speaking"); btn.textContent = "🔊 Escuchar bienvenida"; }
+    };
+    u.onerror = function () {
+      if (btn) { btn.classList.remove("speaking"); btn.textContent = "🔊 Escuchar bienvenida"; }
+    };
+    speechSynthesis.speak(u);
+  }
+
+  var btnW = document.getElementById("welcomeBtn");
+  if (btnW) {
+    btnW.addEventListener("click", function () {
+      speak();
+      document.title = "🔊 VIDA · Acceso";
+      setTimeout(function () { document.title = "VIDA · Acceso"; }, 2000);
+    });
+  }
+
+  /* Sonar automaticamente con la primera interaccion (los navegadores lo permiten). */
+  function onFirstInteract() {
+    if ("speechSynthesis" in window && !localStorage.getItem("vida_welcome_played")) {
+      setTimeout(function () {
+        speak();
+        try { localStorage.setItem("vida_welcome_played", "1"); } catch (_) {}
+      }, 600);
+    }
+    document.removeEventListener("click", onFirstInteract);
+    document.removeEventListener("keydown", onFirstInteract);
+  }
+  document.addEventListener("click", onFirstInteract);
+  document.addEventListener("keydown", onFirstInteract);
 })();
 </script>
 </body>
