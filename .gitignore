@@ -34,3 +34,5 @@ media/materials/*
 # Artefactos accidentales
 os
 *.ps
+.vercel
+.env*

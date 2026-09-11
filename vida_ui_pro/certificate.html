@@ -66,6 +66,18 @@
   </footer>
 </main>
 
+<section class="cert-actions">
+  <button class="cert-btn primary" id="downloadCert" type="button"
+    data-vid="{{ cert.certificate_id if cert and cert.certificate_id else '' }}"
+    {% if not cert or not cert.certificate_id %}disabled{% endif %}>
+    ⬇ Descargar certificado
+  </button>
+  <button class="cert-btn ghost" type="button" onclick="window.print()">🖨 Imprimir / Guardar PDF</button>
+</section>
+{% if not cert or not cert.certificate_id %}
+<div class="cert-note">⊘ El certificado se habilita cuando el motor lo emita sin errores.</div>
+{% endif %}
+
 <section class="dedication">
   <div class="dedi-or">❦</div>
   <div class="dedi-kicker">AGRADECIMIENTO</div>
@@ -114,6 +126,63 @@
   if ("speechSynthesis" in window && speechSynthesis.addEventListener) {
     speechSynthesis.addEventListener("voiceschanged", function () {});
   }
+})();
+
+(function () {
+  var btn = document.getElementById("downloadCert");
+  if (!btn) return;
+
+  function descargarCertificado() {
+    if (btn.disabled) return;
+    btn.disabled = true;
+    var original = btn.textContent;
+    btn.textContent = "Preparando…";
+    var ok = false;
+    try {
+      var css = "";
+      try {
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", "/static/style_cert.css", false);
+        xhr.send();
+        if (xhr.status === 200) css = xhr.responseText;
+      } catch (_) {}
+
+      var certEl = document.querySelector(".certificate");
+      if (!certEl) throw new Error("certificado no disponible");
+
+      var piezas = [certEl.outerHTML.replace(/href="\/verificar\//g, 'href="' + location.origin + '/verificar/')];
+      var dedi = document.querySelector(".dedication");
+      if (dedi) piezas.push(dedi.outerHTML);
+      var gracias = document.querySelector(".thanks-note");
+      if (gracias) piezas.push(gracias.outerHTML);
+
+      var html = "<!DOCTYPE html>\n<html lang=\"es\">\n<head>\n" +
+        "<meta charset=\"utf-8\">\n" +
+        "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n" +
+        "<title>" + document.title + "</title>\n" +
+        (css ? "<style>\n" + css + "\n</style>\n" :
+          "<link rel=\"stylesheet\" href=\"/static/style_cert.css\">\n") +
+        "</head>\n<body>\n" + piezas.join("\n") + "\n</body>\n</html>";
+
+      var blob = new Blob([html], { type: "text/html;charset=utf-8" });
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      var vid = btn.getAttribute("data-vid") || "SENA";
+      a.download = "Certificado-VIDA-" + vid.split("-").pop().slice(0, 12) + ".html";
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1200);
+      ok = true;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = ok ? "✅ Certificado descargado" : original;
+      if (ok) {
+        setTimeout(function () { btn.textContent = original; }, 2500);
+      }
+    }
+  }
+
+  btn.addEventListener("click", descargarCertificado);
 })();
 </script>
 </body>

@@ -116,6 +116,39 @@ h1{
   font-family:Inter,system-ui,sans-serif;color:var(--muted);font-size:13.5px;line-height:1.7;
 }
 .thanks-note strong{color:var(--gold2);letter-spacing:.03em}
+
+/* ---------- Acciones del certificado ---------- */
+.cert-actions{
+  width:min(980px,100%);margin:26px auto 0;
+  display:flex;gap:12px;justify-content:center;flex-wrap:wrap;
+}
+.cert-btn{
+  font-family:Inter,system-ui,sans-serif;font-size:13px;font-weight:700;
+  border:0;border-radius:12px;padding:13px 22px;cursor:pointer;transition:.15s;
+}
+.cert-btn.primary{
+  background:linear-gradient(135deg,#d4af37,#f4d77f);color:#1a1403;
+  box-shadow:0 10px 30px rgba(212,175,55,.25);
+}
+.cert-btn.primary:hover:not(:disabled){filter:brightness(1.08)}
+.cert-btn.primary:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
+.cert-btn.ghost{
+  background:rgba(69,230,255,.07);color:var(--cyan);
+  border:1px solid rgba(69,230,255,.45);
+}
+.cert-btn.ghost:hover{background:rgba(69,230,255,.16)}
+.cert-note{
+  width:min(980px,100%);margin:14px auto 0;text-align:center;
+  font-family:Inter,system-ui,sans-serif;font-size:12.5px;color:#f0c867;
+}
+
+@media print{
+  body{padding:0;background:#fff}
+  .certificate{box-shadow:none;margin:0;width:100%}
+  .certificate,.certificate *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .cert-actions,.cert-note,.dedication,.thanks-note,.dedi-btn{display:none!important}
+}
+
 @media(max-width:720px){
   .certificate{padding:44px 22px 36px}
   h1{font-size:30px}

@@ -8,11 +8,18 @@ import secrets
 import sqlite3
 import tempfile
 import webbrowser
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from secrets import compare_digest
 
-from flask import Flask, jsonify, render_template, request, send_from_directory
+from flask import (
+    Flask,
+    jsonify,
+    render_template,
+    request,
+    send_from_directory,
+    session,
+)
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
@@ -742,9 +749,11 @@ def _cert_allowed(req: request) -> bool:
         or req.args.get("clave")
         or req.args.get("token")
     )
-    if not supplied:
-        return False
-    return compare_digest(str(supplied).strip(), _cert_token())
+    if supplied and compare_digest(str(supplied).strip(), _cert_token()):
+        session["vida_cert_ok"] = True
+        session.permanent = True
+        return True
+    return bool(session.get("vida_cert_ok"))
 
 
 def api_snapshot() -> dict:
@@ -757,6 +766,16 @@ def create_app() -> Flask:
         template_folder=str(ROOT / "vida_ui_pro"),
         static_folder=str(ROOT / "vida_ui_pro"),
         static_url_path="/static",
+    )
+
+    app.secret_key = _cert_token() or secrets.token_urlsafe(32)
+    app.permanent_session_lifetime = timedelta(days=7)
+    app.config.update(
+        SESSION_COOKIE_HTTPONLY=True,
+        SESSION_COOKIE_SAMESITE="Lax",
+        SESSION_COOKIE_SECURE="VERCEL" in os.environ
+        or "NOW_REGION" in os.environ
+        or runtime_root() is not DATA,
     )
 
     @app.get("/")
