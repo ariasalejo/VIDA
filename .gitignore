@@ -12,6 +12,7 @@ __pycache__/
 
 # Datos generados (base local, evidencias, eventos, informes)
 data/vida.db
+data/users.db
 data/.cert_token
 data/evidence/
 data/events/*.json

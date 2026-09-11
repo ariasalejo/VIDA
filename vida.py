@@ -1031,7 +1031,7 @@ def create_app() -> Flask:
                 "ok": True,
                 "active": active_course_id(),
                 "course_id": cid,
-                "courses": courses_index()[0].get_json(),
+                "courses": courses_index().get_json(),
                 "state": engine_state(),
             }
         ), 201
