@@ -40,3 +40,5 @@ os
 
 # Backups y paginas en obra
 portafolio.html
+*.BACKUP_*
+*.BACKUP*
