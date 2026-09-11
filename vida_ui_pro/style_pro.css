@@ -83,7 +83,6 @@ button{font-family:inherit}
 .user-menu button#logoutBtn:hover{background:rgba(251,113,133,.1)}
 .guest-badge{font-size:10.5px;letter-spacing:.16em;color:var(--gold2);border:1px solid rgba(212,175,55,.4);
   background:rgba(212,175,55,.08);padding:9px 12px;border-radius:11px;font-weight:800;white-space:nowrap}
-.login-link{color:var(--cyan)!important;border-color:rgba(69,230,255,.4)!important}
 .course-switch{display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.05em}
 .cs-label{color:var(--muted2);font-size:9px;letter-spacing:.18em}
 .course-switch select{
