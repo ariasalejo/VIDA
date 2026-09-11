@@ -7,6 +7,7 @@ let currentActivity = null;
 let actVideoTimer = null;
 let sharedVideoTimer = null;
 let videosMeta = null;
+let AUTH = { authed: false, guest: false, user: null, slug: "" };
 
 const MIME = {
   pdf: "📕 PDF", png: "🖼 Imagen", jpg: "🖼 Imagen", jpeg: "🖼 Imagen",
@@ -362,7 +363,43 @@ function router() {
 window.addEventListener("hashchange", router);
 
 /* ---------------- BOOT ---------------- */
+async function checkAuth() {
+  try { AUTH = await getJSON("/api/auth/me"); } catch (_) {}
+  if (!AUTH.authed && !AUTH.guest) { location.href = "/acceso"; return false; }
+  return true;
+}
+
+function initAuthUI() {
+  const ub = $("#userBtn");
+  if (ub) ub.addEventListener("click", (e) => {
+    const m = $("#userMenu");
+    if (m) m.hidden = !m.hidden;
+  });
+  document.addEventListener("click", (e) => {
+    const m = $("#userMenu");
+    if (m && !m.hidden && !(e.target.closest && e.target.closest(".userbox"))) m.hidden = true;
+  });
+  const sp = $("#shareProfile");
+  if (sp) sp.addEventListener("click", async () => {
+    const url = location.origin + (AUTH.slug ? "/perfil/" + AUTH.slug : "/perfil");
+    try { await navigator.clipboard.writeText(url); sp.textContent = "✅ Enlace copiado"; }
+    catch (_) { window.prompt("Enlace de tu perfil:", url); }
+    setTimeout(() => { sp.textContent = "📤 Compartir mi perfil"; }, 1800);
+  });
+  const lb = $("#logoutBtn");
+  if (lb) lb.addEventListener("click", async () => {
+    try { await fetch("/api/auth/logout", { method: "POST" }); } catch (_) {}
+    location.href = "/acceso";
+  });
+}
+
 async function load() {
+  if (!(await checkAuth())) return;
+  initAuthUI();
+  if (AUTH.guest) {
+    const cs = $("#courseSel"); if (cs) cs.disabled = true;
+    const sy = $("#sync"); if (sy) sy.disabled = true;
+  }
   course = await getJSON("/api/course");
   $("#heroTitle").textContent = course.title;
   const i = $("#chipInst"); if (i) i.textContent = "🏛 " + (course.provider || "") + " · " + (course.platform || "");
@@ -551,6 +588,7 @@ function initMediumVideo() {
 
 async function saveVideo(id, video, schedule) {
   if (!video.duration) return;
+  if (AUTH.guest) return;
   schedule(async () => {
     const completed = video.currentTime / video.duration >= 0.95 ? 1 : 0;
     try {
@@ -679,6 +717,7 @@ function initActivityVideo(activity) {
 
 function saveActivityVideo(id, video) {
   if (!video.duration) return;
+  if (AUTH.guest) return;
   if (actVideoTimer) { clearTimeout(actVideoTimer); }
   actVideoTimer = setTimeout(async () => {
     const completed = video.currentTime / video.duration >= 0.95 ? 1 : 0;
@@ -715,6 +754,7 @@ function initDropzone() {
 
 async function uploadEvidence(file) {
   const msg = $("#evMsg");
+  if (AUTH.guest) { msg.textContent = "🔒 Modo invitado: solo lectura."; return; }
   msg.textContent = "Subiendo " + esc(file.name) + "…";
   const form = new FormData();
   form.append("file", file);

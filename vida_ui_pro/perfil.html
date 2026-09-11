@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% if not_found %}Perfil no encontrado · VIDA{% else %}Perfil de {{ data.learner }} · VIDA{% endif %}</title>
+<style>
+:root{--gold:#d4af37;--gold2:#f4d77f;--cyan:#45e6ff;--green:#47e0b7;--text:#eef8ff;--muted:#8aa8ba;--line:#1b3d56}
+*{box-sizing:border-box;margin:0;padding:0}
+body{min-height:100vh;padding:36px 16px 60px;color:#eef8ff;font-family:Inter,system-ui,sans-serif;
+  background:radial-gradient(1100px 480px at 50% -12%,rgba(212,175,55,.12),transparent 55%),linear-gradient(180deg,#06111d,#03080f)}
+.wrap{width:min(760px,100%);margin:0 auto}
+.brand{text-align:center;letter-spacing:.28em;font-weight:900;font-size:12px;color:var(--cyan)}
+.card{margin-top:26px;border:1px solid rgba(212,175,55,.5);border-radius:26px;overflow:hidden;
+  background:linear-gradient(180deg,#0b1b2a,#060f19);box-shadow:0 35px 110px rgba(0,0,0,.55)}
+.banner{padding:38px 40px 30px;text-align:center;border-bottom:1px solid rgba(212,175,55,.25);
+  background:radial-gradient(420px 180px at 50% -30%,rgba(212,175,55,.18),transparent 60%)}
+.avatar{width:76px;height:76px;margin:0 auto;border-radius:50%;display:grid;place-items:center;font-size:28px;font-weight:900;color:#1a1403;
+  background:linear-gradient(135deg,#d4af37,#f4d77f);box-shadow:0 12px 40px rgba(212,175,55,.35)}
+h1{margin-top:18px;font-size:27px;font-weight:800}
+.course{margin-top:7px;color:var(--gold2);font-size:15px;font-weight:600}
+.meta{margin-top:9px;color:var(--muted);font-size:12.5px;letter-spacing:.05em}
+.chips{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:20px}
+.chip{padding:8px 14px;border-radius:999px;font-size:11px;letter-spacing:.12em;border:1px solid var(--line);color:#9cc3d6;background:#071522}
+.chip b{color:var(--gold2)}
+.body{padding:30px 40px 40px}
+.bars{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+.stat{border:1px solid var(--line);border-radius:16px;padding:18px;background:#071522}
+.stat b{font-size:28px;font-family:ui-monospace,monospace;color:var(--cyan)}
+.stat small{display:block;margin-top:4px;font-size:10px;letter-spacing:.16em;color:var(--muted)}
+.stat.video b{color:var(--gold2)}.stat.activity b{color:var(--gold2)}.stat.concept b{color:var(--green)}
+.bar{height:6px;border-radius:99px;background:#0c1e2e;margin-top:10px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#2e8bff,#45e6ff)}
+.section{margin-top:26px}
+.section h2{font-size:12px;letter-spacing:.22em;color:var(--muted);text-transform:uppercase;margin-bottom:12px}
+.cert{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;border:1px solid rgba(71,224,183,.35);border-radius:16px;padding:16px 18px;background:rgba(71,224,183,.05)}
+.cert.off{border-color:rgba(247,198,90,.35);background:rgba(247,198,90,.05)}
+.cert b{color:var(--green)}
+.cert.off b{color:var(--gold2)}
+.cert small{display:block;color:var(--muted);font-size:11px;margin-top:4px}
+.cta{display:inline-block;margin-top:14px;padding:11px 20px;border-radius:999px;text-decoration:none;font-size:12.5px;letter-spacing:.08em;border:1px solid rgba(69,230,255,.45);color:var(--cyan)}
+.cta:hover{background:rgba(69,230,255,.1)}
+.dedi{margin-top:20px;padding:20px;border:1px solid rgba(212,175,55,.4);border-radius:16px;font-style:italic;color:#f4eff2;line-height:1.7;font-size:14.5px;background:rgba(212,175,55,.05)}
+.foot{margin-top:24px;text-align:center;color:var(--muted);font-size:12px;line-height:1.7}
+.foot a{color:var(--cyan);text-decoration:none}
+.missing{padding:50px 30px;text-align:center}
+.missing .em{font-size:54px}
+.missing h1{font-size:22px;margin-top:14px}
+.missing p{color:var(--muted);font-size:13.5px;margin-top:10px}
+.missing a{display:inline-block;margin-top:20px;color:var(--cyan);text-decoration:none;border:1px solid rgba(69,230,255,.4);padding:11px 20px;border-radius:999px;font-size:13px}
+@media(max-width:600px){.banner,.body{padding:26px 20px}.bars{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">🧠 BLUMIX · VIDA</div>
+
+  {% if not_found %}
+  <div class="card">
+    <div class="missing">
+      <div class="em">🔍</div>
+      <h1>Perfil no encontrado</h1>
+      <p>El enlace compartido no corresponde a ningún perfil público de VIDA.</p>
+      <a href="/">Ir al panel VIDA</a>
+    </div>
+  </div>
+  {% else %}
+  <div class="card">
+    <div class="banner">
+      <div class="avatar">{{ data.learner[:1] }}</div>
+      <h1>{{ data.learner }}</h1>
+      <div class="course">{{ data.course }}</div>
+      <div class="meta">{{ data.provider }} · {{ data.platform }} · {{ data.hours }} horas</div>
+      <div class="chips">
+        <span class="chip">PROGRESO <b>{{ data.overall }}%</b></span>
+        <span class="chip">DOMINIO <b>{{ data.mastery }}%</b></span>
+        <span class="chip">EVIDENCIAS <b>{{ data.evidence_count }}</b></span>
+        <span class="chip">PUNTAJE <b>{{ data.learning_score }}%</b></span>
+      </div>
+    </div>
+
+    <div class="body">
+      <div class="section">
+        <h2>Cumplimiento</h2>
+        <div class="bars">
+          <div class="stat video"><b>{{ data.video_completed }}/{{ data.video_total }}</b><small>SESIONES DE VIDEO</small>
+            <div class="bar"><i style="width:{{ (data.video_completed/data.video_total*100 if data.video_total else 0)|int }}%"></i></div></div>
+          <div class="stat activity"><b>{{ data.activity_completed }}/{{ data.activity_total }}</b><small>ACTIVIDADES ENTREGADAS</small>
+            <div class="bar"><i style="width:{{ (data.activity_completed/data.activity_total*100 if data.activity_total else 0)|int }}%"></i></div></div>
+          <div class="stat concept"><b>{{ data.concept_verified }}/{{ data.concept_total }}</b><small>CONCEPTOS VERIFICADOS</small>
+            <div class="bar"><i style="width:{{ (data.concept_verified/data.concept_total*100 if data.concept_total else 0)|int }}%"></i></div></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Certificado</h2>
+        {% if data.certificate.issued %}
+        <div class="cert">
+          <div><b>✓ EMITIDO · {{ data.certificate.status }}</b><small>{{ data.certificate.certificate_id }}</small></div>
+          <div>
+            {% if data.certificate.verification_url %}<a class="cta" href="{{ data.certificate.verification_url }}">Verificar en línea ⇢</a>{% endif %}
+            <a class="cta" href="/certificado">Ver certificado</a>
+          </div>
+        </div>
+        {% else %}
+        <div class="cert off">
+          <div><b>◌ EN OBSERVACIÓN</b><small>El certificado se emite al cumplirse todas las condiciones.</small></div>
+          <a class="cta" href="/certificado">Ver estado</a>
+        </div>
+        {% endif %}
+      </div>
+
+      {% if data.dedication %}
+      <div class="section"><h2>Dedicatoria</h2><div class="dedi">“{{ data.dedication }}”</div></div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="foot">
+    Certificado personal generado por BLUMIX · VIDA. No constituye certificación oficial del SENA.<br>
+    <a href="/acceso">Acceder a mi espacio VIDA</a>
+  </div>
+</div>
+</body>
+</html>

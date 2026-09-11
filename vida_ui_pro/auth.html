@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VIDA · Acceso</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{min-height:100vh;display:grid;place-items:center;padding:26px;color:#eef8ff;font-family:Inter,system-ui,sans-serif;
+  background:radial-gradient(1200px 500px at 50% -10%,rgba(212,175,55,.1),transparent 50%),
+  radial-gradient(circle at top right,rgba(46,139,255,.18),transparent 40%),
+  linear-gradient(180deg,#06111d,#03080f)}
+.wrap{width:min(560px,100%)}
+.brand{text-align:center;letter-spacing:.28em;font-weight:900;font-size:13px;color:#45e6ff}
+.headline{margin-top:14px;text-align:center}
+.headline h1{font-size:26px;font-weight:800;letter-spacing:.02em}
+.headline p{color:#8aa8ba;font-size:13.5px;margin-top:10px;line-height:1.6}
+.card{margin-top:26px;padding:34px;border:1px solid #1b3d56;border-radius:24px;text-align:center;
+  background:linear-gradient(180deg,#0b1b2a,#060f19);box-shadow:0 35px 100px rgba(0,0,0,.5)}
+.tabs{display:flex;gap:8px;justify-content:center;margin-bottom:22px}
+.tab{flex:1;padding:11px;border:1px solid #1b3d56;border-radius:11px;background:#071522;color:#8aa8ba;font-size:13px;font-weight:700;cursor:pointer;transition:.15s}
+.tab.active{background:linear-gradient(135deg,#2e8bff,#45e6ff);color:#021018;border-color:transparent}
+form{display:none;flex-direction:column;gap:12px}
+form.on{display:flex}
+input{background:#071522;border:1px solid #1b3d56;color:#eef8ff;border-radius:11px;padding:12px 14px;font-size:14px;width:100%}
+input::placeholder{color:#5c7a8c}
+button.cta{background:linear-gradient(135deg,#2e8bff,#45e6ff);color:#021018;border:0;border-radius:11px;padding:13px;font-weight:800;cursor:pointer;font-size:14px}
+button.cta:disabled{opacity:.55;cursor:wait}
+.msg{font-size:12.5px;margin-top:12px;min-height:18px}
+.msg.err{color:#fb7185}
+.msg.ok{color:#47e0b7}
+.or{display:flex;align-items:center;gap:12px;color:#5c7a8c;font-size:11px;letter-spacing:.2em;margin:20px 0 14px}
+.or::before,.or::after{content:"";flex:1;height:1px;background:#1b3d56}
+.mini{display:flex;gap:10px}
+.mini a{flex:1;padding:12px;border:1px solid rgba(69,230,255,.35);color:#45e6ff;border-radius:11px;text-decoration:none;font-size:12.5px;font-weight:700}
+.mini a.guest{background:rgba(69,230,255,.07);border-color:rgba(69,230,255,.45)}
+.mini a.share{background:rgba(212,175,55,.07);border-color:rgba(212,175,55,.4);color:#f0c867}
+.back{margin-top:22px;text-align:center}
+.back a{color:#8aa8ba;font-size:12.5px;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">🧠 BLUMIX · VIDA</div>
+  <div class="headline">
+    <h1>Bienvenido a tu centro de aprendizaje</h1>
+    <p>Observa, verifica, comprende, demuestra y avanza. Accede con tu cuenta o continúa como invitado.</p>
+  </div>
+
+  <div class="card">
+    <div class="tabs">
+      <button class="tab active" type="button" data-tab="login">🔑 Iniciar sesión</button>
+      <button class="tab" type="button" data-tab="signup">✨ Crear cuenta</button>
+    </div>
+
+    <form id="form-login" class="on" autocomplete="off">
+      <input type="email" name="email" placeholder="Correo electrónico" required>
+      <input type="password" name="password" placeholder="Contraseña" required>
+      <button class="cta" type="submit">Entrar a VIDA</button>
+      <div class="msg" id="msg-login"></div>
+    </form>
+
+    <form id="form-signup" autocomplete="off">
+      <input type="text" name="name" placeholder="Tu nombre">
+      <input type="email" name="email" placeholder="Correo electrónico" required>
+      <input type="password" name="password" placeholder="Contraseña (mínimo 6 caracteres)" required>
+      <button class="cta" type="submit">Crear cuenta y entrar</button>
+      <div class="msg" id="msg-signup"></div>
+    </form>
+
+    <div class="or">O EXPLORA</div>
+    <div class="mini">
+      <a class="guest" href="/acceso/guest">👤 Entrar como invitado</a>
+      <a class="share" href="/perfil/{{ slug }}">🔗 Compartir mi perfil</a>
+    </div>
+  </div>
+
+  <div class="back"><a href="/perfil/{{ slug }}">Ver perfil público de {{ slug.replace('-', ' ') }}</a></div>
+</div>
+
+<script>
+(function () {
+  var tabs = document.querySelectorAll(".tab");
+  var forms = { login: document.getElementById("form-login"), signup: document.getElementById("form-signup") };
+  var msgs = { login: document.getElementById("msg-login"), signup: document.getElementById("msg-signup") };
+
+  tabs.forEach(function (t) {
+    t.addEventListener("click", function () {
+      tabs.forEach(function (x) { x.classList.remove("active"); });
+      t.classList.add("active");
+      Object.keys(forms).forEach(function (k) { forms[k].classList.toggle("on", k === t.dataset.tab); msgs[k].textContent = ""; });
+    });
+  });
+
+  function send(formId, url) {
+    return function (ev) {
+      ev.preventDefault();
+      var f = forms[formId];
+      var btn = f.querySelector(".cta");
+      var data = {};
+      new FormData(f).forEach(function (v, k) { data[k] = v; });
+      btn.disabled = true;
+      msgs[formId].textContent = "Espera…";
+      msgs[formId].className = "msg";
+      fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      })
+        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+        .then(function (r) {
+          if (!r.ok || !r.d.ok) throw new Error(r.d.error || "Error inesperado.");
+          location.href = "/";
+        })
+        .catch(function (e) {
+          msgs[formId].textContent = "⚠️ " + e.message;
+          msgs[formId].className = "msg err";
+        })
+        .finally(function () { btn.disabled = false; });
+    };
+  }
+
+  forms.login.addEventListener("submit", send("login", "/api/auth/login"));
+  forms.signup.addEventListener("submit", send("signup", "/api/auth/signup"));
+})();
+</script>
+</body>
+</html>

@@ -9,12 +9,14 @@ import sqlite3
 import tempfile
 import webbrowser
 from datetime import datetime, timedelta, timezone
+from functools import wraps
 from pathlib import Path
 from secrets import compare_digest
 
 from flask import (
     Flask,
     jsonify,
+    redirect,
     render_template,
     request,
     send_from_directory,
@@ -25,6 +27,7 @@ from rich.panel import Panel
 from rich.table import Table
 
 from vida_engines import (
+    accounts,
     CourseEngine,
     ProgressEngine,
     IntelligenceEngine,
@@ -756,6 +759,82 @@ def _cert_allowed(req: request) -> bool:
     return bool(session.get("vida_cert_ok"))
 
 
+def _logged_in() -> dict | None:
+    uid = session.get("uid")
+    if not uid:
+        return None
+    try:
+        return accounts.get_user_by_id(str(uid))
+    except Exception:
+        return None
+
+
+def _is_guest() -> bool:
+    return bool(session.get("guest"))
+
+
+def _learner_slug() -> str:
+    return accounts.slugify(course().get("learner", "Aprendiz VIDA"))
+
+
+def _needs_account(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if not _logged_in():
+            return jsonify(
+                {"ok": False, "error": "Requiere iniciar sesión."}
+            ), 401
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
+def _session_context() -> dict:
+    user = _logged_in()
+    guest = _is_guest()
+    return {
+        "authed": bool(user),
+        "guest": guest,
+        "user": user,
+        "slug": _learner_slug() if (user or guest) else None,
+    }
+
+
+def _public_profile_data() -> dict:
+    course_data = course()
+    state = engine_state()
+    cert = state["certificate"]
+    return {
+        "slug": _learner_slug(),
+        "learner": course_data.get("learner", "Aprendiz VIDA"),
+        "course": course_data.get("title", "Curso SENA"),
+        "provider": course_data.get("provider", "SENA"),
+        "platform": course_data.get("platform", "Zajuna"),
+        "hours": course_data.get("hours", 48),
+        "dedication": course_data.get("dedication", ""),
+        "overall": state["overall"],
+        "mastery": state["mastery"],
+        "evidence_count": state["evidence_count"],
+        "learning_score": state["learning_score"],
+        "video_completed": state["completed_videos"],
+        "video_total": state["video_count"],
+        "activity_completed": state["completed_activities"],
+        "activity_total": state["activity_count"],
+        "concept_verified": state["verified_concepts"],
+        "concept_total": state["concept_count"],
+        "certificate": {
+            "issued": cert.get("issued", False),
+            "certificate_id": cert.get("certificate_id"),
+            "status": cert.get("status"),
+            "verification_url": (
+                f"/verificar/{cert.get('certificate_id')}"
+                if cert.get("certificate_id")
+                else None
+            ),
+        },
+    }
+
+
 def api_snapshot() -> dict:
     return engine_state()
 
@@ -768,7 +847,11 @@ def create_app() -> Flask:
         static_url_path="/static",
     )
 
-    app.secret_key = _cert_token() or secrets.token_urlsafe(32)
+    app.secret_key = (
+        os.environ.get("VIDA_SECRET_KEY")
+        or _cert_token()
+        or secrets.token_urlsafe(32)
+    )
     app.permanent_session_lifetime = timedelta(days=7)
     app.config.update(
         SESSION_COOKIE_HTTPONLY=True,
@@ -780,9 +863,94 @@ def create_app() -> Flask:
 
     @app.get("/")
     def home():
+        if not _logged_in() and not _is_guest():
+            return redirect("/acceso")
         return render_template(
             "index_pro.html",
             course=course(),
+            ctx=_session_context(),
+        )
+
+    @app.get("/acceso")
+    def acceso():
+        if _logged_in() or _is_guest():
+            return redirect("/")
+        return render_template(
+            "auth.html",
+            slug=_learner_slug(),
+        )
+
+    @app.get("/acceso/guest")
+    def acceso_guest():
+        session["guest"] = True
+        session.permanent = True
+        return redirect("/")
+
+    @app.post("/api/auth/signup")
+    def auth_signup():
+        payload = request.get_json(silent=True) or {}
+        try:
+            user = accounts.create_user(
+                payload.get("email", ""),
+                payload.get("name", ""),
+                payload.get("password", ""),
+            )
+        except accounts.AccountError as exc:
+            return jsonify({"ok": False, "error": str(exc)}), 400
+        session.clear()
+        session["uid"] = user["id"]
+        session.permanent = True
+        return jsonify({"ok": True, "user": user}), 201
+
+    @app.post("/api/auth/login")
+    def auth_login():
+        payload = request.get_json(silent=True) or {}
+        if not payload.get("email") or not payload.get("password"):
+            return jsonify(
+                {"ok": False, "error": "Correo y contraseña son obligatorios."}
+            ), 400
+        try:
+            user = accounts.login(
+                payload.get("email", ""),
+                payload.get("password", ""),
+            )
+        except accounts.AccountError as exc:
+            return jsonify({"ok": False, "error": str(exc)}), 401
+        session.clear()
+        session["uid"] = user["id"]
+        session.permanent = True
+        return jsonify({"ok": True, "user": user})
+
+    @app.post("/api/auth/logout")
+    def auth_logout():
+        session.clear()
+        return jsonify({"ok": True})
+
+    @app.get("/api/auth/me")
+    def auth_me():
+        return jsonify(_session_context())
+
+    @app.get("/api/public/profile")
+    def public_profile():
+        return jsonify(_public_profile_data())
+
+    @app.get("/perfil")
+    def perfil_redirect():
+        return redirect(f"/perfil/{_learner_slug()}")
+
+    @app.get("/perfil/<slug>")
+    def perfil_page(slug: str):
+        data = _public_profile_data()
+        if data["slug"] != slug:
+            return render_template(
+                "perfil.html",
+                data={},
+                not_found=True,
+            ), 404
+        return render_template(
+            "perfil.html",
+            data=data,
+            not_found=False,
         )
 
     @app.get("/api/dashboard")
@@ -833,6 +1001,7 @@ def create_app() -> Flask:
         )
 
     @app.post("/api/courses")
+    @_needs_account
     def create_course():
         if not _cert_allowed(request):
             return jsonify(
@@ -1210,6 +1379,7 @@ def create_app() -> Flask:
         )
 
     @app.post("/api/progress/<vid>")
+    @_needs_account
     def set_video_progress(vid: str):
         payload = request.get_json(silent=True) or {}
 
@@ -1273,6 +1443,7 @@ def create_app() -> Flask:
         )
 
     @app.post("/api/item/<item_id>")
+    @_needs_account
     def set_item(item_id: str):
         payload = request.get_json(silent=True) or {}
 
@@ -1317,6 +1488,7 @@ def create_app() -> Flask:
         )
 
     @app.post("/api/study")
+    @_needs_account
     def study():
         payload = request.get_json(silent=True) or {}
 
@@ -1505,6 +1677,7 @@ def create_app() -> Flask:
         return jsonify(result)
 
     @app.post("/api/evidence/<activity_id>")
+    @_needs_account
     def upload_evidence(activity_id: str):
         from werkzeug.utils import secure_filename
 

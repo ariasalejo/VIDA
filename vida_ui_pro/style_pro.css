@@ -65,6 +65,25 @@ button{font-family:inherit}
 .top-actions a:hover,.top-actions button:hover{color:var(--text);border-color:var(--line-strong)}
 .cert-link{color:var(--gold2)!important;border-color:rgba(212,175,55,.4)!important}
 .cert-link:hover{border-color:rgba(212,175,55,.8)!important}
+.userbox{position:relative;display:flex;align-items:center}
+.user-btn{width:40px;height:40px;border-radius:12px;border:1px solid rgba(69,230,255,.35)!important;
+  background:linear-gradient(135deg,#2e8bff,#45e6ff)!important;color:#021018!important;
+  font-size:15px;font-weight:900;padding:0!important;display:grid;place-items:center}
+.user-btn:hover{filter:brightness(1.1)}
+.user-menu{position:absolute;top:52px;right:0;z-index:80;min-width:220px;padding:10px;
+  border:1px solid var(--line);border-radius:14px;background:rgba(6,17,29,.98);
+  box-shadow:0 25px 70px rgba(0,0,0,.6);backdrop-filter:blur(14px)}
+.user-menu .um-head{padding:8px 10px 12px;border-bottom:1px solid var(--line);margin-bottom:8px}
+.user-menu .um-head b{display:block;font-size:13px;color:var(--text)}
+.user-menu .um-head small{color:var(--muted);font-size:11px;word-break:break-all}
+.user-menu a,.user-menu button{display:block;width:100%;text-align:left;padding:10px 12px;border:0;border-radius:10px;
+  background:transparent;color:var(--muted);font-size:13px;text-decoration:none;cursor:pointer}
+.user-menu a:hover,.user-menu button:hover{background:rgba(69,230,255,.08);color:var(--text)}
+.user-menu button#logoutBtn{color:#fb7185}
+.user-menu button#logoutBtn:hover{background:rgba(251,113,133,.1)}
+.guest-badge{font-size:10.5px;letter-spacing:.16em;color:var(--gold2);border:1px solid rgba(212,175,55,.4);
+  background:rgba(212,175,55,.08);padding:9px 12px;border-radius:11px;font-weight:800;white-space:nowrap}
+.login-link{color:var(--cyan)!important;border-color:rgba(69,230,255,.4)!important}
 .course-switch{display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.05em}
 .cs-label{color:var(--muted2);font-size:9px;letter-spacing:.18em}
 .course-switch select{

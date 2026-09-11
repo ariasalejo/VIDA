@@ -20,6 +20,20 @@
     <button id="voiceBtn" type="button" title="Guía por voz">🔊</button>
     <a class="cert-link" href="/certificado" target="_blank">🏆 Certificado</a>
     <button id="sync" type="button">↻ SYNC</button>
+    <div class="userbox" id="userBox">
+      {% if ctx and ctx.user %}
+      <button id="userBtn" class="user-btn" type="button" title="Mi cuenta">{{ ctx.user.display_name[:1]|upper }}</button>
+      <div class="user-menu" id="userMenu" hidden>
+        <div class="um-head"><b>{{ ctx.user.display_name }}</b><small>{{ ctx.user.email }}</small></div>
+        <a href="/perfil/{{ ctx.slug }}">🔗 Mi perfil</a>
+        <button type="button" id="shareProfile">📤 Compartir mi perfil</button>
+        <button type="button" id="logoutBtn">🚪 Cerrar sesión</button>
+      </div>
+      {% elif ctx and ctx.guest %}
+      <span class="guest-badge" title="Modo invitado, solo lectura">👤 INVITADO</span>
+      <a class="login-link" href="/acceso">Iniciar sesión</a>
+      {% endif %}
+    </div>
   </div>
 </header>
 
