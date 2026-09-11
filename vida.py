@@ -874,7 +874,7 @@ def create_app() -> Flask:
 
     @app.get("/")
     def home():
-        if _logged_in() or _is_guest():
+        if _logged_in():
             return render_template(
                 "index_pro.html",
                 course=course(),
@@ -885,17 +885,31 @@ def create_app() -> Flask:
             slug=_learner_slug(),
         )
 
+    @app.get("/inicio")
+    def inicio():
+        if _logged_in() or _is_guest():
+            return render_template(
+                "index_pro.html",
+                course=course(),
+                ctx=_session_context(),
+            )
+        return redirect("/")
+
     @app.get("/acceso")
     def acceso():
         if _logged_in():
             return redirect("/")
-        return redirect("/")
+        return render_template(
+            "auth.html",
+            slug=_learner_slug(),
+        )
 
     @app.get("/acceso/guest")
     def acceso_guest():
+        session.clear()
         session["guest"] = True
-        session.permanent = True
-        return redirect("/")
+        session.permanent = False
+        return redirect("/inicio")
 
     @app.post("/api/auth/signup")
     def auth_signup():
