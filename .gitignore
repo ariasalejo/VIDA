@@ -42,3 +42,9 @@ os
 portafolio.html
 *.BACKUP_*
 *.BACKUP*
+
+# Podcast: se versionan los guiones y audios finales, no los chunks intermedios
+podcast_audio/chunk_*
+podcast_audio/concat.txt
+podcast_audio/*/
+podcast_audio/*.tmp.mp3
