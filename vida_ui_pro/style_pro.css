@@ -358,6 +358,45 @@ video.offline{opacity:.18;filter:grayscale(.7)}
 .ev-record .er-chip.on{color:var(--green);border:1px solid rgba(71,224,183,.4)}
 .ev-record .er-chip.off{color:var(--gold2);border:1px solid rgba(212,175,55,.4)}
 .ev-files-label{font-size:9px;letter-spacing:.22em;color:var(--muted2);font-weight:800;margin:14px 0 6px}
+.ev-reset{
+  font-size:10px;letter-spacing:.06em;font-weight:700;color:var(--muted);
+  padding:8px 12px;border-radius:99px;border:1px dashed var(--line-strong);
+  background:transparent;cursor:pointer;
+}
+.ev-reset:hover{color:var(--gold2);border-color:var(--gold2)}
+.ev-loading{
+  padding:22px 14px;text-align:center;color:var(--muted);
+  font-size:12px;letter-spacing:.08em;border:1px dashed var(--line);
+  border-radius:12px;animation:pulseSoft 1.6s ease-in-out infinite;
+}
+@keyframes pulseSoft{0%,100%{opacity:.55}50%{opacity:1}}
+.ev-legend{
+  display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;
+  font-size:9.5px;letter-spacing:.14em;font-weight:800;color:var(--muted2);
+  margin:8px 2px 14px;text-transform:uppercase;
+}
+.ev-legend .lg{display:inline-flex;align-items:center;gap:5px}
+.ev-legend .lg::before{content:"";width:8px;height:8px;border-radius:99px;background:var(--muted2)}
+.ev-legend .lg.a::before{background:var(--green)}
+.ev-legend .lg.b::before{background:var(--cyan)}
+.ev-legend .lg.c::before{background:var(--gold2)}
+.ev-legend .lg.d::before{background:#c084fc}
+.er-k{
+  flex:0 0 auto;font-size:8.5px;letter-spacing:.12em;font-weight:800;
+  color:var(--muted);padding:3px 7px;border-radius:6px;border:1px solid var(--line);
+}
+.ev-empty{
+  padding:26px 16px;text-align:center;border:1px dashed var(--line);
+  border-radius:12px;color:var(--muted);
+}
+.ev-empty b{display:block;font-size:14px;color:var(--text);letter-spacing:.06em;margin-bottom:6px}
+.ev-empty span{display:block;font-size:11.5px;margin-bottom:14px}
+.ev-empty button{
+  font-size:11px;font-weight:700;letter-spacing:.05em;color:var(--cyan);
+  border:1px solid rgba(69,230,255,.4);background:rgba(69,230,255,.07);
+  padding:9px 14px;border-radius:99px;cursor:pointer;
+}
+.ev-empty button:hover{background:rgba(69,230,255,.14)}
 .ev-toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:2px 0 16px}
 #evSearch{
   flex:1 1 220px;min-width:0;

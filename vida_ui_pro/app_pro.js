@@ -1009,6 +1009,11 @@ let evData = null;
 let evFilter = "all";
 let evQuery = "";
 const EV_MESES = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
+const EV_LABEL = {
+  ACTIVITY_COMPLETE: "ENTREGA",
+  VIDEO_COMPLETE: "SESIÓN",
+  CONCEPT_VERIFY: "CONCEPTO",
+};
 
 function evDay(iso) {
   const d = new Date(iso);
@@ -1017,10 +1022,40 @@ function evDay(iso) {
 }
 
 async function renderEvidence() {
-  const payload = await getJSON("/api/evidence");
-  evData = { groups: payload.groups || payload, payload };
-  renderEvidenceList();
+  const box = $("#evidenceGroups");
+  evData = null;
+  if (box) box.innerHTML = '<div class="ev-loading">🛡 Leyendo el expediente de VIDA…</div>';
   paintEvLedgerFoot();
+
+  let data = null;
+  for (let i = 0; i < 5; i++) {
+    try {
+      data = await getJSON("/api/evidence");
+    } catch (e) {
+      data = null;
+    }
+    if (data && Array.isArray(data.groups) &&
+        data.groups.some(g => (g.records || []).length || (g.files || []).length)) break;
+    await new Promise(r => setTimeout(r, 1200));
+  }
+
+  evData = {
+    payload: data || {},
+    groups: data && Array.isArray(data.groups) ? data.groups : [],
+  };
+  renderEvidenceList();
+}
+
+function evClearAll() {
+  evFilter = "all";
+  evQuery = "";
+  const s = $("#evSearch");
+  if (s) s.value = "";
+  const fs = $("#evFilters");
+  if (fs) fs.querySelectorAll(".ev-f").forEach(x => x.classList.toggle("on", x.dataset.f === "all"));
+  const reset = $("#evReset");
+  if (reset) reset.hidden = true;
+  if (evData) renderEvidenceList();
 }
 
 function renderEvidenceList() {
@@ -1029,9 +1064,12 @@ function renderEvidenceList() {
   const box = $("#evidenceGroups");
   if (!box) return;
 
-  const total = payload.total_records ?? groups.reduce((n, g) => n + g.records.length, 0);
-  const files = payload.total_files ?? groups.reduce((n, g) => n + g.files.length, 0);
+  const total = payload.total_records ?? groups.reduce((n, g) => n + (g.records || []).length, 0);
+  const files = payload.total_files ?? groups.reduce((n, g) => n + (g.files || []).length, 0);
   const q = evQuery;
+
+  const resetBtn = $("#evReset");
+  if (resetBtn) resetBtn.hidden = evFilter === "all" && !q;
 
   const match = (r) => {
     if (!q) return true;
@@ -1047,7 +1085,7 @@ function renderEvidenceList() {
     records: showOnlyFiles ? [] : (g.records || []).filter(r =>
       (evFilter === "all" || r.event_type === evFilter) && match(r)),
     files: evFilter === "all" || evFilter === "files" ? (g.files || []).filter(f => match({ evidence_id: f.name, context: {} })) : []
-  })).filter(g => g.records.length || g.files.length);
+  })).filter(g => (g.records || []).length || (g.files || []).length);
 
   const shownRecs = filteredGroups.reduce((n, g) => n + g.records.length + g.files.length, 0);
   const cnt = $("#evCount");
@@ -1058,16 +1096,28 @@ function renderEvidenceList() {
   const resumen = document.createElement("div");
   resumen.className = "ev-summary";
   resumen.innerHTML =
-    `<div class="ev-stat"><b>${esc(String(total))}</b><small>OBSERVACIONES<br>DEL MOTOR</small></div>` +
+    `<div class="ev-stat"><b>${esc(String(total))}</b><small>OBSERVACIONES<br>REGISTRADAS</small></div>` +
     `<div class="ev-stat"><b>${esc(String(files))}</b><small>ARCHIVOS<br>SUBIDOS</small></div>` +
     `<div class="ev-stat"><b>${esc(String(groups.length))}</b><small>ACTIVIDADES<br>RELACIONADAS</small></div>` +
     `<div class="ev-ledger" title="Trazabilidad verificable"><span>🛡</span> OBSERVADO ≠ INFERIDO<br><small>nada se asume, todo se demuestra</small></div>`;
   box.appendChild(resumen);
 
+  const legend = document.createElement("div");
+  legend.className = "ev-legend";
+  legend.innerHTML =
+    `<span class="lg a">● entregas</span>` +
+    `<span class="lg b">● sesiones</span>` +
+    `<span class="lg c">● conceptos</span>` +
+    `<span class="lg d">● archivos</span>`;
+  box.appendChild(legend);
+
   if (!filteredGroups.length) {
     const empty = document.createElement("div");
     empty.className = "ev-empty";
-    empty.textContent = "No hay coincidencias con ese filtro o búsqueda.";
+    empty.innerHTML =
+      `<b>Sin coincidencias</b>` +
+      `<span>El filtro o la búsqueda no encuentra observaciones en el expediente.</span>` +
+      `<button type="button" onclick="evClearAll()">Mostrar todo el expediente</button>`;
     box.appendChild(empty);
     return;
   }
@@ -1090,8 +1140,9 @@ function renderEvidenceList() {
       row.innerHTML =
         `<div class="ev-date" aria-hidden="true"><b>${esc(day.d)}</b><i>${esc(day.m)}</i></div>` +
         `<div class="ev-ico">${EV_ICON[r.event_type] || "◇"}</div>` +
+        `<span class="er-k">${esc(EV_LABEL[r.event_type] || "OBSERVACIÓN")}</span>` +
         `<div class="er-body"><b>${esc(ctx.title || r.source || r.evidence_id)}</b>` +
-        `<small><code>${esc(r.evidence_id)}</code> · ${esc(r.method.replace(/_/g, " "))} · ${esc(fmtStamp(r.observed_at))}</small></div>` +
+        `<small><code>${esc(r.evidence_id)}</code> · ${esc((r.method || "").replace(/_/g, " "))} · ${esc(fmtStamp(r.observed_at))}</small></div>` +
         `<span class="er-chip ${r.result.includes("VERIFIED") || r.result === "DELIVERED" ? "on" : "off"}">${esc(r.result.replace(/_/g, " "))}</span>`;
       el.appendChild(row);
     });
@@ -1118,10 +1169,21 @@ function renderEvidenceList() {
 
 function bindEvidenceToolbar() {
   const s = $("#evSearch");
-  if (s) s.addEventListener("input", () => {
-    evQuery = s.value.trim().toLowerCase();
-    if (evData) renderEvidenceList();
-  });
+  if (s) {
+    s.addEventListener("input", () => {
+      evQuery = s.value.trim().toLowerCase();
+      if (evData) renderEvidenceList();
+    });
+    s.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        evQuery = s.value.trim().toLowerCase();
+        if (evData) renderEvidenceList();
+      } else if (e.key === "Escape") {
+        evClearAll();
+      }
+    });
+  }
   const fs = $("#evFilters");
   if (fs) fs.addEventListener("click", (e) => {
     const b = e.target.closest(".ev-f");
@@ -1130,6 +1192,8 @@ function bindEvidenceToolbar() {
     fs.querySelectorAll(".ev-f").forEach(x => x.classList.toggle("on", x === b));
     if (evData) renderEvidenceList();
   });
+  const reset = $("#evReset");
+  if (reset) reset.addEventListener("click", evClearAll);
 }
 
 function paintEvLedgerFoot() {
