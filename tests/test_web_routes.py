@@ -217,6 +217,24 @@ class VIDAWebTestCase(unittest.TestCase):
         self.assertIn("landscape", css)
         self.assertIn("@page", css)
 
+    def test_podcast_catalog(self):
+        res = self.client.get("/api/podcast")
+        self.assertEqual(res.status_code, 200)
+        episodes = res.get_json()["episodes"]
+        self.assertIsInstance(episodes, list)
+        for ep in episodes:
+            self.assertNotIn("chunk_", ep["file"])
+            self.assertTrue(ep["file"].startswith("/media/podcast/"))
+            self.assertGreater(ep["size"], 0)
+
+    def test_podcast_media_range(self):
+        res = self.client.get(
+            "/media/podcast/podcast_ciberseguridad_1h.mp3",
+            headers={"Range": "bytes=0-99"},
+        )
+        self.assertEqual(res.status_code, 206)
+        self.assertEqual(len(res.data), 100)
+
 
 class FernetCipherTestCase(unittest.TestCase):
     """Cifrado de datos en reposo: roundtrip y aislamiento de claves."""

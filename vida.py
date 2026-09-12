@@ -44,6 +44,7 @@ from vida_engines import (
 ROOT = Path(__file__).resolve().parent
 DATA = ROOT / "data"
 MEDIA = ROOT / "media"
+PODCAST_DIR = ROOT / "podcast_audio"
 DB = DATA / "vida.db"
 COURSE = DATA / "course.json"
 PROFILE = DATA / "profiles" / "sena_ciberseguridad.json"
@@ -2024,6 +2025,32 @@ def create_app() -> Flask:
     def media_video(name: str):
         return send_from_directory(
             MEDIA / "videos",
+            name,
+            conditional=True,
+        )
+
+    @app.get("/api/podcast")
+    def podcast_catalog():
+        episodes = []
+        for path in sorted(PODCAST_DIR.glob("*.mp3")):
+            if path.name.startswith("chunk_") or path.name == "concat.txt":
+                continue
+            size = path.stat().st_size
+            episodes.append(
+                {
+                    "id": path.stem,
+                    "title": "Noche de estudio · Ciberseguridad",
+                    "file": f"/media/podcast/{path.name}",
+                    "size": size,
+                    "minutes": max(1, round(size / (128_000 / 8) / 60)),
+                }
+            )
+        return jsonify({"episodes": episodes})
+
+    @app.get("/media/podcast/<path:name>")
+    def media_podcast(name: str):
+        return send_from_directory(
+            PODCAST_DIR,
             name,
             conditional=True,
         )

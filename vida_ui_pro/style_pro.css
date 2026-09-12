@@ -358,6 +358,39 @@ video.offline{opacity:.18;filter:grayscale(.7)}
 .ev-record .er-chip.on{color:var(--green);border:1px solid rgba(71,224,183,.4)}
 .ev-record .er-chip.off{color:var(--gold2);border:1px solid rgba(212,175,55,.4)}
 .ev-files-label{font-size:9px;letter-spacing:.22em;color:var(--muted2);font-weight:800;margin:14px 0 6px}
+.ev-toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:2px 0 16px}
+#evSearch{
+  flex:1 1 220px;min-width:0;
+  background:rgba(11,27,44,.6);color:var(--text);border:1px solid var(--line);
+  border-radius:12px;padding:10px 13px;font-size:12.5px;outline:none;
+}
+#evSearch:focus{border-color:rgba(69,230,255,.5)}
+.ev-filters{display:flex;flex-wrap:wrap;gap:8px}
+.ev-f{
+  font-size:10px;letter-spacing:.1em;font-weight:700;
+  padding:8px 12px;border-radius:99px;border:1px solid var(--line);
+  background:rgba(8,20,33,.5);color:var(--muted);cursor:pointer;transition:.15s;
+}
+.ev-f:hover{border-color:var(--line-strong);color:var(--text)}
+.ev-f.on{color:var(--cyan);border-color:rgba(69,230,255,.5);background:rgba(69,230,255,.08)}
+.ev-record{position:relative;display:flex;align-items:center;gap:12px;padding:10px 12px;
+  border:1px solid var(--line);border-left:3px solid var(--line);
+  border-radius:12px;background:rgba(8,20,33,.5);margin-top:8px;}
+.ev-record[data-etype="ACTIVITY_COMPLETE"]{border-left-color:var(--green)}
+.ev-record[data-etype="VIDEO_COMPLETE"]{border-left-color:var(--cyan)}
+.ev-record[data-etype="CONCEPT_VERIFY"]{border-left-color:var(--gold2)}
+.ev-record[data-etype="EVIDENCE_UPLOAD"]{border-left-color:#c084fc}
+.ev-date{flex:0 0 auto;width:42px;display:flex;flex-direction:column;align-items:center;line-height:1;
+  border-right:1px solid var(--line);padding-right:10px;margin-right:2px}
+.ev-date b{font-size:16px;color:var(--gold2);font-weight:800;font-variant-numeric:tabular-nums}
+.ev-date i{font-style:normal;font-size:8px;letter-spacing:.14em;color:var(--muted2);margin-top:3px}
+.ev-ledger-foot{
+  margin-top:18px;padding:12px 14px;border-radius:12px;
+  border:1px solid rgba(71,224,183,.3);background:rgba(71,224,183,.05);
+  color:var(--green);font-size:11px;letter-spacing:.05em;line-height:1.7;word-break:break-word;
+}
+.ev-ledger-foot span{font-size:15px;margin-right:4px}
+.ev-ledger-foot code{color:#8cc7db;background:rgba(69,230,255,.08);padding:1px 6px;border-radius:6px}
 
 /* ---------- Zona en construcción ---------- */
 .zone-card{
@@ -445,6 +478,23 @@ video.offline{opacity:.18;filter:grayscale(.7)}
   .act-head h1{font-size:21px}
   .sec-grid{grid-template-columns:repeat(2,1fr)}
   .ev-summary{grid-template-columns:repeat(2,1fr)}
+  .ev-ledger{grid-column:1/-1}
+  .ev-toolbar{flex-direction:column;align-items:stretch}
+  #evSearch{width:100%}
+}
+
+@media(max-width:520px){
+  .ev-summary{grid-template-columns:1fr}
+  .ev-record{flex-wrap:wrap;gap:8px;padding-left:10px}
+  .ev-record .ev-date{
+    width:auto;border-right:0;flex-direction:row;gap:5px;
+    align-items:baseline;padding:0 0 0 6px;
+  }
+  .ev-record .ev-date b{font-size:13px}
+  .ev-record .ev-date i{font-size:8px;margin-top:0}
+  .ev-record .er-chip{flex:1 0 auto;text-align:center}
+  .ev-filters{width:100%}
+  .ev-filters .ev-f{flex:1 1 auto;text-align:center;font-size:9px;padding:7px 8px}
 }
 
 @media(max-width:400px){
@@ -610,4 +660,57 @@ video.offline{opacity:.18;filter:grayscale(.7)}
   .dashboard-knowledge-card #conceptList {
     grid-template-columns: 1fr;
   }
+}
+
+/* ---------- Certificado: chip y tarjeta del dashboard ---------- */
+.cert-chip{font-size:10px;letter-spacing:.14em;padding:8px 12px;border-radius:11px;font-weight:800;white-space:nowrap}
+.cert-chip.on{color:var(--green);border:1px solid rgba(71,224,183,.4);background:rgba(71,224,183,.08)}
+.cert-chip.off{color:var(--gold2);border:1px solid rgba(212,175,55,.4);background:rgba(212,175,55,.07)}
+.cert-card .pill{color:var(--gold2)!important;border-color:rgba(212,175,55,.4)!important}
+.cert-status{margin-top:6px}
+.cert-emitted{display:flex;flex-direction:column;align-items:flex-start;gap:10px;border:1px solid rgba(71,224,183,.35);
+  border-radius:14px;padding:14px 16px;background:rgba(71,224,183,.05)}
+.cert-id{font-family:ui-monospace,monospace;font-size:13px;color:#8cc7db;word-break:break-all;letter-spacing:.03em}
+.cert-verify-btn{display:inline-block;font-size:11.5px;letter-spacing:.1em;color:var(--cyan);text-decoration:none;
+  border:1px solid rgba(69,230,255,.4);padding:8px 15px;border-radius:99px;font-family:Inter,system-ui,sans-serif}
+.cert-verify-btn:hover{background:rgba(69,230,255,.1)}
+.cert-pending{display:flex;flex-direction:column;align-items:flex-start;gap:8px;border:1px dashed var(--line);
+  border-radius:14px;padding:14px 16px}
+.cert-pending small{color:var(--muted2);font-size:12px;line-height:1.6}
+.cert-keys{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+.ck{display:flex;flex-direction:column;gap:5px;padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:rgba(11,27,44,.55)}
+.ck span{font-size:14px}
+.ck b{font-size:10px;letter-spacing:.1em;color:var(--muted);font-weight:700}
+.ck i{font-style:normal;font-size:13px;font-weight:800}
+.ck.ok i{color:var(--green)}.ck.ok span{filter:drop-shadow(0 0 8px rgba(71,224,183,.5))}
+.ck.no i{color:var(--gold2)}
+
+/* ---------- Podcast ---------- */
+.podcast-card .pill{color:var(--cyan)!important;border-color:rgba(69,230,255,.35)!important}
+#podcastList{display:grid;grid-template-columns:1fr;gap:10px;margin-top:4px}
+.ep-item{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px 14px;
+  border:1px solid var(--line);border-radius:14px;background:rgba(11,27,44,.55)}
+.ep-ico{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:19px;
+  background:linear-gradient(135deg,rgba(69,230,255,.16),rgba(46,139,255,.10));border:1px solid rgba(69,230,255,.3)}
+.ep-item .fm{flex:1;min-width:180px}
+.ep-item .fm b{display:block;font-size:13.5px}
+.ep-item .fm small{color:var(--muted2);font-size:11px}
+.ep-audio{width:min(320px,100%);filter:hue-rotate(45deg);border-radius:99px}
+
+/* ---------- Zona en construcción: road map ---------- */
+.zone-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin-top:4px}
+.zone-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 13px;
+  border:1px solid var(--line);border-radius:12px;background:rgba(11,27,44,.55)}
+.zone-item b{font-size:12.5px;font-weight:600;color:var(--text)}
+.zone-item span{font-size:8.5px;letter-spacing:.14em;padding:5px 9px;border-radius:99px;white-space:nowrap}
+.zone-item.trabajo span{color:var(--gold2);border:1px solid rgba(212,175,55,.4)}
+.zone-item.listo span{color:var(--green);border:1px solid rgba(71,224,183,.4)}
+.zone-item.diseno span{color:var(--cyan);border:1px solid rgba(69,230,255,.35)}
+.zone-item.idea span{color:var(--muted);border:1px solid var(--line)}
+
+@media (max-width: 760px) {
+  .cert-keys{grid-template-columns:1fr}
+  .ep-item{flex-direction:column;align-items:flex-start}
+  .ep-audio{width:100%}
+  .zone-list{grid-template-columns:1fr}
 }

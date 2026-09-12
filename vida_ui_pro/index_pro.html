@@ -19,6 +19,7 @@
     </label>
     <button id="voiceBtn" type="button" title="Guía por voz">🔊</button>
     <a class="cert-link" href="/certificado" target="_blank">🏆 Certificado</a>
+    <span class="cert-chip" id="certChip">…</span>
     <button id="sync" type="button">↻ SYNC</button>
     <div class="userbox" id="userBox">
       {% if ctx and ctx.user %}
@@ -93,7 +94,8 @@
 
       <div class="grid2">
         <div class="card">
-          <header><div><small>INTELLIGENCE ENGINE</small><h2>Señales del motor</h2></div><span class="pill">OBSERVADO ≠ INFERIDO</span></header>
+        <header>
+          <div><small>INTELLIGENCE ENGINE</small><h2>Señales del motor</h2></div><span class="pill">OBSERVADO ≠ INFERIDO</span></header>
           <p class="hint">Cinco señales provienen de hechos observados; tres son inferencias de histórico. El motor distingue lo que demuestras de lo que asume.</p>
           <div id="intelSignals" class="intel-signals"></div>
         </div>
@@ -103,6 +105,16 @@
           <p class="hint">Lo que falta demostrar para completar el curso, por prioridad.</p>
           <div id="intelActions" class="intel-actions"></div>
         </div>
+      </div>
+
+      <div class="card cert-card">
+        <header>
+          <div><small>CERTIFICATE · VERIFICACIÓN EN VIVO</small><h2>🏆 Certificado de logro</h2></div>
+          <span class="pill" id="certChip2">CONSULTANDO…</span>
+        </header>
+        <p class="hint">Se emite una sola vez cuando el motor verifica progreso, dominio y evidencia. Cualquier persona puede comprobarlo en línea por su huella SHA-256.</p>
+        <div id="certStatus"></div>
+        <div class="cert-keys" id="certKeys"></div>
       </div>
 
       <div class="card dashboard-media-card" id="mediaCard">
@@ -117,6 +129,12 @@
         </div>
         <div class="player-meta"><span>Reproducción de la sesión sincrónica</span><b id="videoState">Esperando recurso…</b></div>
         <div class="big-bar"><em id="videoBar"></em></div>
+      </div>
+
+      <div class="card podcast-card">
+        <header><div><small>PODCAST · AUDIO DE ESTUDIO</small><h2>🎙 Noche de estudio</h2></div><span class="pill">AUDIO · MP3</span></header>
+        <p class="hint">Resumen del curso en audio, para repasar mientras caminas, viajas o descansas. Se sirve con soporte de búsqueda (range).</p>
+        <div id="podcastList"></div>
       </div>
 
       <div class="card dashboard-knowledge-card">
@@ -228,12 +246,25 @@
       </div>
     </section>
 
-    <!-- ============ EVIDENCIAS ============ -->
+    <!-- ============ EVIDENCIAS (Expediente verificable) ============ -->
     <section class="view" id="view-evidencias">
       <div class="card">
-        <header><div><small>EVIDENCE ENGINE</small><h2>Centro de evidencias</h2></div><span class="pill" id="evCount">OBSERVADO ≠ INFERIDO</span></header>
-        <p class="hint">Registro verificable de entregas: archivos subidos y observaciones del motor. VIDA no inventa evidencia.</p>
+        <header><div><small>EVIDENCE ENGINE · EXPEDIENTE EN VIVO</small><h2>Centro de evidencias</h2></div><span class="pill" id="evCount">OBSERVADO ≠ INFERIDO</span></header>
+        <p class="hint">Expediente verificable: VIDA solo registra lo que observa, nunca inventa evidencia. Filtra por tipo de observación o busca en el registro.</p>
+
+        <div class="ev-toolbar">
+          <input id="evSearch" type="search" placeholder="Buscar por título, ID o método…" aria-label="Buscar en el expediente">
+          <div class="ev-filters" id="evFilters">
+            <button type="button" class="ev-f on" data-f="all">TODOS</button>
+            <button type="button" class="ev-f" data-f="ACTIVITY_COMPLETE">📤 ENTREGAS</button>
+            <button type="button" class="ev-f" data-f="VIDEO_COMPLETE">📼 SESIONES</button>
+            <button type="button" class="ev-f" data-f="CONCEPT_VERIFY">◈ CONCEPTOS</button>
+            <button type="button" class="ev-f" data-f="files">📎 ARCHIVOS</button>
+          </div>
+        </div>
+
         <div id="evidenceGroups"></div>
+        <div class="ev-ledger-foot" id="evLedgerFoot">🛡 Verificando integridad del expediente…</div>
       </div>
     </section>
 

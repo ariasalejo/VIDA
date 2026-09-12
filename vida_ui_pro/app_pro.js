@@ -75,11 +75,11 @@ async function getJSON(u, o) {
 const VOICE_KEY = "vida_voice";
 let voiceOn = localStorage.getItem(VOICE_KEY) !== "off";
 const GUIDES = {
-  dashboard: "Este es tu centro de mando VIDA. Aquí revisas el progreso operativo, el dominio, las evidencias y el puntaje de aprendizaje del curso activo.",
+  dashboard: "Este es tu centro de mando VIDA. Aquí revisas el progreso operativo, el dominio, las evidencias, el puntaje de aprendizaje, el estado de tu certificado y el pódcast de estudio del curso activo.",
   actividades: "Esta es tu ruta de aprendizaje. Cada actividad tiene video de la sesión, material y una zona para subir tu entrega.",
   actividad: "Página de actividad. Mira el objetivo, reproduce la sesión y sube tu entrega como evidencia.",
   conocimiento: "Estos son los conceptos del curso. El dominio se verifica con evidencia; VIDA no asume que ya lo sabes.",
-  evidencias: "Centro de evidencias. VIDA solo registra lo que observa; nunca inventa evidencia.",
+  evidencias: "Centro de evidencias. Es tu expediente verificable en vivo: VIDA solo registra lo que observa, nunca inventa evidencia. Puedes filtrar por entregas, sesiones, conceptos o archivos.",
   reglas: "Reglas del motor. Aquí puedes ver quién califica, con qué pesos y bajo qué condiciones se emite el certificado."
 };
 const VOZ_FEMENINA = /laura|helena|sabina|paulina|m[oó]nica|camila|marisol|luci|ximena|valentina|isabella|sof[aí]a|elena|paloma|palmira|samantha|karina|nuria|silvia|beatriz|marta|olga|andrea|daniela|mar[íi]a|google español|google espa|milena|alicia|emma|selma|rosa|tessa|linda|allison/i;
@@ -426,6 +426,91 @@ function paintSecurity() {
     .catch(() => {});
 }
 
+function paintCertificate() {
+  const chip = $("#certChip");
+  const chip2 = $("#certChip2");
+  getJSON("/api/certificate")
+    .then((c) => {
+      const emitted = !!(c && c.certificate_id);
+      if (chip) {
+        chip.textContent = emitted ? "🏆 EMITIDO" : "🏆 PENDIENTE";
+        chip.className = "cert-chip " + (emitted ? "on" : "off");
+      }
+      if (chip2) chip2.textContent = emitted ? "EMITIDO · VERIFICABLE" : "NO EMITIDO";
+      const st = $("#certStatus");
+      const keys = $("#certKeys");
+      if (!st || !keys) return;
+      const st0 = state || {};
+      const checks = [
+        { ok: (st0.overall ?? 0) >= 100, label: "PROGRESO OPERATIVO", val: (st0.overall ?? 0) + "%" },
+        { ok: (st0.mastery ?? 0) >= 100, label: "DOMINIO VERIFICADO", val: (st0.mastery ?? 0) + "%" },
+        { ok: (st0.evidence_count ?? 0) > 0, label: "EVIDENCIA OBSERVADA", val: (st0.evidence_count ?? 0) + " obs." }
+      ];
+      keys.innerHTML = "";
+      checks.forEach(chk => {
+        const el = document.createElement("div");
+        el.className = "ck" + (chk.ok ? " ok" : " no");
+        el.innerHTML = `<span>${chk.ok ? "✅" : "⭕"}</span><b>${esc(chk.label)}</b><i>${esc(chk.val)}</i>`;
+        keys.appendChild(el);
+      });
+      if (emitted) {
+        const url = c.verification_url || ("/verificar/" + c.certificate_id);
+        st.innerHTML =
+          `<div class="cert-emitted"><span class="status-chip on">✓ EMITIDO · UNA SOLA VEZ</span>` +
+          `<div class="cert-id" title="Identificador con huella SHA-256">${esc(c.certificate_id)}</div>` +
+          `<a class="cert-verify-btn" href="${esc(url)}" target="_blank">Verificar en línea ⇢</a></div>`;
+      } else {
+        st.innerHTML =
+          `<div class="cert-pending"><span class="status-chip off">⏳ NO EMITIDO TODAVÍA</span>` +
+          `<small>El motor lo emite en cuanto los tres criterios de abajo se cumplan y el aprendiz lo confirme.</small></div>`;
+      }
+    })
+    .catch(() => {});
+}
+
+async function renderPodcast() {
+  const box = $("#podcastList");
+  if (!box) return;
+  box.innerHTML = "";
+  let data;
+  try { data = await getJSON("/api/podcast"); } catch (_) { data = { episodes: [] }; }
+  const eps = data.episodes || [];
+  if (!eps.length) {
+    box.innerHTML = `<div class="ev-empty">🎙 El pódcast se prepara… coloca el MP3 en <code>podcast_audio/</code> para que aparezca aquí.</div>`;
+    return;
+  }
+  eps.forEach(ep => {
+    const el = document.createElement("div");
+    el.className = "ep-item";
+    el.innerHTML =
+      `<div class="ep-ico">🎙</div>` +
+      `<div class="fm"><b>${esc(ep.title)}</b><small>${Math.round(ep.minutes || 0)} min · ${fmtSize(ep.size)} · MP3</small></div>` +
+      `<audio class="ep-audio" controls preload="none" src="${esc(ep.file)}"></audio>`;
+    box.appendChild(el);
+  });
+}
+
+function renderZone() {
+  const card = $("#zoneCard");
+  const box = $("#zoneList");
+  if (!card || !box) return;
+  const items = [
+    { t: "Matriz de riesgo interactiva", s: "EN MONTAJE", c: "trabajo" },
+    { t: "Perfil público del aprendiz", s: "EN MONTAJE", c: "trabajo" },
+    { t: "Pódcast por lección", s: "AUDIO LISTO", c: "listo" },
+    { t: "Certificado en formato PDF", s: "EN DISEÑO", c: "diseno" },
+    { t: "Versión en inglés técnico", s: "IDEA", c: "idea" }
+  ];
+  card.hidden = false;
+  box.innerHTML = "";
+  items.forEach(it => {
+    const el = document.createElement("div");
+    el.className = "zone-item " + it.c;
+    el.innerHTML = `<b>${esc(it.t)}</b><span>${esc(it.s)}</span>`;
+    box.appendChild(el);
+  });
+}
+
 async function load() {
   if (!(await checkAuth())) return;
   initAuthUI();
@@ -442,6 +527,8 @@ async function load() {
   await loadCourses();
   await renderRoadmap();
   await refresh();
+  renderZone();
+  renderPodcast();
   router();
 }
 
@@ -460,6 +547,7 @@ async function refresh() {
   const sm = $("#studyMinutes");
   if (sm) sm.textContent = (state.study_minutes ?? 0) + " MIN";
   renderConcepts();
+  paintCertificate();
   if (parseHash().name === "dashboard") {
     renderDashboard();
     renderSignals(state);
@@ -916,18 +1004,56 @@ async function renderRules() {
   });
 }
 
-/* ---------------- EVIDENCIAS ---------------- */
+/* ---------------- EVIDENCIAS: EXPEDIENTE VERIFICABLE ---------------- */
+let evData = null;
+let evFilter = "all";
+let evQuery = "";
+const EV_MESES = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
+
+function evDay(iso) {
+  const d = new Date(iso);
+  if (isNaN(d.getTime()) || !iso) return { d: "—", m: "" };
+  return { d: String(d.getDate()).padStart(2, "0"), m: EV_MESES[d.getMonth()] };
+}
+
 async function renderEvidence() {
   const payload = await getJSON("/api/evidence");
-  const groups = payload.groups || payload;
-  const total = payload.total_records ?? groups.reduce((n, g) => n + g.records.length, 0);
-  const files = payload.total_files ?? groups.reduce((n, g) => n + g.files.length, 0);
+  evData = { groups: payload.groups || payload, payload };
+  renderEvidenceList();
+  paintEvLedgerFoot();
+}
+
+function renderEvidenceList() {
+  const groups = (evData || { groups: [] }).groups;
+  const payload = (evData || {}).payload || {};
   const box = $("#evidenceGroups");
   if (!box) return;
-  box.innerHTML = "";
 
+  const total = payload.total_records ?? groups.reduce((n, g) => n + g.records.length, 0);
+  const files = payload.total_files ?? groups.reduce((n, g) => n + g.files.length, 0);
+  const q = evQuery;
+
+  const match = (r) => {
+    if (!q) return true;
+    const ctx = r.context || {};
+    const hay = [ctx.title, r.evidence_id, r.source, r.method, r.event_type]
+      .filter(Boolean).join(" ").toLowerCase();
+    return hay.includes(q);
+  };
+
+  const showOnlyFiles = evFilter === "files";
+  const filteredGroups = groups.map(g => ({
+    ...g,
+    records: showOnlyFiles ? [] : (g.records || []).filter(r =>
+      (evFilter === "all" || r.event_type === evFilter) && match(r)),
+    files: evFilter === "all" || evFilter === "files" ? (g.files || []).filter(f => match({ evidence_id: f.name, context: {} })) : []
+  })).filter(g => g.records.length || g.files.length);
+
+  const shownRecs = filteredGroups.reduce((n, g) => n + g.records.length + g.files.length, 0);
   const cnt = $("#evCount");
-  if (cnt) cnt.textContent = total + " OBSERVADAS";
+  if (cnt) cnt.textContent = (evFilter === "all" && !q) ? total + " OBSERVADAS" : shownRecs + " RESULTADOS";
+
+  box.innerHTML = "";
 
   const resumen = document.createElement("div");
   resumen.className = "ev-summary";
@@ -938,34 +1064,37 @@ async function renderEvidence() {
     `<div class="ev-ledger" title="Trazabilidad verificable"><span>🛡</span> OBSERVADO ≠ INFERIDO<br><small>nada se asume, todo se demuestra</small></div>`;
   box.appendChild(resumen);
 
-  groups.forEach(g => {
-    const totalG = g.records.length;
+  if (!filteredGroups.length) {
+    const empty = document.createElement("div");
+    empty.className = "ev-empty";
+    empty.textContent = "No hay coincidencias con ese filtro o búsqueda.";
+    box.appendChild(empty);
+    return;
+  }
+
+  filteredGroups.forEach(g => {
     const el = document.createElement("div");
     el.className = "ev-group";
     const head = document.createElement("h3");
-    head.innerHTML = `${totalG ? "✅" : "○"} ${esc(g.title)} ` +
-      `<span>${totalG} observaci${totalG === 1 ? "ón" : "ones"}` +
+    head.innerHTML = `${g.records.length ? "✅" : "📎"} ${esc(g.title)} ` +
+      `<span>${g.records.length} observaci${g.records.length === 1 ? "ón" : "ones"}` +
       `${g.files.length ? " · " + g.files.length + " archivo" + (g.files.length === 1 ? "" : "s") : ""}</span>`;
     el.appendChild(head);
 
-    if (!g.records.length) {
-      const empty = document.createElement("div");
-      empty.className = "ev-empty";
-      empty.textContent = "Sin observaciones del motor todavía. Sube tu entrega o reproduce la sesión para generar evidencia verificable.";
-      el.appendChild(empty);
-    } else {
-      g.records.slice().reverse().forEach(r => {
-        const ctx = r.context || {};
-        const row = document.createElement("div");
-        row.className = "ev-record";
-        row.innerHTML =
-          `<div class="ev-ico">${EV_ICON[r.event_type] || "◇"}</div>` +
-          `<div class="er-body"><b>${esc(ctx.title || r.source || r.evidence_id)}</b>` +
-          `<small><code>${esc(r.evidence_id)}</code> · ${esc(r.method.replace(/_/g, " "))} · ${esc(fmtStamp(r.observed_at))}</small></div>` +
-          `<span class="er-chip ${r.result.includes("VERIFIED") || r.result === "DELIVERED" ? "on" : "off"}">${esc(r.result.replace(/_/g, " "))}</span>`;
-        el.appendChild(row);
-      });
-    }
+    g.records.slice().reverse().forEach(r => {
+      const ctx = r.context || {};
+      const day = evDay(r.observed_at);
+      const row = document.createElement("div");
+      row.className = "ev-record";
+      row.dataset.etype = r.event_type || "";
+      row.innerHTML =
+        `<div class="ev-date" aria-hidden="true"><b>${esc(day.d)}</b><i>${esc(day.m)}</i></div>` +
+        `<div class="ev-ico">${EV_ICON[r.event_type] || "◇"}</div>` +
+        `<div class="er-body"><b>${esc(ctx.title || r.source || r.evidence_id)}</b>` +
+        `<small><code>${esc(r.evidence_id)}</code> · ${esc(r.method.replace(/_/g, " "))} · ${esc(fmtStamp(r.observed_at))}</small></div>` +
+        `<span class="er-chip ${r.result.includes("VERIFIED") || r.result === "DELIVERED" ? "on" : "off"}">${esc(r.result.replace(/_/g, " "))}</span>`;
+      el.appendChild(row);
+    });
 
     if (g.files.length) {
       const filesHead = document.createElement("div");
@@ -985,6 +1114,39 @@ async function renderEvidence() {
 
     box.appendChild(el);
   });
+}
+
+function bindEvidenceToolbar() {
+  const s = $("#evSearch");
+  if (s) s.addEventListener("input", () => {
+    evQuery = s.value.trim().toLowerCase();
+    if (evData) renderEvidenceList();
+  });
+  const fs = $("#evFilters");
+  if (fs) fs.addEventListener("click", (e) => {
+    const b = e.target.closest(".ev-f");
+    if (!b) return;
+    evFilter = b.dataset.f;
+    fs.querySelectorAll(".ev-f").forEach(x => x.classList.toggle("on", x === b));
+    if (evData) renderEvidenceList();
+  });
+}
+
+function paintEvLedgerFoot() {
+  const foot = $("#evLedgerFoot");
+  if (!foot) return;
+  foot.textContent = "🛡 Verificando integridad…";
+  getJSON("/api/security")
+    .then((s) => {
+      const it = (s || {}).integrity || {};
+      foot.innerHTML = `<span>🛡</span> Expediente cifrado en reposo · huella SHA-256 ` +
+        `<code>${esc((it.evidence_hash || "—").slice(0, 16))}…</code>` +
+        ` · ${esc(it.evidence_count ?? 0)} observaciones` +
+        (it.registry_updated_at ? ` · última: ${esc(fmtStamp(it.registry_updated_at))}` : "");
+    })
+    .catch(() => {
+      foot.textContent = "🛡 La verificación de integridad no está disponible en este momento.";
+    });
 }
 
 /* ---------------- INIT ---------------- */
@@ -1019,6 +1181,7 @@ setVoiceBtn();
   });
   setVoiceBtn();
   initDropzone();
+  bindEvidenceToolbar();
   tickClock();
   setInterval(tickClock, 1000);
 load();

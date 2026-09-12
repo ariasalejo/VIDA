@@ -9,23 +9,29 @@
 <body>
 <main class="certificate">
 
-  <div class="orn orn-top-left"></div>
-  <div class="orn orn-top-right"></div>
-  <div class="orn orn-bottom-left"></div>
-  <div class="orn orn-bottom-right"></div>
-
-  <div class="shine"></div>
+  <div class="frame" aria-hidden="true"></div>
+  <div class="orn orn-tl" aria-hidden="true"></div>
+  <div class="orn orn-tr" aria-hidden="true"></div>
+  <div class="orn orn-bl" aria-hidden="true"></div>
+  <div class="orn orn-br" aria-hidden="true"></div>
+  <div class="shine" aria-hidden="true"></div>
 
   <header class="head">
-    <div class="brand">🧠 BLUMIX · VIDA</div>
-    <div class="emblem">✦</div>
-    <div class="issuer">{{ provider }} · CENTRO PERSONAL DE APRENDIZAJE</div>
+    <div class="crest"><span class="crest-glyph">✦</span></div>
+    <div class="head-names">
+      <div class="brand">🧠 BLUMIX · VIDA</div>
+      <div class="issuer">{{ provider }} · CENTRO PERSONAL DE APRENDIZAJE</div>
+    </div>
   </header>
 
   <section class="title-zone">
-    <div class="kicker">CERTIFICADO DE LOGRO EDUCATIVO</div>
+    <div class="rule-title">
+      <span class="rule-line"></span>
+      <div class="kicker">CERTIFICADO DE LOGRO EDUCATIVO</div>
+      <span class="rule-line"></span>
+    </div>
     <h1>Tu primer logro educativo,<br>de muchos que vienen</h1>
-    <p class="line">— · —</p>
+    <div class="flourish">✦ — ❖ — ✦</div>
   </section>
 
   <section class="learner-zone">
@@ -37,28 +43,48 @@
   </section>
 
   <section class="metrics">
-    <div class="metric">
+    <div class="metric m-progress">
+      <div class="m-ico">◈</div>
       <b>100%</b>
       <span>PROGRESO OPERATIVO</span>
+      <div class="m-bar"><i></i></div>
     </div>
-    <div class="metric">
+    <div class="metric m-mastery">
+      <div class="m-ico">✧</div>
       <b>100%</b>
       <span>DOMINIO VERIFICADO</span>
+      <div class="m-bar"><i></i></div>
     </div>
-    <div class="metric">
+    <div class="metric m-evidence">
+      <div class="m-ico">✔</div>
       <b>VERIFIED</b>
       <span>EVIDENCIA OBSERVADA</span>
+      <div class="m-bar"><i></i></div>
     </div>
   </section>
 
   <section class="footer">
     <div class="verify">
-      <div class="status">PERSONAL VERIFIED · HUELLA SHA-256</div>
+      <span class="status">PERSONAL VERIFIED · HUELLA SHA-256</span>
       <div class="vid">VIDA&nbsp;·&nbsp;{{ cert.certificate_id or 'PENDIENTE' }}</div>
       <div class="hash">{{ cert.status }}</div>
       <a class="verify-link" href="/verificar/{{ cert.certificate_id }}">Verificar en línea ⇢</a>
     </div>
-    <div class="sign">Eduar Alejandro Arias Londoño</div>
+
+    <div class="seal" aria-hidden="true">
+      <div class="seal-ring">
+        <div class="seal-inner">
+          <span class="seal-glyph">❖</span>
+        </div>
+      </div>
+      <div class="seal-label">PERSONAL<br>VERIFIED</div>
+    </div>
+
+    <div class="sign">
+      <div class="sign-name">Eduar Alejandro Arias Londoño</div>
+      <div class="sign-role">Aprendiz SENA · firma verificada</div>
+      <div class="sign-line"></div>
+    </div>
   </section>
 
   <footer class="legal">
