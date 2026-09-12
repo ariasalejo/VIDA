@@ -45,6 +45,26 @@ ROOT = Path(__file__).resolve().parent
 DATA = ROOT / "data"
 MEDIA = ROOT / "media"
 PODCAST_DIR = ROOT / "podcast_audio"
+
+PODCAST_META = {
+    "podcast_ciberseguridad_1h": {
+        "title": "Ciberseguridad y Código · Tu primera zancada",
+        "speakers": "Salomé",
+        "voices": "Voz humana · Salomé (es-CO)",
+        "chapters": 6,
+        "desc": "Recorrido completo: qué es la ciberseguridad, la tríada CIA, amenazas, "
+        "programación desde cero, datos ocultos y motivación para no rendirte.",
+    },
+    "podcast_superias_1h": {
+        "title": "Las Voces del Código · Capítulo 03",
+        "speakers": "BLUMIX y OpenCode",
+        "voices": "BLUMIX (es-CO) · OpenCode (es-MX)",
+        "chapters": 45,
+        "desc": "Una conversación entre BLUMIX y la súper IA OpenCode: secretos y "
+        "teorías de la programación y la ciberseguridad, repaso de VIDA y por qué "
+        "este es el mejor momento para entrar en este mundo.",
+    },
+}
 DB = DATA / "vida.db"
 COURSE = DATA / "course.json"
 PROFILE = DATA / "profiles" / "sena_ciberseguridad.json"
@@ -2036,10 +2056,15 @@ def create_app() -> Flask:
             if path.name.startswith("chunk_") or path.name == "concat.txt":
                 continue
             size = path.stat().st_size
+            meta = PODCAST_META.get(path.stem, {})
             episodes.append(
                 {
                     "id": path.stem,
-                    "title": "Noche de estudio · Ciberseguridad",
+                    "title": meta.get("title", path.stem),
+                    "speakers": meta.get("speakers", "Salomé"),
+                    "voices": meta.get("voices", "Voz generada por máquina (TTS)"),
+                    "chapters": meta.get("chapters"),
+                    "desc": meta.get("desc"),
                     "file": f"/media/podcast/{path.name}",
                     "size": size,
                     "minutes": max(1, round(size / (128_000 / 8) / 60)),

@@ -113,6 +113,43 @@ No guarda credenciales de Zajuna. La sesión del dashboard es un clip de ~12 MB.
 
 ---
 
+## 🎙 Podcast de estudio
+
+Los MP3 finales viven en `podcast_audio/` (los `chunk_*` intermedios y `concat.txt`
+no se versionan ni se despliegan). El catálogo aparece en la tarjeta **Podcast** del
+dashboard, con título, voces, duración y reproductor; `/api/podcast` lista todo
+`*.mp3` de la raíz de `podcast_audio/` y `/media/podcast/<nombre>` sirve con `Range`.
+
+| Episodio | Título en pantalla | Voces | Archivo |
+|---|---|---|---|
+| Cap. 01 | Ciberseguridad y Código · Tu primera zancada | Salomé (es-CO) | `podcast_ciberseguridad_1h.mp3` |
+| Cap. 03 | Las Voces del Código · Capítulo 03 | BLUMIX (es-CO) + OpenCode (es-MX) | `podcast_superias_1h.mp3` |
+
+El diseño del capítulo 03 sigue el mismo patrón que los guiones: texto en
+`podcast_guion_superias.md` con marcadores `**BLUMIX:**` / `**OPENCODE:**`. Se
+genera con TTS y se mezcla un **pad ambiental suave** (sintetizado con ffmpeg) para
+studiar/repasar:
+
+```bash
+python3 graba_podcast.py --guide podcast_guion_superias.md --force --music
+python3 graba_podcast.py --music          # conserva el capítulo 01 (Salomé)
+```
+
+---
+
+## ⚡ Sector VIDA (estilo ciberpunk)
+
+Junto a *Reglas* hay una pestaña **VIDA · NEXUS** (`#/vida`) con estética futurista:
+láseres que cruzan la pantalla, escaneo, título con efecto glitch, señales de
+transmisión y la tarjeta **«Hablando con las Súper IAs»** que enlaza al capítulo 03
+del podcast. Todo es CSS/JS puro en `vida_ui_pro/` (renderVida en `app_pro.js`,
+animaciones `laserPass`/`scanSweep`/glitch en `style_pro.css`) y responde en móvil
+(via `760px` y `520px`).
+
+```
+
+---
+
 ## 🔑 Clave del certificado
 
 El certificado y los cambios de curso están protegidos por una **clave privada de solo lectura**
