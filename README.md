@@ -137,14 +137,13 @@ python3 graba_podcast.py --music          # conserva el capítulo 01 (Salomé)
 
 ---
 
-## ⚡ Sector VIDA (estilo ciberpunk)
+## ⚡ Sector VIDA (sección independiente)
 
-Junto a *Reglas* hay una pestaña **VIDA · NEXUS** (`#/vida`) con estética futurista:
-láseres que cruzan la pantalla, escaneo, título con efecto glitch, señales de
-transmisión y la tarjeta **«Hablando con las Súper IAs»** que enlaza al capítulo 03
-del podcast. Todo es CSS/JS puro en `vida_ui_pro/` (renderVida en `app_pro.js`,
-animaciones `laserPass`/`scanSweep`/glitch en `style_pro.css`) y responde en móvil
-(via `760px` y `520px`).
+VIDA vive en su **propia página** (`/vida` → `vida_ui_pro/vida.html`), con estética
+ciberpunk propia y **sin tocar el diseño del centro SENA**: láseres que cruzan la
+pantalla, escaneo, título con efecto glitch, señales de transmisión y reproductores
+para el capítulo 03 («Las Voces del Código»). Desde el menú lateral del SENA solo hay
+un botón **⚡ ENTRAR A VIDA · NEXUS** que abre la sección en su propia pestaña.
 
 ```
 

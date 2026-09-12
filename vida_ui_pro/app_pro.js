@@ -80,8 +80,7 @@ const GUIDES = {
   actividad: "Página de actividad. Mira el objetivo, reproduce la sesión y sube tu entrega como evidencia.",
   conocimiento: "Estos son los conceptos del curso. El dominio se verifica con evidencia; VIDA no asume que ya lo sabes.",
   evidencias: "Centro de evidencias. Es tu expediente verificable en vivo: VIDA solo registra lo que observa, nunca inventa evidencia. Puedes filtrar por entregas, sesiones, conceptos o archivos.",
-  reglas: "Reglas del motor. Aquí puedes ver quién califica, con qué pesos y bajo qué condiciones se emite el certificado.",
-  vida: "Este es el sector VIDA en modo ciberpunk. El núcleo donde aprendes que la programación y la ciberseguridad son el gran mundo del presente y del futuro. Observa los láseres: representan la energía del conocimiento que pasa una y otra vez. No te rindas."
+  reglas: "Reglas del motor. Aquí puedes ver quién califica, con qué pesos y bajo qué condiciones se emite el certificado."
 };
 const VOZ_FEMENINA = /laura|helena|sabina|paulina|m[oó]nica|camila|marisol|luci|ximena|valentina|isabella|sof[aí]a|elena|paloma|palmira|samantha|karina|nuria|silvia|beatriz|marta|olga|andrea|daniela|mar[íi]a|google español|google espa|milena|alicia|emma|selma|rosa|tessa|linda|allison/i;
 const VOZ_MASCULINA = /jorge|pedro|carlos|lucas|pablo|diego|david|miguel|juan|javier|antonio|raul|ram[oó]n|alberto|fernando|andres|andr[eé]s|thomas|alex|male|masculino|hombre/i;
@@ -321,8 +320,7 @@ const routes = {
   "actividad": renderActivity,
   "conocimiento": renderKnowledge,
   "evidencias": renderEvidence,
-  "reglas": renderRules,
-  "vida": renderVida
+  "reglas": renderRules
 };
 
 function parseHash() {
@@ -517,21 +515,6 @@ function renderZone() {
     el.innerHTML = `<b>${esc(it.t)}</b><span>${esc(it.s)}</span>`;
     box.appendChild(el);
   });
-}
-
-function renderVida() {
-  const t = $("#cyberCourseTitle");
-  if (t && course && course.title) t.textContent = course.title;
-  if (!renderVida._timer) {
-    renderVida._timer = setInterval(() => {
-      if (parseHash().name !== "vida") return;
-      const el = $("#cyberClock");
-      if (!el) return;
-      const d = new Date();
-      const p = n => String(n).padStart(2, "0");
-      el.textContent = p(d.getHours()) + ":" + p(d.getMinutes()) + ":" + p(d.getSeconds());
-    }, 1000);
-  }
 }
 
 async function load() {

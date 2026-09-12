@@ -904,3 +904,53 @@ aside a.nav.cyber-nav.active{background:linear-gradient(120deg,rgba(120,0,255,.1
   .reactor{flex:1 1 auto}
   .cyber-clock{letter-spacing:.2em}
 }
+
+/* =========================================================
+   VIDA · PÁGINA INDEPENDIENTE (/vida)
+   Sección aparte, con identidad propia, sin el menú del SENA.
+   ========================================================= */
+.cyber-launch{
+  display:flex;align-items:center;gap:8px;margin-top:14px;width:100%;
+  padding:11px 12px;border-radius:12px;text-decoration:none;
+  color:#fff;font-size:12px;font-weight:800;letter-spacing:.14em;
+  border:1px solid rgba(255,45,149,.5);
+  background:linear-gradient(120deg,rgba(120,0,255,.22),rgba(255,45,149,.14));
+  box-shadow:0 0 18px rgba(255,45,149,.12),inset 0 0 22px rgba(120,0,255,.12);
+  transition:.2s;
+}
+.cyber-launch:hover{color:#fff;border-color:rgba(69,230,255,.6);
+  box-shadow:0 0 26px rgba(69,230,255,.18),inset 0 0 22px rgba(69,230,255,.1)}
+.cyber-launch b{font-size:8px;letter-spacing:.26em;color:var(--gold2);margin-left:auto}
+
+body.cyber-page{
+  margin:0;min-height:100vh;color:#eaf6ff;font-family:inherit;
+  background:
+    radial-gradient(900px 520px at 18% 0%,rgba(120,0,255,.18),transparent 55%),
+    radial-gradient(820px 440px at 92% 8%,rgba(255,45,149,.15),transparent 52%),
+    linear-gradient(160deg,#0c0120,#070b1e 55%,#020b14);
+}
+.cyber-topbar{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:14px 20px;border-bottom:1px solid rgba(69,230,255,.2);
+  background:rgba(4,8,18,.7);position:sticky;top:0;z-index:5;
+}
+.cyber-brand{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.cyber-brand b{font-size:16px;letter-spacing:.2em;color:#fff;
+  text-shadow:0 0 14px rgba(69,230,255,.75)}
+.cyber-brand span{font-size:9.5px;letter-spacing:.3em;color:var(--gold2)}
+.cyber-back{
+  color:var(--cyan);text-decoration:none;font-size:11px;font-weight:800;
+  letter-spacing:.18em;border:1px solid rgba(69,230,255,.4);padding:9px 14px;
+  border-radius:99px;transition:.2s;
+}
+.cyber-back:hover{background:rgba(69,230,255,.1);box-shadow:0 0 18px rgba(69,230,255,.2)}
+.cyber-main{padding:18px;max-width:1080px;margin:0 auto}
+.cyber-main .view.cyber{margin-top:0}
+.cyber-audio-box{margin-top:14px}
+.cyber-audio-label{font-size:11px;letter-spacing:.16em;color:var(--muted);margin-bottom:6px}
+.cyber-audio-label span{color:var(--gold2)}
+.cyber-audio-box audio{width:100%;min-width:0}
+@media (max-width:620px){
+  .cyber-topbar{flex-direction:column;align-items:flex-start}
+  .cyber-main{padding:10px}
+}

@@ -989,6 +989,14 @@ def create_app() -> Flask:
             slug=_learner_slug(),
         )
 
+    @app.get("/vida")
+    def vida_sector():
+        return render_template(
+            "vida.html",
+            course=course(),
+            ctx=_session_context(),
+        )
+
     @app.get("/inicio")
     def inicio():
         if _logged_in() or _is_guest():
