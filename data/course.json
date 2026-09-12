@@ -8,7 +8,6 @@
   "learner": "Eduar Alejandro Arias Londoño",
   "tutor": "Libardo Antonio Contreras",
   "dedication": "A Libardo Antonio Contreras, mi instructor y guía, por acompañarme en este primer logro educativo de muchos que vienen.",
-
   "learning_objectives": [
     "Reconocer los conceptos fundamentales de ciberseguridad.",
     "Identificar y clasificar los activos de información.",
@@ -19,7 +18,6 @@
     "Representar información de seguridad mediante matrices, infografías y mapas mentales.",
     "Demostrar comprensión mediante actividades y evidencias verificables."
   ],
-
   "items": [
     {
       "id": "aa1",
@@ -29,7 +27,12 @@
       "brief": "Identificar, clasificar y valorar los activos de información de la organización de acuerdo con métodos y criterios técnicos de evaluación.",
       "deliverable": "Documento PDF con el informe de análisis y valoración de activos.",
       "video": "Und_Bien.mp4",
-      "materials": [],
+      "materials": [
+        {
+          "name": "Guía de estudio · AA1 Informe de activos",
+          "file": "media/materials/aa1_guia.html"
+        }
+      ],
       "knowledge": [
         "Activo de información",
         "Propietario del activo",
@@ -48,7 +51,12 @@
       "brief": "Representar de forma visual las clases de amenazas, vulnerabilidades y el proceso de análisis y evaluación del riesgo.",
       "deliverable": "Infografía en formato PDF o imagen (PNG/JPG).",
       "video": "aa2_infografia.mp4",
-      "materials": [],
+      "materials": [
+        {
+          "name": "Guía de estudio · AA2 Análisis y Evaluación de Riesgos",
+          "file": "media/materials/aa2_guia.html"
+        }
+      ],
       "knowledge": [
         "Amenaza",
         "Vulnerabilidad",
@@ -67,7 +75,12 @@
       "brief": "Estructurar el mapa de riesgos de ciberseguridad según los activos de información, la normativa y los estándares técnicos.",
       "deliverable": "Matriz de riesgo en hoja de cálculo (XLSX) o documento (PDF).",
       "video": "aa3_matriz_riesgo.mp4",
-      "materials": [],
+      "materials": [
+        {
+          "name": "Guía de estudio · AA3 Matriz de riesgo",
+          "file": "media/materials/aa3_guia.html"
+        }
+      ],
       "knowledge": [
         "Activo",
         "Amenaza",
@@ -88,7 +101,12 @@
       "brief": "Sintetizar los procesos críticos de la gestión de la seguridad de la información mediante un mapa mental.",
       "deliverable": "Mapa mental en imagen (PNG/JPG) o documento (PDF).",
       "video": "aa4_mapa_mental.mp4",
-      "materials": [],
+      "materials": [
+        {
+          "name": "Guía de estudio · AA4 Mapa mental",
+          "file": "media/materials/aa4_guia.html"
+        }
+      ],
       "knowledge": [
         "Gestión de seguridad de la información",
         "Activos",
@@ -102,7 +120,6 @@
       ]
     }
   ],
-
   "concepts": [
     {
       "id": "concepto_ciberseguridad",
@@ -123,7 +140,6 @@
         "aa4"
       ]
     },
-
     {
       "id": "concepto_activo",
       "title": "Activo de información",
@@ -151,7 +167,6 @@
         "aa3"
       ]
     },
-
     {
       "id": "concepto_confidencialidad",
       "title": "Confidencialidad",
@@ -177,7 +192,6 @@
         "aa3"
       ]
     },
-
     {
       "id": "concepto_integridad",
       "title": "Integridad",
@@ -202,7 +216,6 @@
         "aa3"
       ]
     },
-
     {
       "id": "concepto_disponibilidad",
       "title": "Disponibilidad",
@@ -228,7 +241,6 @@
         "aa4"
       ]
     },
-
     {
       "id": "concepto_amenaza",
       "title": "Amenaza",
@@ -250,7 +262,6 @@
         "aa4"
       ]
     },
-
     {
       "id": "concepto_vulnerabilidad",
       "title": "Vulnerabilidad",
@@ -269,7 +280,6 @@
         "aa3"
       ]
     },
-
     {
       "id": "concepto_riesgo",
       "title": "Riesgo",
@@ -290,7 +300,6 @@
         "aa4"
       ]
     },
-
     {
       "id": "concepto_impacto",
       "title": "Impacto",
@@ -309,7 +318,6 @@
         "aa3"
       ]
     },
-
     {
       "id": "concepto_control",
       "title": "Control de seguridad",
@@ -330,7 +338,6 @@
         "aa4"
       ]
     },
-
     {
       "id": "concepto_tratamiento",
       "title": "Tratamiento del riesgo",
@@ -347,7 +354,6 @@
         "aa4"
       ]
     },
-
     {
       "id": "concepto_riesgo_residual",
       "title": "Riesgo residual",
@@ -358,7 +364,6 @@
         "aa4"
       ]
     },
-
     {
       "id": "concepto_matriz_riesgo",
       "title": "Matriz de riesgos",
@@ -379,7 +384,6 @@
         "aa3"
       ]
     },
-
     {
       "id": "concepto_gestion_seguridad",
       "title": "Gestión de la seguridad de la información",
@@ -401,7 +405,6 @@
       ]
     }
   ],
-
   "learning_path": [
     {
       "step": 1,
@@ -451,7 +454,6 @@
       ]
     }
   ],
-
   "videos": [
     {
       "id": "video_aa1",

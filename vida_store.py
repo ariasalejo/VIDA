@@ -19,6 +19,8 @@ import threading
 from datetime import datetime, timezone
 from typing import Any
 
+import vida_secret
+
 _LOCK = threading.Lock()
 _PG = None
 
@@ -188,6 +190,9 @@ def put_file(activity_id: str, filename: str, data: bytes) -> None:
     if not pg:
         return
     try:
+        stored = vida_secret.encrypt(data)
+        if stored is not None:
+            data = stored
         pg.execute(
             """
             INSERT INTO vida_files (activity_id, filename, data, size)
@@ -294,7 +299,15 @@ def _restore_files() -> None:
             target_dir = evidence_root() / row["activity_id"]
             try:
                 target_dir.mkdir(parents=True, exist_ok=True)
-                (target_dir / row["filename"]).write_bytes(row["data"])
+                raw = row["data"]
+                if isinstance(raw, str):
+                    raw = raw.encode("latin-1")
+                try:
+                    raw = vida_secret.decrypt(raw)
+                except ValueError as exc:
+                    logging.warning("vida_store: %s → %s", row["filename"], exc)
+                    continue
+                (target_dir / row["filename"]).write_bytes(raw)
             except OSError:
                 continue
     except Exception:

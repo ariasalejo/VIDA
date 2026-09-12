@@ -15,15 +15,17 @@ data/vida.db
 data/users.db
 data/.cert_token
 data/.flask_secret
+data/.data_key
 data/evidence/
 data/events/*.json
 data/reports/*.json
 certificates/*.issued.json
 !certificates/.gitkeep
 
-# Multimedia (materiales se sirven localmente; videos se versionan por deploy)
+# Multimedia (materiales propios en HTML se versionan; se sirven en el deploy)
 media/materials/*
 !media/materials/.gitkeep
+!media/materials/*.html
 
 # SQLite temporales
 *.db-journal

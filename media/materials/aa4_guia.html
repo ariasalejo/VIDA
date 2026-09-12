@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AA4 · Mapa mental · VIDA</title>
+<style>*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#06111d;--panel:#0b1b2a;--panel2:#071522;--line:#1b3d56;--cyan:#45e6ff;
+      --blue:#2e8bff;--green:#47e0b7;--gold:#d4af37;--text:#eef8ff;--muted:#8aa8ba}
+body{background:radial-gradient(circle at top,rgba(46,139,255,.16),transparent 34%),
+  linear-gradient(180deg,#06111d,#03080f);color:var(--text);min-height:100vh;
+  font-family:Inter,system-ui,-apple-system,sans-serif;line-height:1.6}
+.wrap{max-width:860px;margin:0 auto;padding:38px 22px 60px}
+.head{display:flex;justify-content:space-between;align-items:center;gap:12px;
+  padding-bottom:16px;border-bottom:1px solid var(--line);margin-bottom:26px;flex-wrap:wrap}
+.brand{color:var(--cyan);letter-spacing:.2em;font-weight:900;font-size:12px}
+.chip{font:10px ui-monospace,monospace;letter-spacing:.12em;color:#021018;
+  background:linear-gradient(135deg,var(--blue),var(--cyan));border-radius:999px;padding:5px 12px;font-weight:800}
+h1{font-size:30px;font-weight:900;line-height:1.2;margin:8px 0 6px}
+.kicker{color:var(--muted);letter-spacing:.18em;font-size:11px;font-weight:800}
+.brief{color:var(--muted);font-size:14.5px;margin:8px 0 0;max-width:70ch}
+.deliv{margin-top:10px;font-size:13px;color:var(--green)}
+section{margin-top:30px}
+section h2{font-size:15px;letter-spacing:.1em;color:var(--cyan);font-weight:900;
+  text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+section h2::before{content:"✦";color:var(--gold)}
+.card{background:linear-gradient(180deg,var(--panel),var(--panel2));
+  border:1px solid var(--line);border-radius:16px;padding:20px 22px}
+.card+.card{margin-top:12px}
+.concept{display:flex;gap:14px;align-items:flex-start}
+.concept b{color:var(--gold);white-space:nowrap;font-size:14px}
+.concept p{color:var(--muted);font-size:13.5px}
+ol.steps{counter-reset:step;list-style:none}
+ol.steps li{counter-increment:step;position:relative;padding:0 0 16px 46px;font-size:14px;color:var(--text)}
+ol.steps li::before{content:counter(step,decimal-leading-zero);position:absolute;left:0;top:0;
+  width:32px;height:32px;display:grid;place-items:center;border:1px solid var(--cyan);
+  color:var(--cyan);border-radius:9px;font-weight:800;font-size:13px;background:#071522}
+ol.steps li b{color:var(--cyan)}
+ol.steps li small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px}
+ul.check{list-style:none}
+ul.check li{position:relative;padding:7px 0 7px 34px;font-size:13.5px;color:var(--text);border-bottom:1px dashed var(--line)}
+ul.check li:last-child{border-bottom:0}
+ul.check li::before{content:"□";position:absolute;left:4px;top:6px;color:var(--cyan);font-size:16px;font-weight:800}
+code{background:var(--panel2);border:1px solid var(--line);color:#8cc7db;padding:2px 7px;border-radius:6px;font-size:12px}
+.pill{display:inline-block;margin-top:16px;padding:8px 14px;border:1px solid #1d574c;color:var(--green);
+  border-radius:999px;letter-spacing:.12em;font-size:10px}
+.printbar{position:sticky;top:10px;text-align:right;margin-bottom:6px}
+.btn{background:linear-gradient(135deg,var(--blue),var(--cyan));border:0;color:#021018;
+  font-weight:800;letter-spacing:.06em;padding:10px 18px;border-radius:11px;cursor:pointer;font-size:12.5px}
+.foot{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);
+  color:#6f8fa3;font-size:11px;text-align:center}
+@media print{.printbar{display:none}body{background:#fff;color:#0b1b2a}
+  .card{border:1px solid #d8e6f0;background:#fff}section h2{color:#0b3d66}
+  .concept b{color:#8a6d1a}.kicker,.brand{color:#4a6780}}</style></head>
+<body><div class="wrap">
+<div class="printbar"><button class="btn" onclick="window.print()">🖨 Imprimir / PDF</button></div>
+<header class="head">
+  <div class="brand">🧠 BLUMIX · VIDA</div>
+  <span class="chip">AA4 · SENA</span>
+</header>
+<div class="kicker">GUÍA DE ESTUDIO · AA4 · Mapa mental</div>
+<h1>AA4 · Mapa mental</h1>
+<p class="brief">Sintetizar los procesos críticos de la gestión de la seguridad de la información mediante un mapa mental.</p>
+<p class="deliv">📦 Entregable: Mapa mental en imagen (PNG/JPG) o documento (PDF).</p>
+
+<section><h2>Conceptos clave</h2><div class="card concept"><b>Conjunto</b><p><b>Conjunto organizado de procesos mediante los cuales una organización protege su información y gestiona los riesgos asociados.</b> — Conjunto organizado de procesos mediante los cuales una organización protege su información y gestiona los riesgos asociados.</p></div><div class="card concept"><b>Recurso</b><p><b>Recurso que posee valor para una organización y que debe ser protegido.</b> — Recurso que posee valor para una organización y que debe ser protegido.</p></div><div class="card concept"><b>Circunstancia,</b><p><b>Circunstancia, evento, actor o acción con capacidad potencial de causar daño a un activo.</b> — Circunstancia, evento, actor o acción con capacidad potencial de causar daño a un activo.</p></div><div class="card concept"><b>Debilidad</b><p><b>Debilidad o condición que puede ser aprovechada por una amenaza.</b> — Debilidad o condición que puede ser aprovechada por una amenaza.</p></div><div class="card concept"><b>Posibilidad</b><p><b>Posibilidad de que una amenaza aproveche una vulnerabilidad y produzca consecuencias sobre un activo.</b> — Posibilidad de que una amenaza aproveche una vulnerabilidad y produzca consecuencias sobre un activo.</p></div><div class="card concept"><b>Medida</b><p><b>Medida utilizada para prevenir, detectar, corregir o reducir los efectos de un riesgo.</b> — Medida utilizada para prevenir, detectar, corregir o reducir los efectos de un riesgo.</p></div></section>
+
+<section><h2>Ruta de trabajo</h2>
+<ol class="steps"><li><b>Procesos críticos</b><small>Selecciona los procesos de la gestión de seguridad de la información que vas a sintetizar.</small></li><li><b>Nodos conceptuales</b><small>Enlaza los conceptos clave: activo, amenaza, vulnerabilidad, riesgo, control.</small></li><li><b>Relaciones</b><small>Conecta cada concepto con los procesos y controles asociados.</small></li><li><b>Mapa mental</b><small>Sintetiza visualmente en un mapa mental claro y jerarquizado (imagen o PDF).</small></li></ol></section>
+
+<section><h2>Checklist de entrega</h2>
+<div class="card"><ul class="check"><li>El mapa cubre los procesos de la gestión de seguridad.</li><li>Incluye activos, amenazas, vulnerabilidades, riesgos y controles.</li><li>La síntesis es visual, jerarquizada y legible.</li></ul>
+<span class="pill">PERSONAL · UNA ENTREGA POR EVIDENCIA</span></div></section>
+
+
+<div class="foot">Material de estudio generado por BLUMIX · VIDA a partir del
+manifiesto del curso. No constituye certificación oficial del SENA · Imprimible a PDF.</div>
+
+</div></body></html>

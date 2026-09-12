@@ -4,8 +4,9 @@ __pycache__
 *.pyc
 .pytest_cache
 
-# Multimedia: la sesión grabada se despliega; los materiales se sirven localmente
-media/materials/*
+# Multimedia: los videos se despliegan; los chunks de podcast y cachés no
+podcast_audio/chunk_*
+podcast_audio/concat.txt
 
 # Datos generados en runtime
 data/*.db

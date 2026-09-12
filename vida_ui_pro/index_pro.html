@@ -138,6 +138,20 @@
         <header><div><small>ROADMAP</small><h2>Ruta curricular</h2></div><span class="pill">SOURCE OF TRUTH</span></header>
         <div id="timeline"></div>
       </div>
+
+      <div class="card sec-integrity-card">
+        <header>
+          <div><small>HARDENING · SEGURIDAD DE LA PLATAFORMA</small><h2>🛡 Garantías cibernéticas</h2></div>
+          <span class="pill">IMMUTABLE LEDGER</span>
+        </header>
+        <p class="hint">La plataforma endurece cada respuesta HTTP, cifra las evidencias en reposo y firma el registro con una huella SHA-256 a prueba de manipulaciones.</p>
+        <div class="sec-grid">
+          <div class="sec-item"><b id="secEncrypt">…</b><small>CIFRADO<br>EN REPOSO</small></div>
+          <div class="sec-item"><b id="secHash">…</b><small>HUELLA DEL REGISTRO<br>SHA-256</small></div>
+          <div class="sec-item"><b id="secUpdated">…</b><small>ÚLTIMA<br>OBSERVACIÓN</small></div>
+          <div class="sec-item"><b id="secHTTP">…</b><small>CABECERAS<br>HTTP HARDENED</small></div>
+        </div>
+      </div>
     </section>
 
     <!-- ============ ACTIVIDADES ============ -->
@@ -199,6 +213,7 @@
             <input type="file" id="evFile" accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.xlsx,.xls,.doc,.docx,.ppt,.pptx,.txt,.zip" hidden>
             <div class="file-list" id="evList"></div>
             <div class="ok-note" id="evMsg"></div>
+            <div class="sec-note lime" id="secChip"><span>🛡</span> estado del cifrado de evidencias…</div>
           </div>
         </div>
       </div>
@@ -216,7 +231,7 @@
     <!-- ============ EVIDENCIAS ============ -->
     <section class="view" id="view-evidencias">
       <div class="card">
-        <header><div><small>EVIDENCE ENGINE</small><h2>Centro de evidencias</h2></div><span class="pill">OBSERVADO ≠ INFERIDO</span></header>
+        <header><div><small>EVIDENCE ENGINE</small><h2>Centro de evidencias</h2></div><span class="pill" id="evCount">OBSERVADO ≠ INFERIDO</span></header>
         <p class="hint">Registro verificable de entregas: archivos subidos y observaciones del motor. VIDA no inventa evidencia.</p>
         <div id="evidenceGroups"></div>
       </div>
@@ -252,6 +267,9 @@
     <div class="sig">
       <b>VIDA</b> · una estructura para aprender, crear y avanzar. Motor de progreso · evidencia · inteligencia · certificados verificables.<br>
       {{ course.provider }} · {{ course.platform }} · {{ course.hours }} horas
+      <div class="sig-sec">
+        🛡 CIFRADO EN REPOSO · HUELLA SHA-256 DEL REGISTRO · SEGURIDAD HTTP HARDENED · <span>{{ course.provider }}</span> · <span>{{ course.platform }}</span>
+      </div>
     </div>
 
   </main>

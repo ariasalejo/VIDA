@@ -50,6 +50,16 @@ function fmtSize(n) {
   if (n < 1048576) return (n / 1024).toFixed(1) + " KB";
   return (n / 1048576).toFixed(1) + " MB";
 }
+function fmtStamp(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return String(iso);
+  const p = n => String(n).padStart(2, "0");
+  return `${p(d.getDate())}.${p(d.getMonth() + 1)}.${d.getFullYear()} · ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+const EV_ICON = {
+  ACTIVITY_COMPLETE: "📤", VIDEO_COMPLETE: "📼", CONCEPT_VERIFY: "◈", EVIDENCE_UPLOAD: "📎"
+};
 async function getJSON(u, o) {
   const r = await fetch(u, o);
   let data = null;
@@ -391,6 +401,29 @@ function initAuthUI() {
     try { await fetch("/api/auth/logout", { method: "POST" }); } catch (_) {}
     location.href = "/acceso";
   });
+}
+
+function paintSecurity() {
+  const chip = $("#secChip");
+  getJSON("/api/security")
+    .then((s) => {
+      const on = s && s.evidence_encrypted;
+      if (chip) {
+        chip.innerHTML = on
+          ? "<span>🛡</span> EVIDENCIAS CIFRADAS EN REPOSO · " + esc(s.encryption || "Fernet · AES-128")
+          : "<span>🛡</span> cifrado en reposo DESACTIVADO · clave maestra pendiente";
+      }
+      const it = (s || {}).integrity || {};
+      const set = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = val;
+      };
+      set("secEncrypt", on ? "ACTIVO" : "PENDIENTE");
+      set("secHash", it.evidence_hash ? it.evidence_hash.slice(0, 16) + "…" : "—");
+      set("secUpdated", it.registry_updated_at ? fmtStamp(it.registry_updated_at) : "—");
+      set("secHTTP", "NOSNIFF · CSP · HSTS");
+    })
+    .catch(() => {});
 }
 
 async function load() {
@@ -885,24 +918,71 @@ async function renderRules() {
 
 /* ---------------- EVIDENCIAS ---------------- */
 async function renderEvidence() {
-  const groups = await getJSON("/api/evidence");
+  const payload = await getJSON("/api/evidence");
+  const groups = payload.groups || payload;
+  const total = payload.total_records ?? groups.reduce((n, g) => n + g.records.length, 0);
+  const files = payload.total_files ?? groups.reduce((n, g) => n + g.files.length, 0);
   const box = $("#evidenceGroups");
+  if (!box) return;
   box.innerHTML = "";
+
+  const cnt = $("#evCount");
+  if (cnt) cnt.textContent = total + " OBSERVADAS";
+
+  const resumen = document.createElement("div");
+  resumen.className = "ev-summary";
+  resumen.innerHTML =
+    `<div class="ev-stat"><b>${esc(String(total))}</b><small>OBSERVACIONES<br>DEL MOTOR</small></div>` +
+    `<div class="ev-stat"><b>${esc(String(files))}</b><small>ARCHIVOS<br>SUBIDOS</small></div>` +
+    `<div class="ev-stat"><b>${esc(String(groups.length))}</b><small>ACTIVIDADES<br>RELACIONADAS</small></div>` +
+    `<div class="ev-ledger" title="Trazabilidad verificable"><span>🛡</span> OBSERVADO ≠ INFERIDO<br><small>nada se asume, todo se demuestra</small></div>`;
+  box.appendChild(resumen);
+
   groups.forEach(g => {
-    const total = g.records.length;
+    const totalG = g.records.length;
     const el = document.createElement("div");
     el.className = "ev-group";
-    el.innerHTML = `<h3>${total ? "✅" : "○"} ${esc(g.title)} <span>${total} registro${total === 1 ? "" : "s"}</span></h3>`;
-    if (!g.files.length) {
-      el.innerHTML += `<div class="ev-empty">Sin archivos subidos todavía.</div>`;
+    const head = document.createElement("h3");
+    head.innerHTML = `${totalG ? "✅" : "○"} ${esc(g.title)} ` +
+      `<span>${totalG} observaci${totalG === 1 ? "ón" : "ones"}` +
+      `${g.files.length ? " · " + g.files.length + " archivo" + (g.files.length === 1 ? "" : "s") : ""}</span>`;
+    el.appendChild(head);
+
+    if (!g.records.length) {
+      const empty = document.createElement("div");
+      empty.className = "ev-empty";
+      empty.textContent = "Sin observaciones del motor todavía. Sube tu entrega o reproduce la sesión para generar evidencia verificable.";
+      el.appendChild(empty);
     } else {
-      g.files.forEach(f => {
-        const r = g.records.find(x => (x.context || {}).file === f.name);
-        el.innerHTML += `<div class="file-item"><div class="fi">${fileType(f.name).split(" ")[0]}</div>` +
-          `<div class="fm"><b>${esc(f.name)}</b><small>${fmtSize(f.size)}${r ? " · " + esc(r.evidence_id) : ""}</small></div>` +
-          `<a href="${esc(f.url)}" target="_blank">ver →</a></div>`;
+      g.records.slice().reverse().forEach(r => {
+        const ctx = r.context || {};
+        const row = document.createElement("div");
+        row.className = "ev-record";
+        row.innerHTML =
+          `<div class="ev-ico">${EV_ICON[r.event_type] || "◇"}</div>` +
+          `<div class="er-body"><b>${esc(ctx.title || r.source || r.evidence_id)}</b>` +
+          `<small><code>${esc(r.evidence_id)}</code> · ${esc(r.method.replace(/_/g, " "))} · ${esc(fmtStamp(r.observed_at))}</small></div>` +
+          `<span class="er-chip ${r.result.includes("VERIFIED") || r.result === "DELIVERED" ? "on" : "off"}">${esc(r.result.replace(/_/g, " "))}</span>`;
+        el.appendChild(row);
       });
     }
+
+    if (g.files.length) {
+      const filesHead = document.createElement("div");
+      filesHead.className = "ev-files-label";
+      filesHead.textContent = "ARCHIVOS SUBIDOS";
+      el.appendChild(filesHead);
+      g.files.forEach(f => {
+        const r = g.records.find(x => (x.context || {}).file === f.name);
+        const fi = document.createElement("div");
+        fi.className = "file-item";
+        fi.innerHTML = `<div class="fi">${fileType(f.name).split(" ")[0]}</div>` +
+          `<div class="fm"><b>${esc(f.name)}</b><small>${fmtSize(f.size)}${r ? " · " + esc(r.evidence_id) : ""}</small></div>` +
+          `<a href="${esc(f.url)}" target="_blank">ver →</a>`;
+        el.appendChild(fi);
+      });
+    }
+
     box.appendChild(el);
   });
 }
@@ -941,6 +1021,7 @@ setVoiceBtn();
   initDropzone();
   tickClock();
   setInterval(tickClock, 1000);
-  load();
+load();
+  paintSecurity();
   setInterval(() => { if (document.visibilityState === "visible") refresh(); }, 20000);
 });

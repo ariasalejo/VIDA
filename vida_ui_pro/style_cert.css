@@ -5,9 +5,10 @@
   --text:#eef8ff;--muted:#8aa8ba;--panel:#0b1b2a;--line:#1b3d56;
 }
 *{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
 body{
   min-height:100vh;
-  padding:34px 16px 60px;
+  padding:30px 16px 60px;
   font-family:"Georgia","Times New Roman",serif;
   color:var(--text);
   background:
@@ -17,11 +18,11 @@ body{
 }
 .certificate{
   position:relative;
-  width:min(980px,100%);
+  width:min(1080px,100%);
   margin:0 auto;
   overflow:hidden;
-  border-radius:30px;
-  padding:64px 72px 48px;
+  border-radius:26px;
+  padding:34px 52px 30px;
   text-align:center;
   border:1px solid rgba(212,175,55,.5);
   background:
@@ -36,68 +37,77 @@ body{
   content:"";
   position:absolute;inset:14px;
   border:1px solid rgba(212,175,55,.35);
-  border-radius:20px;
+  border-radius:18px;
   pointer-events:none;
 }
-.orn{position:absolute;width:74px;height:74px;opacity:.85}
+.orn{position:absolute;width:58px;height:58px;opacity:.85}
 .orn::before{content:"";position:absolute;inset:4px;transform:rotate(45deg);border:2px solid rgba(212,175,55,.75);
   background:conic-gradient(from 0deg,transparent 0 25%,rgba(212,175,55,.9) 25% 50%,transparent 50% 75%,rgba(212,175,55,.9) 75%)}
-.orn-top-left{top:26px;left:26px}
-.orn-top-right{top:26px;right:26px;transform:rotate(90deg)}
-.orn-bottom-left{bottom:26px;left:26px;transform:rotate(-90deg)}
-.orn-bottom-right{bottom:26px;right:26px;transform:rotate(180deg)}
+.orn-top-left{top:22px;left:22px}
+.orn-top-right{top:22px;right:22px;transform:rotate(90deg)}
+.orn-bottom-left{bottom:22px;left:22px;transform:rotate(-90deg)}
+.orn-bottom-right{bottom:22px;right:22px;transform:rotate(180deg)}
 .shine{position:absolute;inset:0;pointer-events:none;
   background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.05) 42%,transparent 54%)}
-.head{position:relative;z-index:1;display:flex;align-items:center;gap:16px;justify-content:center}
-.brand{font-family:Inter,system-ui,sans-serif;letter-spacing:.24em;font-weight:900;font-size:12px;color:var(--cyan)}
-.emblem{color:var(--gold2);font-size:22px;text-shadow:0 0 18px rgba(212,175,55,.8)}
-.issuer{font-family:Inter,system-ui,sans-serif;letter-spacing:.18em;font-size:11px;color:var(--muted)}
-.title-zone{margin-top:38px;position:relative;z-index:1}
-.kicker{font-family:Inter,system-ui,sans-serif;letter-spacing:.4em;font-size:11px;color:var(--gold2)}
+.head{position:relative;z-index:1;display:flex;align-items:center;gap:14px;justify-content:center}
+.brand{font-family:Inter,system-ui,sans-serif;letter-spacing:.24em;font-weight:900;font-size:11.5px;color:var(--cyan)}
+.emblem{color:var(--gold2);font-size:20px;text-shadow:0 0 18px rgba(212,175,55,.8)}
+.issuer{font-family:Inter,system-ui,sans-serif;letter-spacing:.16em;font-size:10.5px;color:var(--muted)}
+.title-zone{margin-top:22px;position:relative;z-index:1}
+.kicker{font-family:Inter,system-ui,sans-serif;letter-spacing:.4em;font-size:10.5px;color:var(--gold2)}
 h1{
-  margin-top:18px;
-  font-size:44px;line-height:1.12;font-weight:700;
+  margin-top:12px;
+  font-size:32px;line-height:1.14;font-weight:700;
   background:linear-gradient(180deg,#f8e7b0,#d4af37 60%,#9c7c2d);
   -webkit-background-clip:text;background-clip:text;
   -webkit-text-fill-color:transparent;color:#d4af37;
   text-shadow:0 4px 30px rgba(212,175,55,.25);
 }
-.line{margin:20px auto 0;color:var(--gold);letter-spacing:.6em;font-size:14px}
-.learner-zone{margin-top:40px;position:relative;z-index:1}
-.given{font-family:Inter,system-ui,sans-serif;letter-spacing:.14em;font-size:12px;color:var(--muted);text-transform:uppercase}
+.line{margin:14px auto 0;color:var(--gold);letter-spacing:.6em;font-size:13px}
+.learner-zone{margin-top:22px;position:relative;z-index:1}
+.given{font-family:Inter,system-ui,sans-serif;letter-spacing:.14em;font-size:11.5px;color:var(--muted);text-transform:uppercase}
 .name{
-  margin:14px auto 22px;
-  font-size:40px;font-weight:700;color:#ffffff;
+  margin:10px auto 16px;
+  font-size:34px;font-weight:700;color:#ffffff;
   letter-spacing:.02em;
   text-shadow:0 2px 0 rgba(212,175,55,.35);
 }
-.course{font-family:Inter,system-ui,sans-serif;font-size:19px;color:var(--text);font-weight:600;max-width:680px;margin:0 auto}
-.meta{font-family:Inter,system-ui,sans-serif;font-size:12px;color:var(--muted);margin-top:10px;letter-spacing:.08em}
+.course{font-family:Inter,system-ui,sans-serif;font-size:18px;color:var(--text);font-weight:600;max-width:760px;margin:0 auto}
+.meta{font-family:Inter,system-ui,sans-serif;font-size:11.5px;color:var(--muted);margin-top:8px;letter-spacing:.08em}
 .metrics{
-  margin:40px auto 0;
-  max-width:760px;
-  display:grid;grid-template-columns:repeat(3,1fr);gap:14px;
+  margin:20px auto 0;
+  max-width:780px;
+  display:grid;grid-template-columns:repeat(3,1fr);gap:12px;
   position:relative;z-index:1;
 }
-.metric{padding:18px 12px;border:1px solid var(--line);border-radius:16px;background:#071522}
-.metric b{display:block;font-family:Inter,system-ui,sans-serif;font-size:26px;color:var(--cyan)}
-.metric span{font-family:Inter,system-ui,sans-serif;font-size:9px;letter-spacing:.16em;color:var(--muted)}
-.footer{margin-top:44px;position:relative;z-index:1}
-.status{display:inline-block;padding:8px 16px;border:1px solid #1d574c;color:var(--green);border-radius:999px;letter-spacing:.14em;font-size:10px;font-family:Inter,system-ui,sans-serif}
-.vid{font-family:ui-monospace,monospace;font-size:14px;color:#8cc7db;margin-top:18px;letter-spacing:.05em}
-.hash{font-family:ui-monospace,monospace;font-size:11px;color:var(--muted);margin-top:6px;word-break:break-all}
-.verify-link{display:inline-block;margin-top:18px;font-family:Inter,system-ui,sans-serif;font-size:12px;letter-spacing:.1em;color:var(--cyan);text-decoration:none;border:1px solid rgba(69,230,255,.4);padding:9px 18px;border-radius:999px}
+.metric{padding:13px 12px;border:1px solid var(--line);border-radius:14px;background:#071522}
+.metric b{display:block;font-family:Inter,system-ui,sans-serif;font-size:22px;color:var(--cyan)}
+.metric span{font-family:Inter,system-ui,sans-serif;font-size:8.5px;letter-spacing:.16em;color:var(--muted)}
+.footer{
+  margin-top:20px;position:relative;z-index:1;
+  display:flex;align-items:center;justify-content:space-between;gap:24px;text-align:left;
+  flex-wrap:wrap;
+}
+.verify{flex:1;min-width:300px}
+.status{display:inline-block;padding:7px 14px;border:1px solid #1d574c;color:var(--green);border-radius:999px;letter-spacing:.14em;font-size:9.5px;font-family:Inter,system-ui,sans-serif}
+.vid{font-family:ui-monospace,monospace;font-size:13px;color:#8cc7db;margin-top:12px;letter-spacing:.05em}
+.hash{font-family:ui-monospace,monospace;font-size:10.5px;color:var(--muted);margin-top:5px;word-break:break-all}
+.verify-link{display:inline-block;margin-top:12px;font-family:Inter,system-ui,sans-serif;font-size:11.5px;letter-spacing:.1em;color:var(--cyan);text-decoration:none;border:1px solid rgba(69,230,255,.4);padding:8px 16px;border-radius:999px}
 .verify-link:hover{background:rgba(69,230,255,.1)}
-.sign{margin-top:26px;font-family:Georgia,serif;font-style:italic;font-size:15px;color:#cfe3ef;letter-spacing:.06em}
-.legal{font-family:Inter,system-ui,sans-serif;margin-top:30px;position:relative;z-index:1}
-.legal p{color:#6f8fa3;font-size:11px;line-height:1.6}
+.sign{
+  flex:0 1 auto;min-width:230px;text-align:center;
+  font-family:Georgia,serif;font-style:italic;font-size:15px;color:#cfe3ef;letter-spacing:.06em;
+  padding:14px 24px;border-top:1px solid rgba(212,175,55,.4);
+}
+.legal{font-family:Inter,system-ui,sans-serif;margin-top:16px;position:relative;z-index:1}
+.legal p{color:#6f8fa3;font-size:10.5px;line-height:1.6}
 
 /* ---------- Dedicatoria (apartada, debajo del certificado) ---------- */
 .dedication{
-  width:min(980px,100%);
-  margin:52px auto 0;
+  width:min(1080px,100%);
+  margin:48px auto 0;
   position:relative;
-  padding:46px 56px;
+  padding:42px 54px;
   text-align:center;
   border:1px solid rgba(212,175,55,.55);
   border-radius:24px;
@@ -106,20 +116,20 @@ h1{
     linear-gradient(180deg,rgba(11,27,42,.9),rgba(6,17,29,.95));
   box-shadow:0 0 0 5px rgba(6,17,29,1),0 0 0 6px rgba(212,175,55,.35),0 30px 90px rgba(0,0,0,.5);
 }
-.dedi-or{font-size:34px;color:var(--gold2);text-shadow:0 0 24px rgba(212,175,55,.8)}
-.dedi-kicker{font-family:Inter,system-ui,sans-serif;letter-spacing:.4em;font-size:10px;color:var(--muted);margin-top:14px}
-.dedication h2{margin-top:10px;font-size:34px;font-weight:700;color:#f6ecd0}
-.dedi-text{margin:26px auto 0;max-width:700px;font-style:italic;font-size:20px;line-height:1.7;color:#f4eff2}
-.dedi-close{margin-top:26px;font-family:Georgia,serif;font-size:15px;color:#c9dce9;letter-spacing:.04em}
+.dedi-or{font-size:32px;color:var(--gold2);text-shadow:0 0 24px rgba(212,175,55,.8)}
+.dedi-kicker{font-family:Inter,system-ui,sans-serif;letter-spacing:.4em;font-size:10px;color:var(--muted);margin-top:12px}
+.dedication h2{margin-top:8px;font-size:32px;font-weight:700;color:#f6ecd0}
+.dedi-text{margin:24px auto 0;max-width:700px;font-style:italic;font-size:19px;line-height:1.7;color:#f4eff2}
+.dedi-close{margin-top:22px;font-family:Georgia,serif;font-size:14px;color:#c9dce9;letter-spacing:.04em}
 .thanks-note{
-  width:min(980px,100%);margin:22px auto 0;text-align:center;
+  width:min(1080px,100%);margin:20px auto 0;text-align:center;
   font-family:Inter,system-ui,sans-serif;color:var(--muted);font-size:13.5px;line-height:1.7;
 }
 .thanks-note strong{color:var(--gold2);letter-spacing:.03em}
 
 /* ---------- Acciones del certificado ---------- */
 .cert-actions{
-  width:min(980px,100%);margin:26px auto 0;
+  width:min(1080px,100%);margin:24px auto 0;
   display:flex;gap:12px;justify-content:center;flex-wrap:wrap;
 }
 .cert-btn{
@@ -138,23 +148,36 @@ h1{
 }
 .cert-btn.ghost:hover{background:rgba(69,230,255,.16)}
 .cert-note{
-  width:min(980px,100%);margin:14px auto 0;text-align:center;
+  width:min(1080px,100%);margin:12px auto 0;text-align:center;
   font-family:Inter,system-ui,sans-serif;font-size:12.5px;color:#f0c867;
 }
 
+/* ---------- Impresión: SIEMPRE horizontal (paisaje) ---------- */
+@page{
+  size:A4 landscape;
+  margin:0;
+}
 @media print{
-  body{padding:0;background:#fff}
-  .certificate{box-shadow:none;margin:0;width:100%}
+  html,body{background:#fff;padding:0}
+  body{min-height:0}
+  .certificate{
+    box-shadow:none;margin:0;width:100%;
+    padding:24px 40px 22px;border-radius:0;
+    page-break-inside:avoid;
+  }
   .certificate,.certificate *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .cert-actions,.cert-note,.dedication,.thanks-note,.dedi-btn{display:none!important}
 }
 
-@media(max-width:720px){
-  .certificate{padding:44px 22px 36px}
-  h1{font-size:30px}
-  .name{font-size:28px}
-  .metrics{grid-template-columns:1fr}
-  .orn{width:50px;height:50px}
-  .dedication{padding:36px 22px}
-  .dedi-text{font-size:17px}
+@media(max-width:760px){
+  .certificate{padding:36px 22px 30px}
+  h1{font-size:26px}
+  .name{font-size:26px}
+  .course{font-size:15px}
+  .metrics{grid-template-columns:1fr;max-width:360px}
+  .footer{justify-content:center;text-align:center}
+  .verify{min-width:0}
+  .orn{width:42px;height:42px}
+  .dedication{padding:32px 20px}
+  .dedi-text{font-size:16px}
 }

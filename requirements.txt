@@ -1,3 +1,4 @@
 Flask>=3.1,<4
 rich>=14,<15
 psycopg[binary]>=3.1,<4
+cryptography>=42,<47
