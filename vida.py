@@ -756,6 +756,31 @@ def _cert_token() -> str:
     return token
 
 
+def _session_secret() -> str:
+    """Secreto de firma de sesión.
+
+    Prioridad: variable de entorno VIDA_SECRET_KEY (deploy).
+    En local se genera un token aleatorio persistente en
+    data/.flask_secret (chmod 600); nunca se publica en el código
+    y no se reutiliza la clave del certificado.
+    """
+    env_secret = os.environ.get("VIDA_SECRET_KEY", "").strip()
+    if env_secret:
+        return env_secret
+    secret_file = runtime_root() / ".flask_secret"
+    if not secret_file.exists():
+        try:
+            secret_file.parent.mkdir(parents=True, exist_ok=True)
+            secret_file.write_text(secrets.token_urlsafe(32), encoding="utf-8")
+            secret_file.chmod(0o600)
+        except OSError:
+            return ""
+    try:
+        return secret_file.read_text(encoding="utf-8").strip()
+    except OSError:
+        return ""
+
+
 def _cert_allowed(req: request) -> bool:
     supplied = (
         req.headers.get("X-Vida-Key")
@@ -859,7 +884,7 @@ def create_app() -> Flask:
     )
 
     app.secret_key = (
-        os.environ.get("VIDA_SECRET_KEY")
+        _session_secret()
         or _cert_token()
         or secrets.token_urlsafe(32)
     )
@@ -954,14 +979,7 @@ def create_app() -> Flask:
     @app.post("/api/auth/reset-password")
     def auth_reset_password():
         payload = request.get_json(silent=True) or {}
-        key = (
-            request.headers.get("X-Vida-Key")
-            or request.headers.get("X-Cert-Key")
-            or payload.get("clave")
-            or payload.get("token")
-        )
-        expected = os.environ.get("VIDA_CERT_KEY", "").strip()
-        if not expected or key != expected:
+        if not _cert_allowed(request):
             return jsonify({"ok": False, "error": "Clave del sistema requerida."}), 403
         email = (payload.get("email") or "").strip().lower()
         new_pass = payload.get("password", "")
