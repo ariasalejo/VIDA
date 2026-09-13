@@ -51,7 +51,7 @@ PODCAST_DIR = ROOT / "podcast_audio"
 # Correo del dueño del pódcast. Apple y Spotify lo exigen REAL para verificar
 # el feed. Cambia este valor por TU correo antes de registrarlo en los
 # directorios (búscalo como PODCAST_OWNER_EMAIL).
-PODCAST_OWNER_EMAIL = "TU_CORREO_REAL@EJEMPLO.COM"
+PODCAST_OWNER_EMAIL = "alejoariaslondo@gmail.com"
 
 PODCAST_META = {
     "podcast_ciberseguridad_1h": {
@@ -2166,8 +2166,8 @@ def create_app() -> Flask:
         channel_title = "VIDA · Las Voces del Código · Pódcast"
         channel_desc = (
             "Pódcast de estudio de VIDA: ciberseguridad y programación contadas "
-            "sin humo por las súper IAs BLUMIX y OpenCode. Observar, verificar, "
-            "comprender, demostrar, avanzar."
+            "sin humo por BLUMIX, con invitados especiales del mundo del código. "
+            "Observar, verificar, comprender, demostrar, avanzar."
         )
         channel_img = base + "/static/covers/podcast_ciberseguridad_1h.png"
         now_rfc = format_datetime(datetime.now(timezone.utc))
