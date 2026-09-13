@@ -984,6 +984,13 @@ def create_app() -> Flask:
 
     app.context_processor(lambda: {"site_url": _site_url()})
 
+    @app.after_request
+    def _no_html_cache(resp):
+        if resp.mimetype.startswith("text/html"):
+            resp.headers["Cache-Control"] = "no-store, max-age=0"
+            resp.headers["Pragma"] = "no-cache"
+        return resp
+
     @app.get("/robots.txt")
     def robots_txt():
         return app.response_class(
