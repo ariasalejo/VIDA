@@ -10,9 +10,11 @@ import sqlite3
 import tempfile
 import webbrowser
 from datetime import datetime, timedelta, timezone
+from email.utils import format_datetime
 from functools import wraps
 from pathlib import Path
 from secrets import compare_digest
+from xml.sax.saxutils import escape
 
 from flask import (
     Flask,
@@ -975,6 +977,64 @@ def create_app() -> Flask:
             "object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
         )
         return response
+
+    def _site_url() -> str:
+        """Base pública del sitio, calculada desde el host real (local o Vercel)."""
+        return request.host_url.rstrip("/")
+
+    app.context_processor(lambda: {"site_url": _site_url()})
+
+    @app.get("/robots.txt")
+    def robots_txt():
+        return app.response_class(
+            "\n".join(
+                [
+                    "User-agent: *",
+                    "Allow: /",
+                    "Disallow: /api/",
+                    "Disallow: /acceso",
+                    "Disallow: /verificar/",
+                    "",
+                    "Sitemap: " + _site_url() + "/sitemap.xml",
+                    "",
+                ]
+            ),
+            mimetype="text/plain",
+        )
+
+    @app.get("/sitemap.xml")
+    def sitemap_xml():
+        base = _site_url()
+        today = datetime.now(timezone.utc).date().isoformat()
+        urls = [
+            (base + "/", today, "1.0"),
+            (base + "/vida", today, "1.0"),
+            (base + "/inicio", today, "0.8"),
+            (base + "/certificado", today, "0.6"),
+            (base + "/perfil/" + _learner_slug(), today, "0.6"),
+        ]
+        body = [
+            '<?xml version="1.0" encoding="UTF-8"?>',
+            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+        ]
+        seen: set[str] = set()
+        for loc, lastmod, priority in urls:
+            if loc in seen:
+                continue
+            seen.add(loc)
+            body.append(
+                "  <url>"
+                + f"<loc>{loc}</loc>"
+                + f"<lastmod>{lastmod}</lastmod>"
+                + f"<changefreq>weekly</changefreq>"
+                + f"<priority>{priority}</priority>"
+                + "</url>"
+            )
+        body.append("</urlset>")
+        return app.response_class(
+            "\n".join(body) + "\n",
+            mimetype="application/xml",
+        )
 
     @app.get("/")
     def home():
@@ -2074,11 +2134,100 @@ def create_app() -> Flask:
                     "chapters": meta.get("chapters"),
                     "desc": meta.get("desc"),
                     "file": f"/media/podcast/{path.name}",
+                    "cover": f"/static/covers/{path.stem}.png",
+                    "thumb": f"/static/thumbs/{path.stem}_thumb.png",
                     "size": size,
                     "minutes": max(1, round(size / (128_000 / 8) / 60)),
                 }
             )
         return jsonify({"episodes": episodes})
+
+    @app.get("/podcast.xml")
+    def podcast_feed():
+        """Feed RSS 2.0 + iTunes del pódcast de VIDA.
+
+        Listo para registrarlo en Spotify for Podcasters, Apple Podcasts,
+        Google/YouTube Podcasts y demás directorios. El audio se sirve con
+        Range (streaming) desde /media/podcast/.
+        """
+        base = _site_url()
+        channel_title = "VIDA · Las Voces del Código · Pódcast"
+        channel_desc = (
+            "Pódcast de estudio de VIDA: ciberseguridad y programación contadas "
+            "sin humo por las súper IAs BLUMIX y OpenCode. Observar, verificar, "
+            "comprender, demostrar, avanzar."
+        )
+        channel_img = base + "/static/covers/podcast_ciberseguridad_1h.png"
+        now_rfc = format_datetime(datetime.now(timezone.utc))
+
+        lines = [
+            '<?xml version="1.0" encoding="UTF-8"?>',
+            '<rss version="2.0" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" '
+            'xmlns:content="http://purl.org/rss/1.0/modules/content/">',
+            "  <channel>",
+            "    <title>" + escape(channel_title) + "</title>",
+            '    <link>' + base + "/vida</link>",
+            "    <description>" + escape(channel_desc) + "</description>",
+            "    <language>es-CO</language>",
+            "    <generator>VIDA · Learning Command Center</generator>",
+            "    <lastBuildDate>" + now_rfc + "</lastBuildDate>",
+            "    <itunes:author>VIDA · Eduar Alejandro Arias Londoño</itunes:author>",
+            "    <itunes:summary>" + escape(channel_desc) + "</itunes:summary>",
+            '    <itunes:owner><itunes:name>VIDA</itunes:name>'
+            '    <itunes:email>podcast@vida.local</itunes:email></itunes:owner>',
+            '    <itunes:image href="' + escape(channel_img) + '"/>',
+            "    <itunes:category text=\"Technology\"><itunes:category text=\"Software How-To\"/>"
+            "</itunes:category>",
+            "    <itunes:explicit>false</itunes:explicit>",
+            "    <image>",
+            "      <url>" + escape(channel_img) + "</url>",
+            "      <title>" + escape(channel_title) + "</title>",
+            '      <link>' + base + "/vida</link>",
+            "    </image>",
+        ]
+
+        for path in sorted(PODCAST_DIR.glob("*.mp3")):
+            if path.name.startswith("chunk_") or path.name == "concat.txt":
+                continue
+            meta = PODCAST_META.get(path.stem, {})
+            title = meta.get("title", path.stem)
+            desc = meta.get("desc") or (
+                "Episodio del canal seguro de VIDA. Escúchalo en el centro de mando."
+            )
+            if meta.get("chapters"):
+                desc += f" · {meta['chapters']} capítulos · {meta.get('voices', '')}"
+            size = path.stat().st_size
+            minutes = max(1, round(size / (128_000 / 8) / 60))
+            pub_date = format_datetime(
+                datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc)
+            )
+            audio_url = base + f"/media/podcast/{path.name}"
+            cover_url = base + f"/static/covers/{path.stem}.png"
+            speakers = meta.get("speakers", "Salomé")
+
+            lines += [
+                "    <item>",
+                "      <title>" + escape(title) + "</title>",
+                "      <description>" + escape(desc) + "</description>",
+                "      <content:encoded><![CDATA[" + desc + "]]></content:encoded>",
+                "      <link>" + base + "/vida</link>",
+                "      <guid isPermaLink=\"false\">"
+                + escape(base + f"/media/podcast/{path.name}") + "</guid>",
+                "      <pubDate>" + pub_date + "</pubDate>",
+                f"      <itunes:duration>{(minutes * 60)}</itunes:duration>",
+                "      <itunes:author>" + escape(speakers) + "</itunes:author>",
+                "      <itunes:summary>" + escape(desc) + "</itunes:summary>",
+                f'      <itunes:image href="{escape(cover_url)}"/>',
+                "      <itunes:explicit>false</itunes:explicit>",
+                f'      <enclosure url="{escape(audio_url)}" length="{size}" type="audio/mpeg"/>',
+                "    </item>",
+            ]
+
+        lines += ["  </channel>", "</rss>"]
+        return app.response_class(
+            "\n".join(lines) + "\n",
+            mimetype="application/rss+xml; charset=utf-8",
+        )
 
     @app.get("/media/podcast/<path:name>")
     def media_podcast(name: str):
@@ -2087,6 +2236,10 @@ def create_app() -> Flask:
             name,
             conditional=True,
         )
+
+    @app.errorhandler(404)
+    def not_found(e):
+        return render_template("404.html", site_url=_site_url()), 404
 
     return app
 

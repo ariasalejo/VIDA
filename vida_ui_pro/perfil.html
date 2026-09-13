@@ -4,6 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{% if not_found %}Perfil no encontrado · VIDA{% else %}Perfil de {{ data.learner }} · VIDA{% endif %}</title>
+<meta name="description" content="{% if not_found %}Perfil no encontrado en VIDA.{% else %}Perfil público de evidencias y progreso de {{ data.learner }} en el curso {{ data.course }} ({{ data.provider }} · {{ data.platform }}).{% endif %}">
+<meta name="robots" content="{% if not_found %}noindex{% else %}index,follow{% endif %}">
+<meta name="theme-color" content="#06111d">
+<link rel="canonical" href="{{ site_url }}/perfil/{{ data.slug }}">
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<meta property="og:type" content="profile">
+<meta property="og:title" content="{% if not_found %}Perfil · VIDA{% else %}Perfil de {{ data.learner }}{% endif %}">
+<meta property="og:description" content="Progreso con evidencia real en ciberseguridad (SENA Zajuna): ninguna meta se marca sin demostración.">
 <style>
 :root{--gold:#d4af37;--gold2:#f4d77f;--cyan:#45e6ff;--green:#47e0b7;--text:#eef8ff;--muted:#8aa8ba;--line:#1b3d56}
 *{box-sizing:border-box;margin:0;padding:0}

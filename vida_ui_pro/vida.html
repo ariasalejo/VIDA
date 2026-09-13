@@ -3,18 +3,49 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>VIDA · Sector NEXUS</title>
-<link rel="stylesheet" href="/static/style_pro.css">
+<title>VIDA · NEXUS · Centro de Mando</title>
+<meta name="description" content="VIDA NEXUS es el centro de mando multi-curso de aprendizaje: aquí viven todos tus cursos (SENA Zajuna y más), las evidencias y el pódcast de estudio 'Las Voces del Código' de las súper IAs. Observar, verificar, comprender, demostrar, avanzar.">
+<meta name="author" content="Eduar Alejandro Arias Londoño">
+<meta name="robots" content="index,follow">
+<meta name="theme-color" content="#070b1e">
+<link rel="canonical" href="{{ site_url }}/vida">
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="VIDA · Learning Command Center">
+<meta property="og:locale" content="es_CO">
+<meta property="og:title" content="VIDA · NEXUS · Centro de Mando multi-curso">
+<meta property="og:description" content="Centro de mando de aprendizaje: todos tus cursos, el motor de evidencia y el pódcast de las súper IAs. Nada se asume, todo se demuestra.">
+<meta property="og:url" content="{{ site_url }}/vida">
+<meta property="og:image" content="{{ site_url }}/static/og_image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="VIDA · NEXUS · Centro de Mando">
+<meta name="twitter:description" content="Centro de mando multi-curso de aprendizaje y evidencia, con pódcast de las súper IAs.">
+<meta name="twitter:image" content="{{ site_url }}/static/og_image.png">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {"@type":"WebSite","name":"VIDA · NEXUS","url":"{{ site_url }}/","inLanguage":"es-CO","description":"Centro de mando multi-curso de aprendizaje y evidencia."},
+    {"@type":"WebPage","name":"VIDA · NEXUS · Centro de Mando","url":"{{ site_url }}/vida","inLanguage":"es-CO","isPartOf":{"@type":"WebSite","name":"VIDA"}},
+    {"@type":"PodcastSeries","name":"Las Voces del Código","url":"{{ site_url }}/vida","inLanguage":"es-CO","description":"Pódcast de estudio para aprender programación y ciberseguridad conversando con las súper IAs."},
+    {"@type":"EducationalOrganization","name":"SENA","url":"https://www.sena.edu.co/"}
+  ]
+}
+</script>
+<link rel="alternate" type="application/rss+xml" title="VIDA · Las Voces del Código · Pódcast" href="{{ site_url }}/podcast.xml">
 </head>
 <body class="cyber-page">
 
   <nav class="cyber-topbar">
-    <div class="cyber-brand"><b>⚡ VIDA</b><span>/ SECTOR NEXUS · SUPER IAs</span></div>
-    <a class="cyber-back" href="/">◉ VOLVER AL CENTRO SENA</a>
+    <div class="cyber-brand"><b>⚡ VIDA</b><span>/ NEXUS · CENTRO DE MANDO</span></div>
+    <div class="cyber-actions">
+      <button id="cyberVoiceBtn" class="cyber-back" type="button" title="Narrar esta sección (guía por voz)">🔊 GUÍA</button>
+      <a class="cyber-back" href="/">◉ IR AL CURSO</a>
+    </div>
   </nav>
 
   <main class="cyber-main">
-    <section class="view cyber" id="view-vida" aria-label="VIDA · Sector ciberpunk">
+    <section class="view cyber active" id="view-vida" aria-label="VIDA · NEXUS · Centro de Mando">
       <div class="cyber-bg" aria-hidden="true">
         <span class="laser l1"></span>
         <span class="laser l2"></span>
@@ -27,35 +58,47 @@
       </div>
 
       <div class="cyber-hero">
-        <div class="cyber-kicker">/// TRANSMISIÓN VIDA · SECTOR NEXUS · 2077 ///</div>
+        <div class="cyber-kicker">/// TRANSMISIÓN VIDA · NEXUS · CENTRO DE MANDO · 2077 ///</div>
         <h1 class="cyber-title" data-text="vida">vida<span class="ct-dot">.</span></h1>
-        <p class="cyber-sub">Esta es una <b>sección independiente</b>: otro mundo dentro del mismo
-          universo del SENA. Aquí aprender se convierte en energía y las súper IAs te acompañan.
-          Bienvenido al núcleo.</p>
+        <p class="cyber-sub">Este es el <b>centro de mando</b> de tus aprendizajes: un solo lugar
+          donde viven <b>todos tus cursos</b>, sus evidencias y los pódcast de las súper IAs
+          que te acompañan a estudiar. Bienvenido al núcleo.</p>
         <div class="cyber-tags">
           <span>◈ Observa</span><span>⚡ Verifica</span><span>◉ Comprende</span>
           <span>◇ Demuestra</span><span>⟟ Avanza</span>
         </div>
-        <div class="cyber-clock" id="cyberClock">--:--:--</div>
+        <div class="cyber-clock-row">
+          <div class="cyber-clock" id="cyberClock">--:--:--</div>
+          <div class="cyber-status" id="cyberStatus"><span class="cyber-dot"></span> CONECTANDO AL COMANDO…</div>
+        </div>
       </div>
 
       <div class="card cyber-card cyber-core">
         <header>
-          <div><small>MANIFIESTO · NÚCLEO VIDA</small><h2>{{ course.title }}</h2></div>
+          <div><small>MANIFIESTO · CENTRO DE MANDO</small><h2>Un comando para tus aprendizajes</h2></div>
           <span class="pill cyber-pill">NEXUS · ONLINE</span>
         </header>
-        <p class="cyber-core-text">Si llegaste hasta aquí ya no eres la misma persona que entró.
-          Aquí los conceptos no se memorizan: se <span class="glow-word">demuestran</span>.
-          VIDA no adivina y no inventa evidencia: observa, verifica y avanza contigo.
-          Este es tu <span class="glow-word">sector de las súper IAs</span>: el espacio donde
-          la inteligencia artificial te enseña, te acompaña y te reta.</p>
+        <p class="cyber-core-text">NEXUS no es un curso: es el <span class="glow-word">contenedor</span>
+          donde todos tus cursos suman. Aquí los conceptos no se memorizan: se
+          <span class="glow-word">demuestran</span>. VIDA no adivina y no inventa evidencia:
+          observa, verifica y avanza contigo. Este es tu <span class="glow-word">centro de mando</span>:
+          entra a un taller, estudia con el pódcast y vuelve al comando cuando quieras.</p>
         <div class="cyber-reactors">
-          <div class="reactor"><b>🧠</b><span>CEREBRO · intel</span></div>
-          <div class="reactor"><b>📼</b><span>EVIDENCIA · ver</span></div>
-          <div class="reactor"><b>⚖️</b><span>REGLAS · ley</span></div>
-          <div class="reactor"><b>🏆</b><span>CERT · hazaña</span></div>
+          <div class="reactor"><b>🧠</b><span>CENTRO · multi-curso</span></div>
+          <div class="reactor"><b>📤</b><span>EVIDENCIA · método</span></div>
+          <div class="reactor"><b>⚖️</b><span>REGLAS · claras</span></div>
+          <div class="reactor"><b>🏆</b><span>LOGRO · certificados</span></div>
           <div class="reactor"><b>🎙</b><span>SÚPER IAS · voz</span></div>
         </div>
+      </div>
+
+      <div class="card cyber-card cyber-console">
+        <header>
+          <div><small>COMANDO · TODOS LOS CURSOS</small><h2>🗂 CURSOS DEL CENTRO</h2></div>
+          <span class="pill cyber-pill-gold">MULTI-CURSO</span>
+        </header>
+        <p class="hint" id="coursesState">Escaneando el comando…</p>
+        <div class="cyber-courses" id="cyberCourses"></div>
       </div>
 
       <div class="grid2 cyber-grid2">
@@ -73,21 +116,18 @@
       </div>
 
       <div class="card cyber-card cyber-comm">
-        <header><div><small>CANAL SEGURO · SÚPER IAs</small><h2>🎙 Las Voces del Código</h2></div><span class="pill cyber-pill">FREQ. 45</span></header>
-        <p class="hint">Escucha el capítulo <b>«Las Voces del Código · Capítulo 03»</b> a dúo:
-          BLUMIX (voz colombiana) conversa con <b>OpenCode</b> (voz mexicana) sobre secretos de la
-          programación, las IAs y la ciberseguridad, con música suave de fondo para estudiar.</p>
-        <div class="cyber-audio-box">
-          <div class="cyber-audio-label">🎧 CAP. 03 · LAS VOCES DEL CÓDIGO <span>· ~52 min</span></div>
-          <audio controls preload="none" src="/media/podcast/podcast_superias_1h.mp3"></audio>
-        </div>
-        <div class="cyber-audio-box">
-          <div class="cyber-audio-label">🎧 CAP. 01 · CIBERSEGURIDAD Y CÓDIGO <span>· ~53 min</span></div>
-          <audio controls preload="none" src="/media/podcast/podcast_ciberseguridad_1h.mp3"></audio>
-        </div>
+        <header>
+          <div><small>CANAL SEGURO · SUPER IAs</small><h2>🎙 PÓDCAST DE ESTUDIO</h2></div>
+          <span class="pill cyber-pill">FREQ. ABIERTA</span>
+        </header>
+        <p class="hint" id="podcastState">Sintonizando el canal…</p>
+        <div class="cyber-episodes" id="cyberEpisodes"></div>
         <div class="cyber-freq">
           <span>BLAU/45</span><span>NCC-1701</span><span>SHA-256</span><span>ZETA</span>
         </div>
+        <a class="cyber-feed" href="/podcast.xml" rel="noopener" title="Regístrate en Spotify, Apple y YouTube Podcasts con este feed">
+          📡 SUSCRIBIRSE · FEED RSS DEL PÓDCAST
+        </a>
       </div>
 
       <div class="cyber-ticker">
@@ -95,19 +135,194 @@
           <span>OBSERVAR · VERIFICAR · COMPRENDER · DEMOSTRAR · AVANZAR&nbsp;·&nbsp;//&nbsp;·&nbsp;VIDA NO ADIVINA&nbsp;·&nbsp;//&nbsp;·&nbsp;TU SEGURIDAD EMPIEZA CONTIGO&nbsp;·&nbsp;//&nbsp;·&nbsp;LA CONSTANCIA VENCE AL TALENTO&nbsp;·&nbsp;//&nbsp;·&nbsp;SUPER IAs ACTIVAS&nbsp;·&nbsp;//&nbsp;·&nbsp;</span><span>OBSERVAR · VERIFICAR · COMPRENDER · DEMOSTRAR · AVANZAR&nbsp;·&nbsp;//&nbsp;·&nbsp;VIDA NO ADIVINA&nbsp;·&nbsp;//&nbsp;·&nbsp;TU SEGURIDAD EMPIEZA CONTIGO&nbsp;·&nbsp;//&nbsp;·&nbsp;LA CONSTANCIA VENCE AL TALENTO&nbsp;·&nbsp;//&nbsp;·&nbsp;SUPER IAs ACTIVAS&nbsp;·&nbsp;//&nbsp;·&nbsp;</span>
         </div>
       </div>
+
+      <p class="cyber-footer" id="cyberStamp">⚡ NEXUS · VIDA · CENTRO DE MANDO</p>
     </section>
   </main>
 
 <script>
 (function () {
-  const el = document.getElementById("cyberClock");
-  if (el) {
-    setInterval(function () {
-      const d = new Date();
-      const p = n => String(n).padStart(2, "0");
-      el.textContent = p(d.getHours()) + ":" + p(d.getMinutes()) + ":" + p(d.getSeconds());
-    }, 1000);
+  "use strict";
+  var VOICE_ON = true;
+
+  function $(id) { return document.getElementById(id); }
+  function esc(v) {
+    return String(v).replaceAll("&", "&amp;").replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
   }
+  function getJSON(u) {
+    return fetch(u, { headers: { "Accept": "application/json" } }).then(function (r) {
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    });
+  }
+  function fmtSize(n) {
+    if (!n) return "";
+    if (n < 1048576) return (n / 1024).toFixed(1) + " KB";
+    return (n / 1048576).toFixed(1) + " MB";
+  }
+
+  /* ---- Reloj y estado ---- */
+  function tickClock() {
+    var el = $("cyberClock");
+    if (!el) return;
+    var d = new Date(), p = function (n) { return String(n).padStart(2, "0"); };
+    el.textContent = p(d.getHours()) + ":" + p(d.getMinutes()) + ":" + p(d.getSeconds());
+  }
+  function setStatus(txt) {
+    var s = $("cyberStatus");
+    if (s) s.innerHTML = '<span class="cyber-dot"></span> ' + esc(txt);
+  }
+
+  /* ---- Guía por voz (es-CO, femenina preferida) ---- */
+  var VOZ_FEM = /laura|helena|sabina|paulina|m[oó]nica|camila|marisol|luci|ximena|valentina|isabella|sof[aí]a|elena|palmira|samantha|karina|nuria|silvia|beatriz|marta|olga|andrea|daniela|mar[íi]a|google español|milena|alicia|emma|selma|rosa|tessa|linda|allison|natural|neural/i;
+  var VOZ_MAS = /jorge|pedro|carlos|lucas|pablo|diego|david|miguel|juan|javier|antonio|raul|ram[oó]n|alberto|fernando|andres|thomas|alex|male|masculino|hombre/i;
+
+  function pickVoice() {
+    if (!("speechSynthesis" in window)) return null;
+    var vs = speechSynthesis.getVoices();
+    if (!vs.length) return null;
+    var es = vs.filter(function (v) { return /^es(-|_|$)/i.test(v.lang || ""); });
+    var co = es.filter(function (v) { return /(^|[-_])CO($|[-_])/i.test(v.lang || ""); });
+    var pool = co.length ? co : (es.length ? es : vs);
+    var best = null;
+    for (var i = 0; i < pool.length; i++) {
+      var v = pool[i];
+      if (VOZ_FEM.test(v.name) && !VOZ_MAS.test(v.name)) { best = v; break; }
+    }
+    return best || (es.length ? es[0] : null);
+  }
+  function speak(text) {
+    if (!VOICE_ON || !text || !("speechSynthesis" in window)) return;
+    try {
+      speechSynthesis.cancel();
+      var voz = pickVoice();
+      var limpio = text.replace(/https?:\/\/\S+/g, "").replace(/[|*_=<>`#]/g, " ").replace(/\s+/g, " ").trim();
+      var partes = (limpio.match(/[^.!?;:]+[.!?;:]?/g) || [limpio]).map(function (x) { return x.trim(); }).filter(Boolean);
+      var i = 0;
+      function siguiente() {
+        if (!VOICE_ON || i >= partes.length) return;
+        var u = new SpeechSynthesisUtterance(partes[i++]);
+        if (voz) { u.voice = voz; u.lang = voz.lang || "es-CO"; } else { u.lang = "es-CO"; }
+        u.rate = 0.86; u.pitch = 1.08; u.volume = 1.0;
+        u.onend = function () { window.setTimeout(siguiente, 240); };
+        u.onerror = function () { if (i < partes.length) siguiente(); };
+        speechSynthesis.speak(u);
+      }
+      siguiente();
+    } catch (_) {}
+  }
+
+  var startupText =
+    "Bienvenido al centro de mando VIDA Nexus. Aquí viven todos tus cursos, " +
+    "la evidencia de tu aprendizaje y el pódcast de estudio de las súper IAs. " +
+    "Recuerda: VIDA no adivina y no inventa evidencia: observa, verifica y avanza contigo.";
+
+  /* ---- Cursos del centro de mando ---- */
+  function paintCourses(data) {
+    var box = $("cyberCourses");
+    if (!box) return;
+    var courses = (data || {}).courses || [];
+    if (!courses.length) {
+      $("coursesState").textContent = "Aún no hay talleres en el comando: cada curso que entres se mostrará aquí.";
+      box.innerHTML = "";
+      return;
+    }
+    var active = (data || {}).active;
+    $("coursesState").textContent = courses.length + " curso" + (courses.length === 1 ? "" : "s") + " detectado" + (courses.length === 1 ? "" : "s") + " en el comando. Entra a un taller o escucha el pódcast.";
+    box.innerHTML = "";
+    courses.forEach(function (c) {
+      var el = document.createElement("a");
+      el.className = "cyber-course" + (c.id === active ? " active" : "");
+      el.href = "/inicio";
+      el.innerHTML =
+        '<div class="cyber-course-top"><span class="cyber-course-id">' + esc(c.id) + '</span>' +
+        (c.id === active ? '<span class="cyber-course-live">● ACTIVO</span>' : '<span class="cyber-course-off">EN COLECCIÓN</span>') + '</div>' +
+        '<h3>' + esc(c.title || c.id) + '</h3>' +
+        '<div class="cyber-course-meta">' +
+          '<span>🏛 ' + esc(c.provider || "Institución") + '</span>' +
+          '<span>🛰 ' + esc(c.platform || "Plataforma") + '</span>' +
+          '<span>⏱ ' + (c.hours || 0) + ' h</span>' +
+        '</div>' +
+        '<span class="cyber-course-go">ENTRAR AL TALLER ⟶</span>';
+      box.appendChild(el);
+    });
+  }
+
+  function loadCourses() {
+    getJSON("/api/courses").then(function (d) {
+      paintCourses(d);
+      setStatus("COMANDO SINCRONIZADO · MULTI-CURSO");
+    }).catch(function () {
+      setStatus("SEÑAL PERDIDA · RECONECTANDO…");
+    });
+  }
+
+  /* ---- Pódcast: cuadros del canal seguro ---- */
+  function paintPodcast(data) {
+    var box = $("cyberEpisodes");
+    if (!box) return;
+    var eps = (data || {}).episodes || [];
+    if (!eps.length) {
+      $("podcastState").textContent = "🎙 El pódcast se prepara… VIDA no inventa audio: espera la señal.";
+      box.innerHTML = "";
+      return;
+    }
+    $("podcastState").textContent = eps.length + " episodio" + (eps.length === 1 ? "" : "s") + " en el canal seguro. Dale play y estudia con las súper IAs.";
+    box.innerHTML = "";
+    eps.forEach(function (ep, idx) {
+      var n = "EP " + String(idx + 1).padStart(2, "0");
+      var el = document.createElement("div");
+      el.className = "cyber-ep";
+      var chips =
+        '<span class="cyber-chip voices">🎙 ' + esc(ep.speakers || "Salomé") + '</span>' +
+        (ep.chapters ? '<span class="cyber-chip chapters">📚 ' + esc(ep.chapters) + ' capítulos</span>' : "") +
+        '<span class="cyber-chip dur">⏱ ' + ep.minutes + ' min · ' + fmtSize(ep.size) + '</span>';
+      el.innerHTML =
+        '<div class="cyber-ep-cover">' +
+          '<img src="' + esc(ep.cover || "") + '" alt="Portada ' + esc(ep.title) + '" loading="lazy" onerror="this.closest(\'.cyber-ep\').classList.add(\'no-cover\')">' +
+          '<div class="cyber-ep-num">' + n + '</div>' +
+          '<div class="cyber-ep-shine"></div>' +
+        '</div>' +
+        '<div class="cyber-ep-body">' +
+          '<small class="cyber-ep-tag">🎧 CUADRO DEL CANAL SEGURO</small>' +
+          '<h3>' + esc(ep.title) + '</h3>' +
+          '<div class="cyber-ep-chips">' + chips + '</div>' +
+          (ep.desc ? '<p class="cyber-ep-desc">' + esc(ep.desc) + '</p>' : "") +
+          '<audio controls preload="none" src="' + esc(ep.file) + '"></audio>' +
+        '</div>';
+      box.appendChild(el);
+    });
+  }
+
+  function loadPodcast() {
+    getJSON("/api/podcast").then(paintPodcast).catch(function () {
+      $("podcastState").textContent = "El canal de audio no responde en este momento.";
+    });
+  }
+
+  /* ---- Init ---- */
+  function init() {
+    tickClock(); setInterval(tickClock, 1000);
+    var vb = $("cyberVoiceBtn");
+    if (vb) vb.addEventListener("click", function () {
+      VOICE_ON = !VOICE_ON;
+      if (VOICE_ON) {
+        vb.textContent = "🔊 GUÍA";
+        if ("speechSynthesis" in window) { speechSynthesis.cancel(); speak(startupText); }
+      } else {
+        vb.textContent = "🔇 GUÍA";
+        if ("speechSynthesis" in window) speechSynthesis.cancel();
+      }
+    });
+    loadCourses();
+    loadPodcast();
+    setInterval(loadCourses, 30000);
+    setInterval(loadPodcast, 60000);
+  }
+
+  if ("speechSynthesis" in window) speechSynthesis.onvoiceschanged = pickVoice;
+  document.addEventListener("DOMContentLoaded", init);
 })();
 </script>
 </body>

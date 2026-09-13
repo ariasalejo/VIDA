@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>404 · Señal perdida · VIDA</title>
+<meta name="description" content="Señal no encontrada en el comando. VIDA no adivina: regresa al centro de mando.">
+<meta name="robots" content="noindex,follow">
+<meta name="theme-color" content="#070b1e">
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<link rel="stylesheet" href="/static/style_pro.css">
+<style>
+  body.cyber-page{display:grid;place-items:center;min-height:100vh}
+  .loss-main{position:relative;z-index:2;margin:0 auto;max-width:640px;padding:60px 22px;text-align:center}
+  .loss-404{font-size:clamp(90px,26vw,210px);font-weight:800;line-height:1;color:#0e1830;
+    text-shadow:0 0 0 #45e6ff;position:relative}
+  .loss-404::before{content:"404";position:absolute;inset:0;color:#ff2d95;z-index:-1;
+    animation:glitchA 3.4s infinite steps(1,end)}
+  .loss-404::after{content:"404";position:absolute;inset:0;color:#45e6ff;z-index:-2;
+    animation:glitchB 2.9s infinite steps(1,end)}
+  .loss-signal{font-family:ui-monospace,monospace;font-size:11px;letter-spacing:.5em;color:var(--gold2);
+    margin-top:20px;animation:cyberDot 1.8s ease-in-out infinite}
+  .loss-text{color:var(--muted);font-size:14px;line-height:1.7;margin-top:22px}
+  .loss-text b{color:#fff}
+  .loss-links{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:32px}
+  .loss-redir{margin-top:26px;font-family:ui-monospace,monospace;font-size:11px;letter-spacing:.3em;color:var(--muted2)}
+  .loss-redir b{color:var(--cyan)}
+  @media(max-width:440px){
+    .loss-links{flex-direction:column;align-items:stretch}
+    .loss-links a{text-align:center}
+  }
+</style>
+</head>
+<body class="cyber-page">
+  <div class="cyber-bg" aria-hidden="true">
+    <span class="laser l1"></span>
+    <span class="laser l2"></span>
+    <span class="cyber-scan"></span>
+    <span class="cyber-vline v1"></span>
+    <span class="cyber-vline v2"></span>
+    <span class="cyber-vline v3"></span>
+  </div>
+
+  <main class="loss-main" aria-label="Recurso no encontrado">
+    <div class="cyber-kicker">/// BÚSQUEDA FINALIZADA · SIN RESULTADOS ///</div>
+    <div class="loss-404">404</div>
+    <div class="loss-signal">SEÑAL PERDIDA · GOLPEADO POR EL VACÍO</div>
+    <p class="loss-text">Esta coordenada no existe en el comando. VIDA <b>no adivina y no inventa</b>:
+      si el enlace falló, fue porque la señal llegó rota. Regresa al <b>centro de mando</b> y retoma tu avance.</p>
+    <div class="loss-links">
+      <a class="cyber-back" href="/vida">⌂ Volver al centro de mando</a>
+      <a class="cyber-back" href="/">◉ Ir a mi curso</a>
+    </div>
+    <p class="loss-redir">REDIRIGIENDO AL COMANDO EN <b id="lossCount">08</b>…</p>
+  </main>
+
+<script>
+(function(){
+  var n=8, el=document.getElementById('lossCount');
+  var t=setInterval(function(){
+    n-=1;
+    if(el){el.textContent=String(n).padStart(2,'0');}
+    if(n<=0){clearInterval(t);location.href='/vida';}
+  },1000);
+})();
+</script>
+</body>
+</html>

@@ -51,3 +51,6 @@ podcast_audio/chunk_*
 podcast_audio/concat.txt
 podcast_audio/*/
 podcast_audio/*.tmp.mp3
+
+# Pruebas temporales locales
+tmp_prueba/

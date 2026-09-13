@@ -3,7 +3,35 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>VIDA · BLUMIX Learning Command Center</title>
+<title>VIDA · {{ course.title }}</title>
+<meta name="description" content="{{ course.title }} · Centro personal de aprendizaje, evidencia y verificación del curso SENA en plataforma {{ course.platform }}. VIDA observa, verifica, comprende, demuestra y avanza. {{ course.learner }}.">
+<meta name="author" content="{{ course.learner }}">
+<meta name="robots" content="index,follow">
+<meta name="theme-color" content="#050d17">
+<link rel="canonical" href="{{ site_url }}/inicio">
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="VIDA · Learning Command Center">
+<meta property="og:locale" content="es_CO">
+<meta property="og:title" content="VIDA · {{ course.title }}">
+<meta property="og:description" content="Motor de evidencia e inteligencia adaptativa del curso SENA {{ course.platform }}: progreso operativo, dominio verificado, evidencias reales y certificado verificable.">
+<meta property="og:url" content="{{ site_url }}/inicio">
+<meta property="og:image" content="{{ site_url }}/static/og_image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="VIDA · {{ course.title }}">
+<meta name="twitter:description" content="Centro personal de aprendizaje y evidencia en ciberseguridad (SENA Zajuna).">
+<meta name="twitter:image" content="{{ site_url }}/static/og_image.png">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {"@type":"WebSite","name":"VIDA","url":"{{ site_url }}/","inLanguage":"es-CO"},
+    {"@type":"WebApplication","name":"VIDA · Learning Command Center","url":"{{ site_url }}/inicio","applicationCategory":"EducationalApplication","inLanguage":"es-CO"},
+    {"@type":"Course","name":"{{ course.title }}","provider":{"@type":"Organization","name":"{{ course.provider or 'SENA' }}"},"inLanguage":"es-CO","aggregateRating":{},"offers":{"@type":"Offer","price":"0","priceCurrency":"COP","category":"Educación pública"}},
+    {"@type":"Person","name":"{{ course.learner }}","sameAs":"{{ site_url }}/perfil"}
+  ]
+}
+</script>
 <link rel="stylesheet" href="/static/style_pro.css">
 </head>
 <body>

@@ -882,6 +882,11 @@ aside a.nav.cyber-nav.active{background:linear-gradient(120deg,rgba(120,0,255,.1
 .cyber-freq{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
 .cyber-freq span{font-family:ui-monospace,monospace;font-size:10.5px;letter-spacing:.2em;
   color:var(--muted2);border:1px solid var(--line);padding:6px 12px;border-radius:8px}
+.cyber-feed{display:inline-flex;align-items:center;gap:8px;margin-top:16px;font-size:11px;
+  letter-spacing:.18em;font-weight:800;color:var(--gold2);text-decoration:none;
+  border:1px solid rgba(212,175,55,.45);padding:10px 16px;border-radius:10px;transition:.22s}
+.cyber-feed:hover{background:rgba(212,175,55,.10);box-shadow:0 0 24px rgba(212,175,55,.18);
+  transform:translateY(-2px)}
 
 .cyber-ticker{position:relative;z-index:2;margin-top:18px;overflow:hidden;
   border:1px solid rgba(69,230,255,.28);border-radius:14px;background:rgba(4,8,18,.72);padding:12px 0}
@@ -950,7 +955,195 @@ body.cyber-page{
 .cyber-audio-label{font-size:11px;letter-spacing:.16em;color:var(--muted);margin-bottom:6px}
 .cyber-audio-label span{color:var(--gold2)}
 .cyber-audio-box audio{width:100%;min-width:0}
+
+/* =========================================================
+   VIDA · SECTOR NEXUS RENOVADO
+   Consola de telemetría, señales del motor y pódcast en vivo.
+   ========================================================= */
+.cyber-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+button.cyber-back{cursor:pointer;font-family:inherit;background:transparent}
+button.cyber-back:hover{background:rgba(69,230,255,.1);box-shadow:0 0 18px rgba(69,230,255,.2)}
+
+.cyber-clock-row{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;margin-top:20px}
+.cyber-status{
+  display:inline-flex;align-items:center;gap:8px;font-family:ui-monospace,monospace;
+  font-size:11px;letter-spacing:.24em;color:var(--muted);
+  border:1px dashed rgba(69,230,255,.32);padding:8px 16px;border-radius:10px;
+  background:rgba(69,230,255,.04);
+}
+.cyber-dot{width:8px;height:8px;border-radius:50%;background:var(--green);
+  box-shadow:0 0 12px rgba(71,224,183,.9);animation:cyberDot 1.8s ease-in-out infinite}
+@keyframes cyberDot{0%,100%{opacity:1}50%{opacity:.35}}
+
+.cyber-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:6px}
+.cyber-kpi{
+  padding:16px 16px 13px;border:1px solid rgba(69,230,255,.26);border-radius:16px;
+  background:linear-gradient(170deg,rgba(120,0,255,.10),rgba(4,11,20,.6));
+  transition:.2s;
+}
+.cyber-kpi:hover{transform:translateY(-2px);border-color:rgba(69,230,255,.55);
+  box-shadow:0 12px 34px rgba(120,0,255,.16),0 0 24px rgba(69,230,255,.10)}
+.cyber-kpi small{font-size:8.5px;letter-spacing:.2em;color:var(--muted2);font-weight:800;display:block}
+.cyber-kpi strong{display:block;font-size:30px;font-weight:900;color:var(--cyan);margin:8px 0 7px;
+  font-variant-numeric:tabular-nums;text-shadow:0 0 18px rgba(69,230,255,.55);letter-spacing:.01em}
+.cyber-kpi.gold strong{color:var(--gold2);text-shadow:0 0 18px rgba(212,175,55,.5)}
+.cyber-kpi.green strong{color:var(--green);text-shadow:0 0 18px rgba(71,224,183,.5)}
+
+.cyber-bar{height:6px;border-radius:99px;background:#0c2034;overflow:hidden}
+.cyber-bar i{display:block;height:100%;width:0;border-radius:99px;
+  background:linear-gradient(90deg,var(--blue),var(--cyan));
+  box-shadow:0 0 12px rgba(69,230,255,.6);transition:width .7s ease}
+.cyber-kpi.gold .cyber-bar i{background:linear-gradient(90deg,var(--gold),var(--gold2))}
+.cyber-kpi.green .cyber-bar i{background:linear-gradient(90deg,#0f9d72,var(--green))}
+
+.cyber-bars{display:grid;grid-template-columns:1fr 1fr;gap:12px 22px;margin-top:16px}
+.cyber-bar-row{display:flex;align-items:center;gap:12px}
+.cyber-bar-row span{flex:0 0 auto;font-size:10.5px;letter-spacing:.12em;color:var(--muted2);
+  white-space:nowrap;min-width:120px}
+.cyber-bar-row span b{color:var(--cyan);font-variant-numeric:tabular-nums}
+.cyber-bar-row .cyber-bar{flex:1}
+
+.cyber-sys-strip{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px;
+  border-top:1px dashed rgba(69,230,255,.22);padding-top:14px}
+.cyber-sys-strip span{
+  font-family:ui-monospace,monospace;font-size:9.5px;letter-spacing:.16em;
+  color:var(--muted);border:1px solid var(--line);padding:7px 12px;border-radius:99px;
+  white-space:nowrap;
+}
+.cyber-sys-strip span:first-child{color:var(--gold2);border-color:rgba(212,175,55,.4)}
+.cyber-sys-strip span:nth-child(2){color:var(--green);border-color:rgba(71,224,183,.4)}
+.cyber-sys-strip b{color:inherit}
+
+.cyber-signals{display:flex;flex-direction:column;gap:12px;margin-top:14px}
+.cyber-sig-row{padding:12px 14px;border:1px solid var(--line);border-radius:14px;
+  background:rgba(8,20,33,.45)}
+.cyber-sig-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
+.cyber-sig-top b{font-size:13px;color:var(--text);text-transform:capitalize}
+.cyber-sig{font-size:8.5px;letter-spacing:.16em;padding:4px 10px;border-radius:99px;font-weight:800}
+.cyber-sig.observed{color:var(--green);border:1px solid rgba(71,224,183,.45)}
+.cyber-sig.inferred{color:var(--warn);border:1px solid rgba(247,198,90,.45)}
+.cyber-sig.predicted{color:var(--cyan);border:1px solid rgba(69,230,255,.45)}
+.cyber-sig-row small{display:block;margin-top:7px;font-size:10px;color:var(--muted2)}
+.cyber-sig-row code{color:var(--cyan);background:rgba(69,230,255,.08);padding:1px 6px;border-radius:6px}
+
+.cyber-episodes{display:flex;flex-direction:column;gap:16px;margin-top:16px}
+.cyber-ep{
+  position:relative;display:flex;align-items:stretch;gap:18px;
+  padding:14px;overflow:hidden;border-radius:20px;
+  border:1px solid rgba(255,45,149,.42);
+  background:linear-gradient(160deg,rgba(255,45,149,.10),rgba(4,11,20,.6) 60%,rgba(120,0,255,.06));
+  box-shadow:0 0 0 1px rgba(69,230,255,.05),0 0 26px rgba(255,45,149,.22),
+    0 24px 60px rgba(0,0,0,.45);
+  transition:.25s;
+}
+.cyber-ep::before{content:"";position:absolute;inset:-2px;border-radius:22px;pointer-events:none;
+  background:linear-gradient(120deg,rgba(255,45,149,.55),rgba(69,230,255,.25),rgba(120,0,255,.55));
+  opacity:.18;z-index:0;filter:blur(1px)}
+.cyber-ep:hover{transform:translateY(-3px);
+  box-shadow:0 0 0 1px rgba(69,230,255,.12),0 0 42px rgba(255,45,149,.4),
+    0 32px 80px rgba(0,0,0,.55)}
+.cyber-ep-cover{
+  position:relative;flex:0 0 224px;width:224px;aspect-ratio:1/1;border-radius:14px;
+  overflow:hidden;border:1px solid rgba(69,230,255,.28);
+  box-shadow:inset 0 0 40px rgba(0,0,0,.35),0 10px 30px rgba(0,0,0,.45);
+  background:radial-gradient(120% 120% at 20% 10%,#161030,#04070f);
+  z-index:1;
+}
+.cyber-ep-cover img{display:block;width:100%;height:100%;object-fit:cover}
+.cyber-ep-cover::after{content:"🎙";position:absolute;inset:0;display:none;
+  place-items:center;font-size:64px;
+  background:radial-gradient(120% 120% at 30% 20%,rgba(255,45,149,.3),rgba(4,7,15,.6))}
+.cyber-ep.no-cover .cyber-ep-cover img{display:none}
+.cyber-ep.no-cover .cyber-ep-cover::after{display:grid}
+.cyber-ep-num{
+  position:absolute;top:10px;left:10px;z-index:2;
+  font-family:ui-monospace,monospace;font-size:10px;letter-spacing:.22em;font-weight:800;
+  color:#fff;padding:6px 11px;border-radius:99px;
+  background:rgba(255,45,149,.85);box-shadow:0 0 18px rgba(255,45,149,.7);
+  text-shadow:0 1px 2px rgba(0,0,0,.5);
+}
+.cyber-ep-shine{
+  position:absolute;top:-60%;bottom:-60%;width:42%;left:-70%;z-index:1;pointer-events:none;
+  background:linear-gradient(105deg,transparent,rgba(255,255,255,.16),transparent);
+  transform:skewX(-18deg);animation:epShine 5.2s ease-in-out infinite;
+}
+@keyframes epShine{0%,55%,100%{left:-70%}28%,42%{left:130%}}
+.cyber-ep-body{position:relative;z-index:1;flex:1;min-width:220px;display:flex;flex-direction:column;gap:8px}
+.cyber-ep-tag{font-size:9px;letter-spacing:.24em;color:var(--gold2);font-weight:800}
+.cyber-ep-body h3{margin:0;font-size:18px;font-weight:800;color:#fff;text-shadow:0 0 14px rgba(255,45,149,.5)}
+.cyber-ep-chips{display:flex;flex-wrap:wrap;gap:6px}
+.cyber-chip{font-size:9px;letter-spacing:.08em;padding:4px 10px;border-radius:99px;font-weight:700}
+.cyber-chip.voices{color:var(--cyan);border:1px solid rgba(69,230,255,.4);background:rgba(69,230,255,.06)}
+.cyber-chip.chapters{color:var(--gold2);border:1px solid rgba(212,175,55,.4)}
+.cyber-chip.dur{color:var(--muted2);border:1px solid var(--line)}
+.cyber-ep-desc{margin:2px 0 4px;color:var(--muted);font-size:12px;line-height:1.6}
+.cyber-ep-body audio{width:100%;max-width:440px;filter:hue-rotate(45deg);border-radius:99px}
+
+.cyber-footer{margin-top:20px;text-align:center;font-family:ui-monospace,monospace;
+  font-size:10px;letter-spacing:.3em;color:var(--muted2)}
+
+/* =========================================================
+   VIDA · NEXUS · CENTRO DE MANDO
+   Tarjetas de cursos (talleres del comando).
+   ========================================================= */
+.cyber-courses{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-top:16px}
+.cyber-course{
+  position:relative;display:flex;flex-direction:column;gap:10px;padding:18px 18px 14px;
+  border-radius:18px;overflow:hidden;text-decoration:none;color:var(--text);transition:.22s;
+  border:1px solid rgba(69,230,255,.26);
+  background:linear-gradient(165deg,rgba(120,0,255,.14),rgba(4,11,20,.62));
+  box-shadow:0 0 22px rgba(120,0,255,.12),inset 0 0 30px rgba(69,230,255,.04);
+}
+.cyber-course::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:0;transition:.3s;
+  background:linear-gradient(120deg,rgba(69,230,255,.12),transparent 45%,rgba(255,45,149,.12))}
+.cyber-course:hover{transform:translateY(-4px);border-color:rgba(69,230,255,.55);
+  box-shadow:0 0 36px rgba(69,230,255,.2),0 24px 60px rgba(0,0,0,.45)}
+.cyber-course:hover::after{opacity:1}
+.cyber-course.active{border-color:rgba(212,175,55,.5);
+  background:linear-gradient(165deg,rgba(212,175,55,.10),rgba(4,11,20,.62))}
+.cyber-course-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.cyber-course-id{font-family:ui-monospace,monospace;font-size:9px;letter-spacing:.22em;color:var(--cyan);text-transform:uppercase}
+.cyber-course-live{font-size:9px;letter-spacing:.18em;font-weight:800;color:var(--gold2);
+  border:1px solid rgba(212,175,55,.5);padding:4px 10px;border-radius:99px;animation:cyberDot 1.8s ease-in-out infinite}
+.cyber-course-off{font-size:9px;letter-spacing:.18em;font-weight:800;color:var(--muted2);
+  border:1px solid var(--line);padding:4px 10px;border-radius:99px}
+.cyber-course h3{margin:0;font-size:16px;font-weight:800;line-height:1.3;text-shadow:0 0 14px rgba(69,230,255,.4)}
+.cyber-course-meta{display:flex;flex-wrap:wrap;gap:6px}
+.cyber-course-meta span{font-size:9.5px;letter-spacing:.06em;color:var(--muted);
+  border:1px solid var(--line);padding:4px 9px;border-radius:99px;background:rgba(4,11,20,.4)}
+.cyber-course-go{margin-top:auto;font-size:10px;letter-spacing:.22em;font-weight:800;color:var(--cyan)}
+.cyber-course:hover .cyber-course-go{color:#fff}
+@media (max-width:620px){
+  .cyber-courses{grid-template-columns:1fr}
+}
+
+@media (max-width:900px){
+  .cyber-kpis{grid-template-columns:repeat(2,1fr)}
+  .cyber-bars{grid-template-columns:1fr}
+}
 @media (max-width:620px){
   .cyber-topbar{flex-direction:column;align-items:flex-start}
   .cyber-main{padding:10px}
+  .cyber-kpis{grid-template-columns:1fr 1fr;gap:10px}
+  .cyber-kpi strong{font-size:24px}
+  .cyber-ep{flex-direction:column;align-items:flex-start}
+  .cyber-ep audio{width:100%}
+  .cyber-course{padding:15px 14px 12px}
+  .cyber-course h3{font-size:15px}
+  .cyber-course-meta span{white-space:nowrap}
+  .cyber-course-meta .cyber-course-go{letter-spacing:.16em}
+  .cyber-feed{width:100%;justify-content:center}
+  .cyber-ep-cover{min-width:0;max-width:520px}
+  .cyber-ep-body{min-width:0;width:100%}
+  .cyber-clock-row{flex-direction:column;gap:10px}
+}@media(max-width:400px){
+  .cyber-kpis{grid-template-columns:1fr}
+  .cyber-sys-strip span{white-space:normal}
+  .cyber-actions{flex-direction:column;align-items:stretch;width:100%}
+  .cyber-actions .cyber-back{text-align:center;padding-left:10px;padding-right:10px}
+  .cyber-actions #cyberVoiceBtn{width:100%}
+  .cyber-brand span{letter-spacing:.2em}
+  .cyber-kicker{white-space:normal}
+  .cyber-tags{flex-direction:column;gap:6px}
+  .cyber-pill{white-space:normal}
 }
