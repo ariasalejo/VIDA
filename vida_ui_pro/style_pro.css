@@ -896,6 +896,20 @@ aside a.nav.cyber-nav.active{background:linear-gradient(120deg,rgba(120,0,255,.1
   border:1px solid rgba(212,175,55,.45);padding:10px 16px;border-radius:10px;transition:.22s}
 .cyber-feed:hover{background:rgba(212,175,55,.10);box-shadow:0 0 24px rgba(212,175,55,.18);
   transform:translateY(-2px)}
+.cyber-listen{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:14px;
+  border-top:1px dashed var(--line);padding-top:14px}
+.cl-label{font-size:9.5px;letter-spacing:.26em;color:var(--muted2);font-weight:800}
+.cl-a,.cl-b,.cl-c{font-size:10.5px;letter-spacing:.1em;font-weight:800;color:var(--cyan);
+  border:1px solid rgba(69,230,255,.35);padding:8px 14px;border-radius:99px;text-decoration:none;transition:.2s}
+.cl-a:hover{background:rgba(69,230,255,.1);box-shadow:0 0 16px rgba(69,230,255,.2)}
+.cl-b{color:var(--gold2);border-color:rgba(212,175,55,.45)}
+.cl-b:hover{background:rgba(212,175,55,.1);box-shadow:0 0 16px rgba(212,175,55,.2)}
+.cl-c{color:#fff;border-color:rgba(255,45,149,.5)}
+.cl-c:hover{background:rgba(255,45,149,.12);box-shadow:0 0 16px rgba(255,45,149,.28)}
+@media(max-width:440px){
+  .cyber-listen{flex-direction:column;align-items:stretch}
+  .cl-a,.cl-b,.cl-c{text-align:center}
+}
 
 .cyber-ticker{position:relative;z-index:2;margin-top:18px;overflow:hidden;
   border:1px solid rgba(69,230,255,.28);border-radius:14px;background:rgba(4,8,18,.72);padding:12px 0}
