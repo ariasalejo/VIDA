@@ -148,9 +148,11 @@ def write_covers() -> None:
         if cfg is None:
             print(f"  · {path.name}: sin receta, se deja como está")
             continue
-        img = paint_cover(cfg)
-        img.save(out, "PNG", optimize=True)
-        print(f"  ✓ {out.name} ({os.path.getsize(out)} bytes) · {cfg['num']}")
+        art = paint_cover(cfg)
+        # Apple/Spotify exigen arte de al menos 1400x1400 px para los feeds.
+        art_hi = art.resize((1400, 1400), Image.LANCZOS)
+        art_hi.save(out, "PNG", optimize=True)
+        print(f"  ✓ {out.name} ({os.path.getsize(out)} bytes) · {cfg['num']} · 1400x1400")
 
 
 if __name__ == "__main__":
