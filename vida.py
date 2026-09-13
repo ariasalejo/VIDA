@@ -48,6 +48,11 @@ DATA = ROOT / "data"
 MEDIA = ROOT / "media"
 PODCAST_DIR = ROOT / "podcast_audio"
 
+# Correo del dueño del pódcast. Apple y Spotify lo exigen REAL para verificar
+# el feed. Cambia este valor por TU correo antes de registrarlo en los
+# directorios (búscalo como PODCAST_OWNER_EMAIL).
+PODCAST_OWNER_EMAIL = "TU_CORREO_REAL@EJEMPLO.COM"
+
 PODCAST_META = {
     "podcast_ciberseguridad_1h": {
         "title": "Ciberseguridad y Código · Tu primera zancada",
@@ -2181,7 +2186,7 @@ def create_app() -> Flask:
             "    <itunes:author>VIDA · Eduar Alejandro Arias Londoño</itunes:author>",
             "    <itunes:summary>" + escape(channel_desc) + "</itunes:summary>",
             '    <itunes:owner><itunes:name>VIDA</itunes:name>'
-            '    <itunes:email>podcast@vida.local</itunes:email></itunes:owner>',
+            f'    <itunes:email>{escape(PODCAST_OWNER_EMAIL)}</itunes:email></itunes:owner>',
             '    <itunes:image href="' + escape(channel_img) + '"/>',
             "    <itunes:category text=\"Technology\"><itunes:category text=\"Software How-To\"/>"
             "</itunes:category>",
