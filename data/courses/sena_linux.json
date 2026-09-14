@@ -1,0 +1,122 @@
+{
+  "id": "sena_linux",
+  "title": "Fundamentos de Linux y Línea de Comandos",
+  "provider": "SENA",
+  "hours": 40,
+  "platform": "Zajuna",
+  "source": "https://zajuna.sena.edu.co/",
+  "learner": "Eduar Alejandro Arias Londoño",
+  "tutor": "Libardo Antonio Contreras",
+  "dedication": "A Libardo Antonio Contreras, mi instructor y guía, por impulsarme a dominar la terminal.",
+  "learning_objectives": [
+    "Navegar el sistema de archivos Linux con comandos de terminal.",
+    "Administrar usuarios, permisos y procesos.",
+    "Configurar y administrar servicios esenciales (SSH, Apache, firewall).",
+    "Escribir scripts básicos de automatización en Bash.",
+    "Manejar paquetes y repositorios en distribuciones Debian/Ubuntu.",
+    "Resolver problemas comunes del sistema desde la línea de comandos.",
+    "Demostrar comprensión mediante actividades y evidencias verificables."
+  ],
+  "items": [
+    {
+      "id": "aa1",
+      "kind": "activity",
+      "title": "AA1 · Navegación del sistema de archivos y comandos esenciales",
+      "due": "2026-10-01",
+      "brief": "Demostrar dominio de los comandos cd, ls, pwd, find, grep, cat, mkdir, rm, cp, mv y manejo de permisos chmod/chown.",
+      "deliverable": "Guía práctica con ejemplos reales ejecutados en terminal.",
+      "materials": [],
+      "knowledge": [
+        "Sistema de archivos jerárquico (FHS)",
+        "Permisos UNIX (lectura, escritura, ejecución)",
+        "Propietarios y grupos",
+        "Comandos de navegación",
+        "Búsqueda de archivos (find, locate, grep)"
+      ]
+    },
+    {
+      "id": "aa2",
+      "kind": "activity",
+      "title": "AA2 · Administración de usuarios y procesos",
+      "due": "2026-10-08",
+      "brief": "Crear, modificar y eliminar usuarios; gestionar grupos; monitorear procesos con ps, top, htop y kill.",
+      "deliverable": "Informe práctico con evidencias de gestión de usuarios y procesos.",
+      "materials": [],
+      "knowledge": [
+        "Gestión de usuarios (useradd, usermod, userdel)",
+        "Grupos y permisos grupales",
+        "Procesos y signal handling",
+        "Cron jobs y planificación de tareas"
+      ]
+    },
+    {
+      "id": "aa3",
+      "kind": "activity",
+      "title": "AA3 · Red, servicios y firewall",
+      "due": "2026-10-15",
+      "brief": "Configurar red estática/dinámica, instalar servicios (SSH, Apache), configurar UFW/iptables.",
+      "deliverable": "Laboratorio documentado con configuración de red, servidor web y reglas de firewall.",
+      "materials": [],
+      "knowledge": [
+        "Configuración de red (ip, nmcli, netplan)",
+        "SSH y acceso remoto seguro",
+        "Apache/Nginx básico",
+        "Firewall (UFW, iptables)"
+      ]
+    },
+    {
+      "id": "aa4",
+      "kind": "activity",
+      "title": "AA4 · Scripting en Bash y automatización",
+      "due": "2026-10-22",
+      "brief": "Escribir scripts Bash que automatizan tareas de administración: backup, monitoreo y reportes.",
+      "deliverable": "Repositorio con al menos 3 scripts documentados.",
+      "materials": [],
+      "knowledge": [
+        "Variables, condicionales y bucles en Bash",
+        "Automatización con cron",
+        "Pipelines y redirección de salida",
+        "Buenas prácticas de scripting"
+      ]
+    }
+  ],
+  "concepts": [
+    {
+      "id": "concepto_fhs",
+      "title": "Sistema de archivos jerárquico (FHS)",
+      "definition": "Estructura estándar de directorios en Linux: /bin, /etc, /home, /var, /usr, etc."
+    },
+    {
+      "id": "concepto_permisos",
+      "title": "Permisos UNIX",
+      "definition": "Cada archivo tiene permisos de lectura (r), escritura (w) y ejecución (x) para propietario, grupo y otros."
+    },
+    {
+      "id": "concepto_procesos",
+      "title": "Procesos en Linux",
+      "definition": "Programas en ejecución administrados por el kernel; se identifican con PID y se gestionan con señales."
+    },
+    {
+      "id": "concepto_paquetes",
+      "title": "Gestión de paquetes",
+      "definition": "Sistema de instalación, actualización y eliminación de software con apt/dpkg en distribuciones Debian."
+    },
+    {
+      "id": "concepto_shell",
+      "title": "Shell y scripting",
+      "definition": "Intérprete de comandos que permite automatizar tareas mediante scripts en Bash."
+    },
+    {
+      "id": "concepto_red",
+      "title": "Redes en Linux",
+      "definition": "Configuración y administración de interfaces de red, DNS, firewall y servicios de red."
+    }
+  ],
+  "learning_path": [
+    "aa1",
+    "aa2",
+    "aa3",
+    "aa4"
+  ],
+  "videos": []
+}
