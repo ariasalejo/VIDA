@@ -8,7 +8,6 @@
   "learner": "Eduar Alejandro Arias Londoño",
   "tutor": "Libardo Antonio Contreras",
   "dedication": "A Libardo Antonio Contreras, mi instructor y guía, por acompañarme en este primer logro educativo de muchos que vienen.",
-
   "learning_objectives": [
     "Reconocer los conceptos fundamentales de ciberseguridad.",
     "Identificar y clasificar los activos de información.",
@@ -19,7 +18,6 @@
     "Representar información de seguridad mediante matrices, infografías y mapas mentales.",
     "Demostrar comprensión mediante actividades y evidencias verificables."
   ],
-
   "items": [
     {
       "id": "aa1",
@@ -102,7 +100,6 @@
       ]
     }
   ],
-
   "concepts": [
     {
       "id": "concepto_ciberseguridad",
@@ -123,7 +120,6 @@
         "aa4"
       ]
     },
-
     {
       "id": "concepto_activo",
       "title": "Activo de información",
@@ -151,7 +147,6 @@
         "aa3"
       ]
     },
-
     {
       "id": "concepto_confidencialidad",
       "title": "Confidencialidad",
@@ -177,7 +172,6 @@
         "aa3"
       ]
     },
-
     {
       "id": "concepto_integridad",
       "title": "Integridad",
@@ -202,7 +196,6 @@
         "aa3"
       ]
     },
-
     {
       "id": "concepto_disponibilidad",
       "title": "Disponibilidad",
@@ -228,7 +221,6 @@
         "aa4"
       ]
     },
-
     {
       "id": "concepto_amenaza",
       "title": "Amenaza",
@@ -250,7 +242,6 @@
         "aa4"
       ]
     },
-
     {
       "id": "concepto_vulnerabilidad",
       "title": "Vulnerabilidad",
@@ -269,7 +260,6 @@
         "aa3"
       ]
     },
-
     {
       "id": "concepto_riesgo",
       "title": "Riesgo",
@@ -290,7 +280,6 @@
         "aa4"
       ]
     },
-
     {
       "id": "concepto_impacto",
       "title": "Impacto",
@@ -309,7 +298,6 @@
         "aa3"
       ]
     },
-
     {
       "id": "concepto_control",
       "title": "Control de seguridad",
@@ -330,7 +318,6 @@
         "aa4"
       ]
     },
-
     {
       "id": "concepto_tratamiento",
       "title": "Tratamiento del riesgo",
@@ -347,7 +334,6 @@
         "aa4"
       ]
     },
-
     {
       "id": "concepto_riesgo_residual",
       "title": "Riesgo residual",
@@ -358,7 +344,6 @@
         "aa4"
       ]
     },
-
     {
       "id": "concepto_matriz_riesgo",
       "title": "Matriz de riesgos",
@@ -379,7 +364,6 @@
         "aa3"
       ]
     },
-
     {
       "id": "concepto_gestion_seguridad",
       "title": "Gestión de la seguridad de la información",
@@ -401,7 +385,6 @@
       ]
     }
   ],
-
   "learning_path": [
     {
       "step": 1,
@@ -451,7 +434,6 @@
       ]
     }
   ],
-
   "videos": [
     {
       "id": "video_aa1",
@@ -497,5 +479,6 @@
       "source": "local",
       "required": false
     }
-  ]
+  ],
+  "standards": "ISO/IEC 27001 · Ley 1581/2012 · NIST CSF — marco de referencia, sin certificación"
 }
