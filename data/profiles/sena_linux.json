@@ -1,8 +1,28 @@
 {
-  "learner": "Eduar Alejandro Arias Londoño",
-  "course": "Fundamentos de Linux y Línea de Comandos",
-  "provider": "SENA",
-  "platform": "Zajuna",
-  "hours": 40,
-  "email": ""
+  "course_id": "sena_linux",
+  "name": "Fundamentos de Linux y Línea de Comandos",
+  "version": "1.0",
+
+  "components": {
+    "videos": true,
+    "activities": true,
+    "concepts": true,
+    "evidence": true,
+    "projects": true,
+    "certification": true
+  },
+
+  "weights": {
+    "video": 0.20,
+    "activity": 0.40,
+    "mastery": 0.25,
+    "evidence": 0.15
+  },
+
+  "metadata": {
+    "institution": "SENA",
+    "domain": "Linux y Línea de Comandos",
+    "learning_mode": "formal",
+    "evidence_required": true
+  }
 }
