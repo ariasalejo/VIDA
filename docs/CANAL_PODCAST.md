@@ -9,6 +9,8 @@ y programación contadas por BLUMIX y las súper IAs.
 - **Propietario del feed (owner email):** `PODCAST_OWNER_EMAIL` en `vida.py`
 - **Feed RSS:** `GET /podcast.xml` (RSS 2.0 + iTunes, listo para Spotify,
   Apple Podcasts y YouTube).
+- **Spotify (creadores):** show registrado y URL asignada:
+  `https://open.spotify.com/show/4v3EzrfLm6nIIJv4DhYLWs`
 - **Catálogo JSON:** `GET /api/podcast` (ordena por **número real**, nunca por
   posición en la lista).
 
