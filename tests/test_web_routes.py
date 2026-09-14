@@ -335,6 +335,33 @@ class VIDAWebTestCase(unittest.TestCase):
         self.assertIn("itunes:episode>01", body)
         self.assertIn("itunes:series>BLUMIX · Las Voces del Código", body)
 
+    def test_feed_duration_reads_real_audio_length(self):
+        # La duración del feed debe venir del MP3 real (mutagen), no de una
+        # estimación por bitrate: a 96 kbps la vieja fórmula cortaba -25%.
+        import re
+        import xml.dom.minidom
+
+        import vida
+        from mutagen.mp3 import MP3
+
+        res = self.client.get("/podcast.xml")
+        self.assertEqual(res.status_code, 200)
+        body = res.get_data(as_text=True)
+        xml.dom.minidom.parseString(body)
+        feed = {}
+        for block in body.split("<item>"):
+            num = re.search(r"itunes:episode>(\d+)", block)
+            dur = re.search(r"itunes:duration>(\d+)</itunes:duration>", block)
+            if num and dur:
+                feed[num.group(1)] = int(dur.group(1))
+        self.assertGreaterEqual(len(feed), 3)
+        for stem, meta in vida.PODCAST_META.items():
+            mp3 = vida.PODCAST_DIR / f"{stem}.mp3"
+            if not mp3.exists() or meta["num"] not in feed:
+                continue
+            real = int(round(MP3(str(mp3)).info.length))
+            self.assertEqual(feed[meta["num"]], real)
+
     def test_broken_mp3_does_not_break_catalog_or_feed(self):
         # Un archivo sin leer (0 bytes) NO debe tumbar ni el catálogo ni el
         # feed RSS: el radio del error queda contenido al episodio.

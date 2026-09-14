@@ -45,6 +45,12 @@ registrado en `git log`; este documento resume el *porqué*.
      (duplicaba el portal); la escucha vive en **VIDA · NEXUS** (`/vida`);
    - el portal oculta el episodio de evidencia (EP 01) para que no se repita
      con su tarjeta de evidencia; EP 01 aparece solo en el centro de evidencias.
+7. **Registro en Spotify/YouTube:** al validar el feed con Spotify for Creators
+   salía un error de procesamiento. Causa raíz: las duraciones del feed se
+   estimaban con una fórmula que asumía 128 kbps, pero el audio va a 96 kbps
+   mono → <itunes:duration> quedaba ~25 % corto. Ahora la duración real se lee
+   del MP3 (mutagen) y el feed emite los segundos exactos (53:16, 52:16 y
+   27:53). El feed vive en una URL estable por proyecto (no por deploy).
 5. **Documentación nueva:** `docs/ESTANDARES.md`, `docs/CANAL_PODCAST.md`,
    `docs/ERRORES_Y_CORRECCIONES.txt` y `docs/PRESUPUESTO_DEPLOY.md`.
 6. **README:** sección «Estándares y marco normativo» + `docs/` en la

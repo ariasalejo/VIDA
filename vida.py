@@ -138,12 +138,27 @@ def _podcast_ep_entry(path: Path) -> dict | None:
     if size <= 0:
         return None
     meta = PODCAST_META.get(path.stem, {})
+    duration_seconds = _mp3_duration_seconds(path)
+    if duration_seconds <= 0:
+        duration_seconds = round(size / (96_000 / 8))
     return {
         "meta": meta,
         "size": size,
-        "minutes": max(1, round(size / (128_000 / 8) / 60)),
+        "minutes": max(1, round(duration_seconds / 60)),
+        "duration_seconds": int(duration_seconds),
         "pub_date": format_datetime(datetime.fromtimestamp(mtime, tz=timezone.utc)),
     }
+
+
+def _mp3_duration_seconds(path: Path) -> float:
+    """Duración real del MP3 (contenido, no estimada por bitrate)."""
+    try:
+        from mutagen.mp3 import MP3
+
+        info = MP3(str(path)).info
+        return float(info.length if info.length else 0)
+    except Exception:
+        return 0.0
 PROFILE = DATA / "profiles" / "sena_ciberseguridad.json"
 CERT_DIR = ROOT / "certificates"
 CERT_HTML = ROOT / "certificate.html"
@@ -2430,7 +2445,6 @@ def create_app() -> Flask:
             if meta.get("chapters"):
                 desc += f" · {meta['chapters']} capítulos · {meta.get('voices', '')}"
             size = entry["size"]
-            minutes = entry["minutes"]
             pub_date = entry["pub_date"]
             audio_url = base + f"/media/podcast/{path.name}"
             cover_url = base + f"/static/covers/{path.stem}.png"
@@ -2447,7 +2461,7 @@ def create_app() -> Flask:
                 "      <guid isPermaLink=\"false\">"
                 + escape(base + f"/media/podcast/{path.name}") + "</guid>",
                 "      <pubDate>" + pub_date + "</pubDate>",
-                f"      <itunes:duration>{(minutes * 60)}</itunes:duration>",
+                f"      <itunes:duration>{entry['duration_seconds']}</itunes:duration>",
                 f"      <itunes:season>{season}</itunes:season>",
                 "      <itunes:episode>" + (ep_num or "1") + "</itunes:episode>",
                 "      <itunes:episodeType>full</itunes:episodeType>",

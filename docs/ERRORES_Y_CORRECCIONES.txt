@@ -53,3 +53,11 @@ REGISTRO DE ERRORES Y CORRECCIONES · VIDA
 10. [2026-09-14] GitHub tardaba >10 min en aceptar el push (≈100 MB de audio
     nuevos). Corrección: reintento con timeout ampliado; el deploy de Vercel
     se disparó solo por la integración git.
+
+11. [2026-09-14] Spotify/YouTube rechazaban el feed del pódcast. Diagnóstico:
+    <itunes:duration> salía ~25 % corto (EP01: 2400 s = 40 min cuando el audio
+    real dura 3196 s ≈ 53 min), porque se estimaba desde el tamaño del archivo
+    asumiendo 128 kbps, pero los MP3 se re-encodean a 96 kbps mono.
+    Corrección: la duración se lee del propio MP3 con mutagen y el feed emite
+    los segundos reales (dur_seconds). Test de regresión añadido.
+    Deps: + mutagen en requirements.txt.
