@@ -2013,6 +2013,7 @@ def create_app() -> Flask:
         return jsonify(result)
 
     @app.get("/api/evidence")
+    @_needs_account
     def evidence_overview():
         course_data = course()
         result = []
@@ -2199,6 +2200,7 @@ def create_app() -> Flask:
         ), 201
 
     @app.get("/media/evidence/<activity_id>/<path:name>")
+    @_needs_account
     def media_evidence(activity_id: str, name: str):
         return send_from_directory(
             evidence_root() / activity_id,

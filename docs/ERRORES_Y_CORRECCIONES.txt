@@ -38,3 +38,18 @@ REGISTRO DE ERRORES Y CORRECCIONES · VIDA
 08. [2026-09-14] POST /api/podcast/evidence podía devolver 500 con payloads
     malformados (position="abc"). Y bool("false")==True validaba mal.
     Corrección: parseo defensivo con 400 y booleano estricto. Test añadido.
+
+09. [2026-09-14] Verificación pre-publicación (sitio público):
+    - Las URLs de producción estaban tras el SSO de Vercel, así que el feed
+      RSS del pódcast no podría leerse por Spotify/Apple/YouTube (eran públicas
+      solo para la sesión autenticada).
+      Corrección (decidida por el usuario): desactivar el SSO de producción
+      (ssoProtection = null) para ABRIR feeds y audio al público. El dashboard
+      y los datos personales siguen protegidos por el login propio de la app.
+    - Detección: GET /api/evidence y GET /media/evidence/* respondían 200 a
+      invitados, exponiendo el expediente personal. Ahora exigen cuenta (401).
+      Tests añadidos (53 en total).
+
+10. [2026-09-14] GitHub tardaba >10 min en aceptar el push (≈100 MB de audio
+    nuevos). Corrección: reintento con timeout ampliado; el deploy de Vercel
+    se disparó solo por la integración git.

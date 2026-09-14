@@ -198,6 +198,11 @@ class VIDAWebTestCase(unittest.TestCase):
             ),
             encoding="utf-8",
         )
+        # El expediente es personal, así que hace falta cuenta para leerlo.
+        self.client.post(
+            "/api/auth/signup",
+            json={"email": "expediente@vida.test", "name": "Expediente", "password": "secreto123"},
+        )
         res = self.client.get("/api/evidence")
         self.assertEqual(res.status_code, 200)
         payload = res.get_json()
@@ -211,6 +216,14 @@ class VIDAWebTestCase(unittest.TestCase):
         self.assertEqual(len(aa1["records"]), 1)
         self.assertEqual(aa1["records"][0]["source"], "work/aa1")
         self.assertEqual(payload["total_records"], 1)
+
+    def test_evidence_overview_and_files_require_account(self):
+        # Ahora que el sitio es público, el expediente y sus archivos siguen
+        # siendo privados: ningún invitado debe ver personal de nadie.
+        res = self.client.get("/api/evidence")
+        self.assertEqual(res.status_code, 401)
+        res = self.client.get("/media/evidence/aa1/minuta.pdf")
+        self.assertEqual(res.status_code, 401)
 
     def test_certificate_css_is_landscape(self):
         css = (ROOT / "vida_ui_pro" / "style_cert.css").read_text(encoding="utf-8")

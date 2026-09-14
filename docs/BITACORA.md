@@ -32,6 +32,13 @@ registrado en `git log`; este documento resume el *porqué*.
    - payload inválido → 400;
    - feed RSS bien formado con campos iTunes;
    - **contención**: MP3 de 0 bytes no rompe ni catálogo ni feed.
+5. **Privacidad en sitio público (permitido: acceso público en producción):**
+   - el SSO de Vercel bloqueaba el feed RSS/audio públicos (Spotify/Apple/YouTube
+     no podrían jalarlos). El usuario aprobó abrir producción (`ssoProtection=null`);
+   - ese cambio obligó a verificar el perímetro: `/api/evidence` y
+     `/media/evidence/*` ahora exigen cuenta (401) — datos personales a salvo.
+     Material y videos de curso siguen públicos por diseño.
+   - Pruebas: 47 → 53.
 5. **Documentación nueva:** `docs/ESTANDARES.md`, `docs/CANAL_PODCAST.md`,
    `docs/ERRORES_Y_CORRECCIONES.txt` y `docs/PRESUPUESTO_DEPLOY.md`.
 6. **README:** sección «Estándares y marco normativo» + `docs/` en la
