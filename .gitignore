@@ -54,3 +54,6 @@ podcast_audio/*.tmp.mp3
 
 # Pruebas temporales locales
 tmp_prueba/
+
+# Herramienta local del asistente (nunca debe versionarse)
+.opencode/

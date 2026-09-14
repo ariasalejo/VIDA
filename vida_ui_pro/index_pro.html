@@ -32,7 +32,7 @@
   ]
 }
 </script>
-<link rel="stylesheet" href="/static/style_pro.css?v=3">
+<link rel="stylesheet" href="/static/style_pro.css?v=4">
 </head>
 <body>
 
@@ -161,8 +161,8 @@
       </div>
 
       <div class="card podcast-card">
-        <header><div><small>PODCAST · AUDIO DE ESTUDIO</small><h2>🎙 Noche de estudio</h2></div><span class="pill">AUDIO · MP3</span></header>
-        <p class="hint">Resumen del curso en audio, para repasar mientras caminas, viajas o descansas. Se sirve con soporte de búsqueda (range).</p>
+        <header><div><small>PODCAST · BLUMIX · LAS VOCES DEL CÓDIGO</small><h2>🎙 Súper IAs en acción</h2></div><span class="pill">AUDIO · MP3</span></header>
+        <p class="hint">El pódcast de la temporada para estudiar mientras caminas, viajas o descansas, con BLUMIX y las súper IAs. Se sirve con soporte de búsqueda (range).</p>
         <div id="podcastList"></div>
       </div>
 
@@ -281,12 +281,27 @@
         <header><div><small>EVIDENCE ENGINE · EXPEDIENTE EN VIVO</small><h2>Centro de evidencias</h2></div><span class="pill" id="evCount">OBSERVADO ≠ INFERIDO</span></header>
         <p class="hint">Expediente verificable: VIDA solo registra lo que observa, nunca inventa evidencia. Filtra por tipo de observación o busca en el registro.</p>
 
+        <div class="card ev-podcast-card" id="evPodcastCard">
+          <header>
+            <div><small>PÓDCAST DE EVIDENCIA · TEMPORADA 1</small><h2>🎙 EP 01 · Tu primera zancada</h2></div>
+            <span class="pill" id="evPodcastState">SIN REGISTRO</span>
+          </header>
+          <p class="hint">Escucha el episodio de estudio completo (o al menos el 95&nbsp;%) y VIDA lo registrará como evidencia observada en tu expediente. Reproduce desde aquí:</p>
+          <div class="ev-podcast-audio">
+            <div class="ev-art" title="Portada EP 01"><img src="/static/covers/podcast_ciberseguridad_1h.png" alt="Portada EP 01" loading="lazy"><i class="pod-season-shine"></i></div>
+            <audio id="evPodcastAudio" controls preload="none"></audio>
+          </div>
+          <div class="player-meta"><span>Pódcast · Ciberseguridad y Código · El Aprendiz y Salomé</span><b id="evPodcastInfo">Preparando el episodio…</b></div>
+          <div class="big-bar"><em id="evPodcastBar"></em></div>
+        </div>
+
         <div class="ev-toolbar">
           <input id="evSearch" type="search" placeholder="Buscar por título, ID o método…" aria-label="Buscar en el expediente">
           <div class="ev-filters" id="evFilters">
             <button type="button" class="ev-f on" data-f="all">TODOS</button>
             <button type="button" class="ev-f" data-f="ACTIVITY_COMPLETE">📤 ENTREGAS</button>
             <button type="button" class="ev-f" data-f="VIDEO_COMPLETE">📼 SESIONES</button>
+            <button type="button" class="ev-f" data-f="PODCAST_LISTEN">🎙 PÓDCAST</button>
             <button type="button" class="ev-f" data-f="CONCEPT_VERIFY">◈ CONCEPTOS</button>
             <button type="button" class="ev-f" data-f="files">📎 ARCHIVOS</button>
             <button type="button" class="ev-reset" id="evReset" hidden>⟲ restablecer</button>
@@ -323,6 +338,7 @@
       <p class="dedic-texto">“{{ course.dedication }}”</p>
       <p class="dedic-firma">— Eduar Alejandro Arias Londoño · Aprendiz SENA</p>
       <div class="dedic-marca">💛 SENA · Zajuna · Curso: «{{ course.title }}» ({{ course.hours }} h)</div>
+      <div class="dedic-standards">ISO/IEC 27001 · Ley 1581/2012 · NIST CSF — marco de referencia, sin certificación</div>
     </div>
 
     <div class="sig">

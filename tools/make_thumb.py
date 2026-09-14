@@ -62,14 +62,15 @@ def paint_thumb(cfg: dict) -> Image.Image:
     f_small = ImageFont.truetype(FONT_MONO, 26)
 
     # Cabecera.
-    d.text((70, 54), "// VIDA · CANAL SEGURO · PÓDCAST", font=f_kick, fill=pal["a"])
+    d.text((70, 54), "// BLUMIX · LAS VOCES DEL CÓDIGO · TEMPORADA 1", font=f_kick, fill=pal["a"])
     d.line([(70, 102), (830, 102)], fill=(*pal["a"], 90), width=2)
 
     # Número gigante con glitch + sello EP.
     num = cfg["num"]
     for dx, dy, col in ((-7, 5, pal["b"]), (6, -3, pal["a"]), (0, 0, (255, 255, 255))):
         d.text((94 + dx, 128 + dy), num, font=f_num, fill=col)
-    d.text((700, 150), "EP  " + num, font=f_sub, fill=(*pal["a"], 160), anchor="lm")
+    if cfg.get("num_label") is not None:
+        d.text((700, 150), "EP  " + num, font=f_sub, fill=(*pal["a"], 160), anchor="lm")
 
     # Título y subtítulo (zona izquierda, segura para YouTube).
     ty = 430

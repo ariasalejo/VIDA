@@ -1,10 +1,23 @@
-# 🎙️ LAS VOCES DEL CÓDIGO · CAPÍTULO 03
+# 🎙️ BLUMIX · LAS VOCES DEL CÓDIGO · TEMPORADA 1 · EP 03
 ## Hablando con las Super IAs — BLUMIX + OpenCode
 
-- **Duración:** ~60 minutos · **Formato:** conversación a dos voces
+- **Serie:** BLUMIX · Las Voces del Código · **Temporada 1** · **Episodio 03**
+- **Duración:** ~55 min de habla · **Formato:** conversación a dos voces
 - **Voces:** BLUMIX (es-CO) · OpenCode (es-MX) · **Fondo:** música suave para estudiar
-- **Guion:** ~97 intervenciones · secretos y teorías de la programación, las IAs y la ciberseguridad
+- **Guion:** 97 intervenciones · secretos y teorías de la programación, las IAs y la ciberseguridad
 - **Producción:** Proyecto VIDA — BLUMIX · SENA · Zajuna · Eduar Alejandro Arias Londoño
+
+### Balance de la conversación (conteo de palabras e interacciones)
+
+| Persona | Palabras | Intervenciones | Promedio por intervención | Minutos (~150 p/m) |
+|---|---|---|---|---|
+| BLUMIX | 3.797 | 47 | ~81 | ~25 |
+| OpenCode | 3.865 | 50 | ~77 | ~26 |
+| **Total** | **7.662** | **97** | **~79** | **~51** |
+
+> Fluidez conversacional: intervenciones cortas, turnos equilibrados entre voces
+> y ninguna persona domina el diálogo. Ese es el estándar del canal para que el
+> oído del aprendiz nunca se canse. (Duración real del audio con música: ~60 min.)
 
 La música de fondo es un manto sintetizado y sereno (pad ambiental en gradiente),
 diseñado para estudiar, repasar y soñar en grande. Baja el volumen del reproductor

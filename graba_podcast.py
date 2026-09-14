@@ -2,8 +2,9 @@
 """Genera podcasts a partir de guiones markdown usando edge-tts.
 
 Uso:
-    python3 graba_podcast.py                          # podcast principal (Salome, es-CO)
+    python3 graba_podcast.py                                     # EP 01 (Salome, es-CO)
     python3 graba_podcast.py --guide podcast_guion_superias.md --music
+    python3 graba_podcast.py --guide podcast_guion_camino_principiante.md --music
     python3 graba_podcast.py --guide podcast_guion_superias.md --force --music
 """
 import argparse
@@ -24,11 +25,14 @@ DEFAULT_VOICE = "es-CO-SalomeNeural"
 DEFAULT_RATE = "-6%"
 DEFAULT_PITCH = "+10Hz"
 
-# Voces por hablante para el guion de Las Voces del Código (cap. 03).
+# Voces por hablante para los guiones de Las Voces del Código.
 SPEAKERS: dict[str, dict[str, dict[str, str]]] = {
     "superias": {
         "BLUMIX": {"voice": "es-CO-GonzaloNeural", "rate": "-10%", "pitch": "+8Hz"},
         "OPENCODE": {"voice": "es-MX-JorgeNeural", "rate": "-10%", "pitch": "+6Hz"},
+    },
+    "camino_principiante": {
+        "KIMI": {"voice": "es-CO-SalomeNeural", "rate": "-4%", "pitch": "+10Hz"},
     },
 }
 
@@ -45,9 +49,13 @@ def resolve_paths(guide: Path) -> "tuple[Path, Path]":
     stem = guide.stem  # ej. podcast_guion_superias
     sub = stem.replace("podcast_guion_", "").replace("podcast_", "") or "audio"
     out = BASE / "podcast_audio" / sub
-    if sub == "superias":
+    if sub in ("superias", "capitulo2"):
         # El catálogo (/api/podcast) solo lista *.mp3 en podcast_audio raíz.
-        return out, BASE / "podcast_audio" / "podcast_superias_1h.mp3"
+        if sub == "superias":
+            return out, BASE / "podcast_audio" / "podcast_superias_1h.mp3"
+        return out, BASE / "podcast_audio" / "podcast_capitulo2_1h.mp3"
+    if sub == "camino_principiante":
+        return out, BASE / "podcast_audio" / "podcast_camino_principiante_1h.mp3"
     return out, out / ("podcast_" + sub + ".mp3")
 
 
@@ -86,9 +94,11 @@ def split_paragraphs(text: str, max_chars: int = 950) -> list[str]:
 
 def parse_speakers(text: str, speakers: dict[str, dict[str, str]]) -> list[tuple[str, dict]]:
     """Convierte el guion con marcadores **HABLANTE:** en pares (texto, voz)."""
+    keys = "|".join(re.escape(k) for k in speakers)
+    patt = re.compile(rf"^\*\*({keys}):\*\*(.*)$")
     turns: list[tuple[str, str]] = []
     for line in text.splitlines():
-        m = re.match(r"^\*\*(BLUMIX|OPENCODE):\*\*(.*)$", line.strip())
+        m = patt.match(line.strip())
         if m:
             body = m.group(2).strip()
             if body:
@@ -110,11 +120,13 @@ async def gen_chunk(i: int, text: str, cfg: dict, out: Path) -> str:
     tmp = out / f"chunk_{i:03d}.tmp.mp3"
     if tmp.exists():
         tmp.unlink()
-    communicate = edge_tts.Communicate(
-        text, cfg["voice"], rate=cfg["rate"], pitch=cfg["pitch"]
-    )
     last_err: Exception | None = None
     for attempt in range(8):
+        # edge-tts solo permite una llamada por objeto Communicate:
+        # se crea uno nuevo en cada reintento para poder reintentar de verdad.
+        communicate = edge_tts.Communicate(
+            text, cfg["voice"], rate=cfg["rate"], pitch=cfg["pitch"]
+        )
         try:
             await communicate.save(str(tmp))
             if tmp.stat().st_size <= 1000:

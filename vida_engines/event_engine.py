@@ -32,6 +32,9 @@ class EventEngine:
         "ACTIVITY_COMPLETE",
         "CONCEPT_OPEN",
         "CONCEPT_VERIFY",
+        "PODCAST_OPEN",
+        "PODCAST_PLAY",
+        "PODCAST_COMPLETE",
         "STUDY_START",
         "STUDY_END",
     }

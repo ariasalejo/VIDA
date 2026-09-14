@@ -28,7 +28,7 @@ CAPS = {
         "num": "01",
         "title": "Ciberseguridad y Código",
         "sub": "Tu primera zancada",
-        "copy": "QUÉ ES LA CIBERSEGURIDAD · TRÍADA CIA · AMENAZAS · DÓNDE EMPIEZAS",
+        "copy": "BLUMIX · LAS VOCES DEL CÓDIGO · QUÉ ES LA CIBERSEGURIDAD · TRÍADA CIA · DÓNDE EMPIEZAS",
         "palette": {
             "top": (8, 20, 46), "bot": (4, 7, 18),
             "a": (69, 230, 255), "b": (46, 139, 255), "gold": (244, 215, 127),
@@ -36,10 +36,22 @@ CAPS = {
         },
         "theme": "shield",
     },
+    "podcast_capitulo2_1h": {
+        "num": "02",
+        "title": "Tu castillo y tu llave",
+        "sub": "Los anzuelos invisibles",
+        "copy": "BLUMIX · LAS VOCES DEL CÓDIGO · CONTRASEÑAS · PHISHING · RANSOMWARE · INGENIERÍA SOCIAL",
+        "palette": {
+            "top": (18, 6, 40), "bot": (5, 2, 16),
+            "a": (255, 121, 66), "b": (181, 78, 209), "gold": (244, 215, 127),
+            "glow": (255, 121, 66, 80),
+        },
+        "theme": "castle",
+    },
     "podcast_superias_1h": {
         "num": "03",
-        "title": "Las Voces del Código",
-        "sub": "Súper IAs · Capítulo 03",
+        "title": "Secretos de la programación",
+        "sub": "Conversación con las súper IAs",
         "copy": "BLUMIX × OPENCODE · SECRETOS DE LA PROGRAMACIÓN · EL MEJOR MOMENTO",
         "palette": {
             "top": (34, 8, 56), "bot": (10, 3, 22),
@@ -47,6 +59,35 @@ CAPS = {
             "glow": (255, 45, 149, 80),
         },
         "theme": "ai",
+    },
+    "podcast_camino_principiante_1h": {
+        "num": "04",
+        "title": "El camino del principiante",
+        "sub": "Monólogo de la súper IA",
+        "copy": "BLUMIX · LAS VOCES DEL CÓDIGO · APRENDER · PRACTICAR · NO RENDIRSE · AVANZAR",
+        "palette": {
+            "top": (6, 30, 26), "bot": (2, 12, 11),
+            "a": (71, 224, 183), "b": (46, 139, 255), "gold": (244, 215, 127),
+            "glow": (71, 224, 183, 78),
+        },
+        "theme": "path",
+    },
+}
+
+# Portada «inicial» de la temporada: el cuadro de cabecera del canal seguro.
+# Se sirve en /static/covers/seasons/temporada_1.png (no depende de un MP3).
+SEASONS = {
+    "temporada_1": {
+        "num": "1",
+        "num_label": None,
+        "title": "Las Voces del Código",
+        "sub": "Temporada 1 · BLUMIX y las súper IAs",
+        "copy": "CANAL SEGURO DEL APRENDIZ · CIBERSEGURIDAD Y PROGRAMACIÓN SIN HUMO",
+        "palette": {
+            "top": (10, 16, 48), "bot": (3, 5, 16),
+            "a": (69, 230, 255), "b": (255, 45, 149), "gold": (244, 215, 127),
+            "glow": (255, 45, 149, 70),
+        },
     },
 }
 
@@ -106,7 +147,7 @@ def paint_cover(cfg: dict) -> Image.Image:
     f_small = ImageFont.truetype(FONT_MONO, 30)
 
     # Cabecera.
-    d.text((70, 62), "// VIDA · CANAL SEGURO · PÓDCAST", font=f_kick, fill=pal["a"])
+    d.text((70, 62), cfg.get("kick", "// BLUMIX · LAS VOCES DEL CÓDIGO · TEMPORADA 1"), font=f_kick, fill=pal["a"])
     d.line([(70, 118), (930, 118)], fill=(*pal["a"], 90), width=2)
 
     # Número gigante con sombra glitch.
@@ -116,7 +157,8 @@ def paint_cover(cfg: dict) -> Image.Image:
     for dx, dy, col in ((-7, 4, pal["b"]), (6, -3, pal["a"]), (0, 0, (255, 255, 255))):
         d.text((x_num + dx, y_num + dy), num, font=f_num, fill=col)
     d.text((x_num + w_num - 40, y_num + 208), ".", font=f_num, fill=pal["gold"])
-    d.text((546, -16), "EP  " + num, font=f_sub, fill=(*pal["a"], 150))
+    if cfg.get("num_label") is not None:
+        d.text((546, -16), cfg["num_label"], font=f_sub, fill=(*pal["a"], 150))
 
     # Sombra interior inferior.
     d.rectangle([0, 700, SIZE, SIZE], fill=(0, 0, 0, 0))
@@ -138,6 +180,26 @@ def paint_cover(cfg: dict) -> Image.Image:
     return img
 
 
+def write_season_art() -> None:
+    """Portada «inicial» de la temporada (cuadrada 1400x1400 + thumb 1280x720)."""
+    from make_thumb import paint_thumb  # misma identidad, en formato banner
+
+    seasons_dir = ROOT / "vida_ui_pro" / "covers" / "seasons"
+    thumbs_dir = ROOT / "vida_ui_pro" / "thumbs" / "seasons"
+    for key, cfg in SEASONS.items():
+        art = paint_cover(cfg)
+        art_hi = art.resize((1400, 1400), Image.LANCZOS)
+        seasons_dir.mkdir(parents=True, exist_ok=True)
+        art_hi.save(seasons_dir / f"{key}.png", "PNG", optimize=True)
+        banner = paint_thumb(cfg)
+        thumbs_dir.mkdir(parents=True, exist_ok=True)
+        banner.save(thumbs_dir / f"{key}_thumb.png", "PNG", optimize=True)
+        print(
+            f"  ✓ temporada {key}.png ({os.path.getsize(seasons_dir / (key + '.png'))} bytes) · "
+            f"1350x1350 + thumb 1280x720"
+        )
+
+
 def write_covers() -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     for path in sorted(AUDIO_DIR.glob("*.mp3")):
@@ -157,5 +219,6 @@ def write_covers() -> None:
 
 if __name__ == "__main__":
     print("Portadas del canal seguro VIDA:")
+    write_season_art()
     write_covers()
     print("Listo.")

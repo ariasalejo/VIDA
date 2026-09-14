@@ -58,7 +58,7 @@ function fmtStamp(iso) {
   return `${p(d.getDate())}.${p(d.getMonth() + 1)}.${d.getFullYear()} · ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 const EV_ICON = {
-  ACTIVITY_COMPLETE: "📤", VIDEO_COMPLETE: "📼", CONCEPT_VERIFY: "◈", EVIDENCE_UPLOAD: "📎"
+  ACTIVITY_COMPLETE: "📤", VIDEO_COMPLETE: "📼", PODCAST_LISTEN: "🎙", CONCEPT_VERIFY: "◈", EVIDENCE_UPLOAD: "📎"
 };
 async function getJSON(u, o) {
   const r = await fetch(u, o);
@@ -474,26 +474,50 @@ async function renderPodcast() {
   box.innerHTML = "";
   let data;
   try { data = await getJSON("/api/podcast"); } catch (_) { data = { episodes: [] }; }
-  const eps = data.episodes || [];
+  const eps = (data.episodes || []).filter(ep => ep.slot !== "evidence");
   if (!eps.length) {
     box.innerHTML = `<div class="ev-empty">🎙 El pódcast se prepara… coloca el MP3 en <code>podcast_audio/</code> para que aparezca aquí.</div>`;
     return;
   }
+  const totalMin = eps.reduce((s, e) => s + Math.round(e.minutes || 0), 0);
+  const totalCh = eps.reduce((s, e) => s + (Number(e.chapters) || 0), 0);
+  const season = String(data.season || "1");
+  const wrap = document.createElement("div");
+
+  const seasonEl = document.createElement("div");
+  seasonEl.className = "pod-season";
+  seasonEl.innerHTML =
+    `<div class="pod-season-cover" title="Portada inicial de la temporada">` +
+      `<img src="${esc(data.season_cover || "")}" alt="Portada Temporada ${esc(season)}" loading="lazy" onerror="this.style.display='none'"><i class="pod-season-shine"></i>` +
+    `</div>` +
+    `<div class="pod-season-meta">` +
+      `<b>${esc(data.series || "BLUMIX · Las Voces del Código")}</b>` +
+      `<small>🎙 Temporada ${esc(season)} · ${eps.length} episodio${eps.length === 1 ? "" : "s"} · ~${totalMin} min · ${totalCh} capítulos</small>` +
+      `<p>Estudia mientras caminas, viajas o descansas. Da play y escucha a BLUMIX y las súper IAs.</p>` +
+    `</div>`;
+  wrap.appendChild(seasonEl);
+
   eps.forEach(ep => {
     const el = document.createElement("div");
     el.className = "ep-item";
+    const mini =
+      `<div class="ep-mini" title="Portada EP ${esc(ep.num || "")}">` +
+        `<img src="${esc(ep.cover || "")}" alt="" loading="lazy" onerror="this.closest('.ep-mini').classList.add('no-art')">` +
+        `<i class="pod-season-shine"></i>` +
+      `</div>`;
     const chips =
-      (ep.speakers ? `<span class="ep-src">🎙 ${esc(ep.speakers)}</span>` : "") +
+      (ep.num ? `<span class="ep-src">🎙 EP ${esc(ep.num)} · ${esc(ep.speakers || "BLUMIX")}</span>` : "") +
       (ep.voices ? `<span class="ep-voices">${esc(ep.voices)}</span>` : "") +
       `<span class="ep-dur">${Math.round(ep.minutes || 0)} min · ${fmtSize(ep.size)} · MP3</span>`;
     el.innerHTML =
-      `<div class="ep-ico">🎙</div>` +
+      mini +
       `<div class="fm"><b>${esc(ep.title)}</b><small class="ep-chips">${chips}</small>` +
       (ep.desc ? `<small class="ep-desc">${esc(ep.desc)}</small>` : "") +
       `</div>` +
       `<audio class="ep-audio" controls preload="none" src="${esc(ep.file)}"></audio>`;
-    box.appendChild(el);
+    wrap.appendChild(el);
   });
+  box.appendChild(wrap);
 }
 
 function renderZone() {
@@ -1018,6 +1042,7 @@ const EV_MESES = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP",
 const EV_LABEL = {
   ACTIVITY_COMPLETE: "ENTREGA",
   VIDEO_COMPLETE: "SESIÓN",
+  PODCAST_LISTEN: "PÓDCAST",
   CONCEPT_VERIFY: "CONCEPTO",
 };
 
@@ -1032,6 +1057,7 @@ async function renderEvidence() {
   evData = null;
   if (box) box.innerHTML = '<div class="ev-loading">🛡 Leyendo el expediente de VIDA…</div>';
   paintEvLedgerFoot();
+  initEvidencePodcast();
 
   let data = null;
   for (let i = 0; i < 5; i++) {
@@ -1050,6 +1076,72 @@ async function renderEvidence() {
     groups: data && Array.isArray(data.groups) ? data.groups : [],
   };
   renderEvidenceList();
+}
+
+let podcastTimer = null;
+
+function initEvidencePodcast() {
+  const audio = $("#evPodcastAudio");
+  const card = $("#evPodcastCard");
+  if (!audio || !card) return;
+  const state = $("#evPodcastState");
+  const info = $("#evPodcastInfo");
+  const bar = $("#evPodcastBar");
+
+  getJSON("/api/podcast")
+    .then(async (data) => {
+      const ep = (data.episodes || []).filter(e => e.slot === "evidence")[0];
+      if (!ep) { if (info) info.textContent = "Sin episodio de evidencia disponible"; return; }
+
+      let registered = false;
+      try {
+        const evRes = await getJSON("/api/evidence");
+        (evRes.groups || []).forEach(g => (g.records || []).forEach(r => {
+          if (r.event_type === "PODCAST_LISTEN" && (r.context || {}).num === ep.num) {
+            registered = true;
+            if (info) info.textContent = "✓ Episodio escuchado · " + (r.evidence_id || "") + " · " + ((r.context || {}).title || "");
+          }
+        }));
+      } catch (_) {}
+
+      audio.src = ep.file;
+      if (info && !registered) info.textContent = "EP " + (ep.num || "") + " · " + (ep.speakers || "") + " · " + (Math.round(ep.minutes || 0) || "?") + " min";
+      if (state) state.textContent = registered ? "✓ REGISTRADO" : "PENDIENTE";
+
+      audio.ontimeupdate = () => {
+        if (!audio.duration) return;
+        const n = Math.round(audio.currentTime / audio.duration * 100);
+        if (bar) bar.style.width = n + "%";
+        if (n >= 95) {
+          if (state) state.textContent = state.textContent === "✓ REGISTRADO" ? "✓ REGISTRADO" : "✅ ESCUCHADO · registrando…";
+          if (podcastTimer) { clearTimeout(podcastTimer); }
+          podcastTimer = setTimeout(async () => {
+            try {
+              const r = await getJSON("/api/podcast/evidence", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  num: ep.num,
+                  position: audio.currentTime,
+                  duration: audio.duration,
+                  completed: true
+                })
+              });
+              if (state) state.textContent = r.already ? "✓ REGISTRADO" : "✅ " + (r.evidence_id || "EVIDENCIA REGISTRADA");
+              if (info && !registered) info.textContent = "✓ Episodio escuchado · " + (r.evidence_id || "");
+              if (!registered) { registered = true; renderEvidenceList(); }
+            } catch (_) {
+              if (state) state.textContent = "⚠ SIN REGISTRO · requiere cuenta";
+            }
+          }, 1200);
+        } else if (state && state.textContent !== "✓ REGISTRADO") {
+          state.textContent = "▶ " + n + "% · en progreso";
+        }
+      };
+    })
+    .catch(() => {
+      if (info) info.textContent = "Pódcast no disponible en este momento.";
+    });
 }
 
 function evClearAll() {
@@ -1113,6 +1205,7 @@ function renderEvidenceList() {
   legend.innerHTML =
     `<span class="lg a">● entregas</span>` +
     `<span class="lg b">● sesiones</span>` +
+    `<span class="lg e">● pódcast</span>` +
     `<span class="lg c">● conceptos</span>` +
     `<span class="lg d">● archivos</span>`;
   box.appendChild(legend);

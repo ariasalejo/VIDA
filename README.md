@@ -64,6 +64,7 @@ api/index.py           # Punto de entrada para Vercel
 data/                  # Manifiestos, perfil, reglas y base SQLite
 media/videos/          # 🎬 Sesiones grabadas (MP4)
 media/materials/       # 📚 Material de aprendizaje
+docs/                  # 📄 Estándares, pódcast, bitácora, errores, presupuesto
 tests/                 # Suites de prueba (pytest)
 ```
 
@@ -122,8 +123,14 @@ dashboard, con título, voces, duración y reproductor; `/api/podcast` lista tod
 
 | Episodio | Título en pantalla | Voces | Archivo |
 |---|---|---|---|
-| Cap. 01 | Ciberseguridad y Código · Tu primera zancada | Salomé (es-CO) | `podcast_ciberseguridad_1h.mp3` |
-| Cap. 03 | Las Voces del Código · Capítulo 03 | BLUMIX (es-CO) + OpenCode (es-MX) | `podcast_superias_1h.mp3` |
+| Cap. 01 | Ciberseguridad y Código · Tu primera zancada | El Aprendiz y Salomé (es-CO) · `slot: evidence` | `podcast_ciberseguridad_1h.mp3` |
+| Cap. 02 | Tu castillo, tu llave y los anzuelos invisibles | Gonzalo (es-CO) · **audio pendiente** | — |
+| Cap. 03 | Secretos de la programación y las IAs | BLUMIX (es-CO) + OpenCode (es-MX) | `podcast_superias_1h.mp3` |
+| Cap. 04 | El camino del principiante | Kimi · súper IA (es-CO) | `podcast_camino_principiante_1h.mp3` |
+
+El catálogo ordena por **número real del episodio** (`num`), nunca por posición
+en lista. El canal y sus reglas editoriales se documentan en
+`docs/CANAL_PODCAST.md`.
 
 El diseño del capítulo 03 sigue el mismo patrón que los guiones: texto en
 `podcast_guion_superias.md` con marcadores `**BLUMIX:**` / `**OPENCODE:**`. Se
@@ -132,8 +139,13 @@ studiar/repasar:
 
 ```bash
 python3 graba_podcast.py --guide podcast_guion_superias.md --force --music
+python3 graba_podcast.py --guide podcast_guion_camino_principiante.md --music   # EP 04 · Kimi
 python3 graba_podcast.py --music          # conserva el capítulo 01 (Salomé)
 ```
+
+Los audios finales se mezclan con el pad ambiental y se publican en MP3 mono
+44.1 kHz a 96 kbps (presupuesto de lambda y calidad razonable en narración;
+detalles en `docs/PRESUPUESTO_DEPLOY.md`).
 
 ---
 
@@ -141,11 +153,10 @@ python3 graba_podcast.py --music          # conserva el capítulo 01 (Salomé)
 
 VIDA vive en su **propia página** (`/vida` → `vida_ui_pro/vida.html`), con estética
 ciberpunk propia y **sin tocar el diseño del centro SENA**: láseres que cruzan la
-pantalla, escaneo, título con efecto glitch, señales de transmisión y reproductores
-para el capítulo 03 («Las Voces del Código»). Desde el menú lateral del SENA solo hay
-un botón **⚡ ENTRAR A VIDA · NEXUS** que abre la sección en su propia pestaña.
-
-```
+pantalla, escaneo, título con efecto glitch, señales de transmisión, el **canal de la
+temporada 1** («BLUMIX · Las Voces del Código») con portada de temporada y reproductores.
+Desde el menú lateral del SENA solo hay un botón **⚡ ENTRAR A VIDA · NEXUS** que abre
+la sección en su propia pestaña.
 
 ---
 
@@ -201,6 +212,20 @@ pytest -q
 
 ---
 
+## 🧾 Estándares y marco normativo
+
+VIDA se diseña con referencia a buenas prácticas y marcos colombianos, **sin
+reclamar certificaciones**: ISO/IEC 27000/27001/27002, ISO 31000 + IEC 31010,
+NIST CSF 2.0, Ley 1581/2012 + Dec. 1377/2013 y CONPES 3995/2020. El mapeo
+honesto y los límites de la solución viven en **[`docs/ESTANDARES.md`](docs/ESTANDARES.md)**.
+
+Más allá de las normas: **el radio del daño de un error se acota** (un MP3 roto
+no tumba el catálogo ni el feed público; un payload inválido devuelve `4xx`,
+nunca un 500 general) y **cada salida a producción se verifica antes** (52
+pruebas + smoke local + presupuesto de lambda medido).
+
+---
+
 ## 🏗 Hoja de ruta
 
 - [x] Motor de progreso, evidencia, inteligencia y certificados
@@ -209,6 +234,9 @@ pytest -q
 - [x] Sesión grabada integrada y desplegada en Vercel
 - [x] Dedicatoria especial al docente y al SENA (final del dashboard, en cursiva)
 - [x] Sesiones por actividad (AA1–AA4) más video del dashboard
+- [x] Pódcast Temporada 1 (EP01–04) con portadas, numeración real y feed RSS (Spotify/Apple/YouTube)
+- [x] Evidencia verificable de escucha (PODCAST_LISTEN ≥ 95 %) con radio de error acotado
+- [x] Documentación y estándares (`docs/ESTANDARES.md` y compañía)
 - [ ] Material de aprendizaje por actividad
 - [ ] Certificado final emitido
 

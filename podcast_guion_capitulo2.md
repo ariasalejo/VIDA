@@ -1,4 +1,4 @@
-# 🎙️ PODCAST: CIBERSEGURIDAD Y PROGRAMACIÓN PARA PRINCIPIANTES
+# 🎙️ BLUMIX · LAS VOCES DEL CÓDIGO · TEMPORADA 1 · EP 02
 
 ## Capítulo 2 — Tu castillo, tu llave y los anzuelos invisibles
 ### Voz del narrador: Gonzalo (es-CO) · Edición extendida

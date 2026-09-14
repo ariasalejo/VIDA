@@ -33,7 +33,7 @@
 }
 </script>
 <link rel="alternate" type="application/rss+xml" title="VIDA · Las Voces del Código · Pódcast" href="{{ site_url }}/podcast.xml">
-<link rel="stylesheet" href="/static/style_pro.css?v=3">
+<link rel="stylesheet" href="/static/style_pro.css?v=4">
 </head>
 <body class="cyber-page">
 
@@ -118,9 +118,11 @@
 
       <div class="card cyber-card cyber-comm">
         <header>
-          <div><small>CANAL SEGURO · SUPER IAs</small><h2>🎙 PÓDCAST DE ESTUDIO</h2></div>
+          <div><small>CANAL SEGURO · TEMPORADA 1</small><h2>📁 BLUMIX · Las Voces del Código</h2></div>
           <span class="pill cyber-pill">FREQ. ABIERTA</span>
         </header>
+        <p class="hint">La temporada que acompaña a El Aprendiz: ciberseguridad y programación sin humo, con BLUMIX y las súper IAs. Cada episodio con su número real y su portada.</p>
+        <div class="cyber-season" id="cyberSeason"></div>
         <p class="hint" id="podcastState">Sintonizando el canal…</p>
         <div class="cyber-episodes" id="cyberEpisodes"></div>
         <div class="cyber-freq">
@@ -268,17 +270,42 @@
   /* ---- Pódcast: cuadros del canal seguro ---- */
   function paintPodcast(data) {
     var box = $("cyberEpisodes");
+    var seasonBox = $("cyberSeason");
     if (!box) return;
     var eps = (data || {}).episodes || [];
     if (!eps.length) {
+      if (seasonBox) seasonBox.innerHTML = "";
       $("podcastState").textContent = "🎙 El pódcast se prepara… VIDA no inventa audio: espera la señal.";
       box.innerHTML = "";
       return;
     }
-    $("podcastState").textContent = eps.length + " episodio" + (eps.length === 1 ? "" : "s") + " en el canal seguro. Dale play y estudia con las súper IAs.";
+    var totalMin = eps.reduce(function (s, e) { return s + Math.round(e.minutes || 0); }, 0);
+    var totalCh = eps.reduce(function (s, e) { return s + (Number(e.chapters) || 0); }, 0);
+    $("podcastState").textContent = eps.length + " episodio" + (eps.length === 1 ? "" : "s") + " en la temporada · ~" + totalMin + " min · " + totalCh + " capítulos. Dale play y estudia con las súper IAs.";
+    if (seasonBox) {
+      seasonBox.innerHTML =
+        '<div class="cyber-season-hero">' +
+          '<div class="cyber-season-cover" title="Portada de la temporada">' +
+            '<img src="' + esc(data.season_cover || "") + '" alt="Portada Temporada ' + esc(data.season || "1") + '" loading="lazy" onerror="this.closest(\'.cyber-season-cover\').style.background=\'radial-gradient(120% 120% at 20% 10%,#161030,#04070f)\'">' +
+            '<div class="cyber-ep-shine"></div>' +
+          '</div>' +
+          '<div class="cyber-season-body">' +
+            '<small class="cyber-ep-tag">🎙 CANAL SEGURO · TEMPORADA ' + esc(data.season || "1") + ' · PORTADA INICIAL</small>' +
+            '<h3>' + esc(data.series || "Las Voces del Código") + '</h3>' +
+            '<p class="cyber-season-desc">Ciberseguridad y programación sin humo, con BLUMIX y las súper IAs. ' +
+              'Cada episodio con su número real, su portada y su reproductor: escucha, verifica y avanza.</p>' +
+            '<div class="cyber-season-meta">' +
+              '<span class="cyber-chip chapters">📦 ' + eps.length + ' EPISODIO' + (eps.length === 1 ? "" : "S") + '</span>' +
+              '<span class="cyber-chip voices">⏱ ~' + totalMin + ' MIN</span>' +
+              '<span class="cyber-chip dur">📚 ' + totalCh + ' CAPÍTULOS</span>' +
+              '<span class="cyber-chip voices">🎙 BLUMIX · SÚPER IAs</span>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+    }
     box.innerHTML = "";
-    eps.forEach(function (ep, idx) {
-      var n = "EP " + String(idx + 1).padStart(2, "0");
+    eps.forEach(function (ep) {
+      var n = "EP " + String(ep.num || "").padStart(2, "0");
       var el = document.createElement("div");
       el.className = "cyber-ep";
       var chips =

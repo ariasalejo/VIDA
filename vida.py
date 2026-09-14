@@ -53,27 +53,97 @@ PODCAST_DIR = ROOT / "podcast_audio"
 # directorios (búscalo como PODCAST_OWNER_EMAIL).
 PODCAST_OWNER_EMAIL = "alejoariaslondo@gmail.com"
 
+# Temporada 1 del canal: «BLUMIX · Las Voces del Código».
+# La serie acompaña al aprendiz de cero en ciberseguridad y programación.
+# Los pódcast se distribuyen por "slot": dashboard (uno) y evidence (otro),
+# y el catálogo/feed usan siempre el número real del episodio (num), nunca la
+# posición de lista, para que EP 03 no vuelva a mostrarse como EP 02.
+PODCAST_SERIES = "BLUMIX · Las Voces del Código"
+PODCAST_SEASON = 1
+
 PODCAST_META = {
+    # EP 01 · narradora Salomé (es-CO) · audio listo.
     "podcast_ciberseguridad_1h": {
+        "num": "01",
         "title": "Ciberseguridad y Código · Tu primera zancada",
-        "speakers": "Salomé",
+        "episode_title": "Tu primera zancada en el mundo digital",
+        "speakers": "El Aprendiz y Salomé",
         "voices": "Voz humana · Salomé (es-CO)",
         "chapters": 6,
-        "desc": "Recorrido completo: qué es la ciberseguridad, la tríada CIA, amenazas, "
-        "programación desde cero, datos ocultos y motivación para no rendirte.",
+        "slot": "evidence",
+        "desc": "Recorrido completo para empezar de cero: qué es la ciberseguridad, "
+        "la tríada CIA, las amenazas reales, programación desde cero, los datos "
+        "ocultos que te rodean y por qué no debes rendirte.",
     },
+    # EP 02 · narrador Gonzalo (es-CO) · guion listo, audio pendiente.
+    "podcast_capitulo2_1h": {
+        "num": "02",
+        "title": "Tu castillo, tu llave y los anzuelos invisibles",
+        "episode_title": "Contraseñas, phishing, ransomware e ingeniería social",
+        "speakers": "Gonzalo",
+        "voices": "Voz humana · Gonzalo (es-CO)",
+        "chapters": 5,
+        "slot": "dashboard",
+        "desc": "Cómo te roban y cómo defenderte: el candado de tus contraseñas, "
+        "el anzuelo del phishing, el ransomware y el ladrón que no necesita "
+        "tecnología: la ingeniería social.",
+    },
+    # EP 03 · BLUMIX (es-CO) + OpenCode (es-MX) · audio listo.
     "podcast_superias_1h": {
-        "title": "Las Voces del Código · Capítulo 03",
+        "num": "03",
+        "title": "Secretos de la programación y las IAs",
+        "episode_title": "Conversación con la súper IA OpenCode",
         "speakers": "BLUMIX y OpenCode",
         "voices": "BLUMIX (es-CO) · OpenCode (es-MX)",
         "chapters": 45,
+        "slot": "dashboard",
         "desc": "Una conversación entre BLUMIX y la súper IA OpenCode: secretos y "
         "teorías de la programación y la ciberseguridad, repaso de VIDA y por qué "
         "este es el mejor momento para entrar en este mundo.",
     },
+    # EP 04 · kimono de la súper IA Kimi (es-CO) · monólogo · audio pendiente.
+    "podcast_camino_principiante_1h": {
+        "num": "04",
+        "title": "El camino del principiante",
+        "episode_title": "Monólogo de la súper IA Kimi",
+        "speakers": "Kimi",
+        "voices": "Súper IA · Kimi (es-CO)",
+        "chapters": 31,
+        "slot": "dashboard",
+        "desc": "Monólogo de la súper IA Kimi: hoja de ruta honesta para quien "
+        "empieza de cero: la curva del aprendizaje, los hábitos, aprender haciendo, "
+        "verificar tu avance, la comunidad y un plan de 30 días.",
+    },
 }
 DB = DATA / "vida.db"
 COURSE = DATA / "course.json"
+
+
+def _podcast_ep_entry(path: Path) -> dict | None:
+    """Ficha pública de un episodio a partir de su MP3.
+
+    El radio del error queda **contenido al episodio**: si un archivo no es
+    legible (borrado a mitad de catálogo, sin permisos, cero bytes…), la
+    entrada se omite y ni el catálogo (/api/podcast) ni el feed RSS
+    (/podcast.xml) se caen por culpa de un solo archivo.
+    """
+    if path.name.startswith("chunk_") or path.name == "concat.txt":
+        return None
+    try:
+        st = path.stat()
+        size = st.st_size
+        mtime = st.st_mtime
+    except OSError:
+        return None
+    if size <= 0:
+        return None
+    meta = PODCAST_META.get(path.stem, {})
+    return {
+        "meta": meta,
+        "size": size,
+        "minutes": max(1, round(size / (128_000 / 8) / 60)),
+        "pub_date": format_datetime(datetime.fromtimestamp(mtime, tz=timezone.utc)),
+    }
 PROFILE = DATA / "profiles" / "sena_ciberseguridad.json"
 CERT_DIR = ROOT / "certificates"
 CERT_HTML = ROOT / "certificate.html"
@@ -1962,6 +2032,28 @@ def create_app() -> Flask:
                     "files": files,
                 }
             )
+
+        try:
+            podcast_records = json.loads(
+                (evidence_root() / "evidence.json").read_text(encoding="utf-8")
+            )
+        except (json.JSONDecodeError, OSError):
+            podcast_records = []
+        podcast_records = [
+            rec
+            for rec in podcast_records
+            if rec.get("event_type") == "PODCAST_LISTEN"
+        ]
+        if podcast_records:
+            result.append(
+                {
+                    "activity_id": "podcast",
+                    "title": "Pódcast · Las Voces del Código",
+                    "records": podcast_records,
+                    "files": [],
+                }
+            )
+
         return jsonify(
             {
                 "total_records": _evidence_count(),
@@ -2132,27 +2224,148 @@ def create_app() -> Flask:
     @app.get("/api/podcast")
     def podcast_catalog():
         episodes = []
-        for path in sorted(PODCAST_DIR.glob("*.mp3")):
-            if path.name.startswith("chunk_") or path.name == "concat.txt":
+        skipped = 0
+
+        def _ep_entries():
+            for path in PODCAST_DIR.glob("*.mp3"):
+                if path.name.startswith("chunk_") or path.name == "concat.txt":
+                    continue
+                yield path
+
+        for path in sorted(
+            _ep_entries(),
+            key=lambda p: PODCAST_META.get(p.stem, {}).get("num", "99"),
+        ):
+            entry = _podcast_ep_entry(path)
+            if entry is None:
+                skipped += 1
                 continue
-            size = path.stat().st_size
-            meta = PODCAST_META.get(path.stem, {})
+            size = entry["size"]
+            meta = entry["meta"]
             episodes.append(
                 {
                     "id": path.stem,
+                    "num": meta.get("num", ""),
+                    "series": meta.get("series", PODCAST_SERIES),
+                    "season": meta.get("season", PODCAST_SEASON),
                     "title": meta.get("title", path.stem),
                     "speakers": meta.get("speakers", "Salomé"),
                     "voices": meta.get("voices", "Voz generada por máquina (TTS)"),
                     "chapters": meta.get("chapters"),
+                    "slot": meta.get("slot", "dashboard"),
                     "desc": meta.get("desc"),
                     "file": f"/media/podcast/{path.name}",
                     "cover": f"/static/covers/{path.stem}.png",
                     "thumb": f"/static/thumbs/{path.stem}_thumb.png",
                     "size": size,
-                    "minutes": max(1, round(size / (128_000 / 8) / 60)),
+                    "minutes": entry["minutes"],
                 }
             )
-        return jsonify({"episodes": episodes})
+        payload = {
+            "series": PODCAST_SERIES,
+            "season": PODCAST_SEASON,
+            "season_cover": f"/static/covers/seasons/temporada_{int(PODCAST_SEASON)}.png",
+            "season_thumb": f"/static/thumbs/seasons/temporada_{int(PODCAST_SEASON)}_thumb.png",
+            "episodes": episodes,
+        }
+        if skipped:
+            payload["skipped_unreadable"] = skipped
+        return jsonify(payload)
+
+    @app.post("/api/podcast/evidence")
+    @_needs_account
+    def podcast_evidence():
+        """Registra «episodio escuchado» como evidencia verificable.
+
+        Solo se registra cuando el aprendiz reprodujo al menos el 95 % del
+        audio (completed=true) y una sola vez por episodio: VIDA no inventa
+        evidencia y no la duplica.
+        """
+        payload = request.get_json(silent=True) or {}
+        ep_num = str(payload.get("num", "")).strip()
+        raw_completed = payload.get("completed", False)
+        if isinstance(raw_completed, str):
+            by_client = raw_completed.strip().lower() in ("1", "true", "yes", "sí", "si")
+        else:
+            by_client = bool(raw_completed)
+        try:
+            position = float(payload.get("position", 0) or 0)
+            duration = float(payload.get("duration", 0) or 0)
+        except (TypeError, ValueError):
+            return jsonify(
+                {"ok": False, "error": "Datos de reproducción inválidos."}
+            ), 400
+        completed = by_client or (duration > 0 and position / duration >= 0.95)
+
+        stem = next(
+            (
+                stem
+                for stem, meta in PODCAST_META.items()
+                if meta.get("num") == ep_num
+            ),
+            None,
+        )
+        if stem is None:
+            return jsonify(
+                {"ok": False, "error": "Episodio no reconocido."}
+            ), 404
+
+        meta = PODCAST_META[stem]
+        file_path = PODCAST_DIR / f"{stem}.mp3"
+        if not file_path.exists():
+            return jsonify(
+                {"ok": False, "error": "El audio de ese episodio no está disponible."}
+            ), 404
+
+        # Mínimo verificable: 95 % del total o del metadato del archivo.
+        if not completed:
+            return jsonify(
+                {"ok": False, "error": "Evidencia aún no completada (se exige ≥ 95 % del audio)."}
+            ), 202
+
+        from vida_engines import EventEngine, EvidenceEngine
+
+        events = EventEngine(DATA / "events" / "events.json")
+        evidence = EvidenceEngine(evidence_root() / "evidence.json")
+
+        source = f"podcast/{stem}"
+        already = any(
+            str(rec.get("source", "")) == source
+            for rec in evidence.all()
+        )
+        title = f"{PODCAST_SERIES} · EP {ep_num} · {meta.get('title', stem)}"
+
+        if already:
+            return jsonify(
+                {"ok": True, "already": True, "title": title}
+            )
+
+        events.record(
+            "PODCAST_COMPLETE",
+            source=source,
+            subject=str(course().get("learner", "aprendiz")),
+            data={"title": title, "episode": ep_num},
+        )
+        record = evidence.record(
+            source=source,
+            method="playback_complete",
+            event_type="PODCAST_LISTEN",
+            result="VERIFIED_LISTEN",
+            context={
+                "title": title,
+                "num": ep_num,
+                "series": PODCAST_SERIES,
+                "season": PODCAST_SEASON,
+                "file": f"/media/podcast/{stem}.mp3",
+            },
+        )
+        return jsonify(
+            {
+                "ok": True,
+                "evidence_id": record.evidence_id,
+                "title": title,
+            }
+        ), 201
 
     @app.get("/podcast.xml")
     def podcast_feed():
@@ -2163,11 +2376,12 @@ def create_app() -> Flask:
         Range (streaming) desde /media/podcast/.
         """
         base = _site_url()
-        channel_title = "VIDA · Las Voces del Código · Pódcast"
+        channel_title = "BLUMIX · Las Voces del Código · Pódcast"
         channel_desc = (
-            "Pódcast de estudio de VIDA: ciberseguridad y programación contadas "
-            "sin humo por BLUMIX, con invitados especiales del mundo del código. "
-            "Observar, verificar, comprender, demostrar, avanzar."
+            "Temporada 1 de «Las Voces del Código»: ciberseguridad y programación "
+            "contadas sin humo por BLUMIX y las súper IAs, junto a El Aprendiz, "
+            "para quien empieza desde cero. Observar, verificar, comprender, "
+            "demostrar, avanzar."
         )
         channel_img = base + "/static/covers/podcast_ciberseguridad_1h.png"
         now_rfc = format_datetime(datetime.now(timezone.utc))
@@ -2198,24 +2412,29 @@ def create_app() -> Flask:
             "    </image>",
         ]
 
-        for path in sorted(PODCAST_DIR.glob("*.mp3")):
-            if path.name.startswith("chunk_") or path.name == "concat.txt":
+        for path in sorted(
+            PODCAST_DIR.glob("*.mp3"),
+            key=lambda p: PODCAST_META.get(p.stem, {}).get("num", "99"),
+        ):
+            entry = _podcast_ep_entry(path)
+            if entry is None:
                 continue
-            meta = PODCAST_META.get(path.stem, {})
+            meta = entry["meta"]
+            ep_num = meta.get("num", "")
             title = meta.get("title", path.stem)
             desc = meta.get("desc") or (
                 "Episodio del canal seguro de VIDA. Escúchalo en el centro de mando."
             )
             if meta.get("chapters"):
                 desc += f" · {meta['chapters']} capítulos · {meta.get('voices', '')}"
-            size = path.stat().st_size
-            minutes = max(1, round(size / (128_000 / 8) / 60))
-            pub_date = format_datetime(
-                datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc)
-            )
+            size = entry["size"]
+            minutes = entry["minutes"]
+            pub_date = entry["pub_date"]
             audio_url = base + f"/media/podcast/{path.name}"
             cover_url = base + f"/static/covers/{path.stem}.png"
             speakers = meta.get("speakers", "Salomé")
+            series = meta.get("series", PODCAST_SERIES)
+            season = meta.get("season", PODCAST_SEASON)
 
             lines += [
                 "    <item>",
@@ -2227,6 +2446,11 @@ def create_app() -> Flask:
                 + escape(base + f"/media/podcast/{path.name}") + "</guid>",
                 "      <pubDate>" + pub_date + "</pubDate>",
                 f"      <itunes:duration>{(minutes * 60)}</itunes:duration>",
+                f"      <itunes:season>{season}</itunes:season>",
+                "      <itunes:episode>" + (ep_num or "1") + "</itunes:episode>",
+                "      <itunes:episodeType>full</itunes:episodeType>",
+                "      <itunes:title>" + escape(title) + "</itunes:title>",
+                f"      <itunes:series>{escape(series)}</itunes:series>",
                 "      <itunes:author>" + escape(speakers) + "</itunes:author>",
                 "      <itunes:summary>" + escape(desc) + "</itunes:summary>",
                 f'      <itunes:image href="{escape(cover_url)}"/>',

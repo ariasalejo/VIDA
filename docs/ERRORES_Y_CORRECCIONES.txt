@@ -1,0 +1,40 @@
+REGISTRO DE ERRORES Y CORRECCIONES · VIDA
+==========================================
+(Se numera en orden cronológico; cada entrada: qué pasó, diagnóstico, corrección.)
+
+01. [2026-09-11] EP01 mostraba "EP 01" pero el catálogo lo contaba por índice.
+    Diagnóstico: la posición en la lista se usaba como número.
+    Corrección: numeración real por metadato PODCAST_META[slug]["num"] en
+    /api/podcast, /podcast.xml y el front (app_pro.js / vida.html).
+
+02. [2026-09-12] Vistas viejas de /vida por caché de navegador.
+    Corrección: HTML sin caché + CSS versionado (?v=4) en index_pro/vida/404.
+
+03. [2026-09-13] chunk_* y concat.txt aparecían en el catálogo.
+    Corrección: filtro por nombre en _ep_entries() y .vercelignore/.gitignore
+    para que nunca se versionen ni se desplieguen.
+
+04. [2026-09-13] Recetas de portada solo para EP01/EP03.
+    Corrección: recetas EP02 y EP04 + portada/meta de temporada_1 en
+    tools/make_covers.py y make_thumb.py; regeneradas 1400×1400 (Apple/Spotify).
+
+05. [2026-09-13] Podía registrarse el mismo episodio como evidencia varias veces.
+    Corrección: idempotencia por source "podcast/<slug>" en
+    POST /api/podcast/evidence; estados 200+already / 201.
+
+06. [2026-09-14] Bundle de despliegue estimado ~255 MB decimal con EP04; sobre
+    el tope duro de 250 MB de la lambda de @vercel/python. Difícil de prever:
+    el plan estimó ~247 MB.
+    Diagnóstico: audios 128 kbps + videos ya muy comprimidos.
+    Corrección: re-encode a 96 kbps mono → ~223 MB decimal (margen ~27 MB).
+    Mitigación futura documentada: migrar MP3/MP4 a Vercel Blob
+    (BLOB_READ_WRITE_TOKEN ya está configurado en el proyecto).
+
+07. [2026-09-14] Un MP3 ilegible/0 bytes rompía todo /api/podcast y /podcast.xml
+    (500), derribando tarjetas y feeds públicos.
+    Corrección: _podcast_ep_entry omite el archivo roto (skipped_unreadable);
+    el feed sigue generándose. Test de regresión añadido (52 tests).
+
+08. [2026-09-14] POST /api/podcast/evidence podía devolver 500 con payloads
+    malformados (position="abc"). Y bool("false")==True validaba mal.
+    Corrección: parseo defensivo con 400 y booleano estricto. Test añadido.

@@ -235,6 +235,117 @@ class VIDAWebTestCase(unittest.TestCase):
         self.assertEqual(res.status_code, 206)
         self.assertEqual(len(res.data), 100)
 
+    # ---------- Pódcast: temporada, evidencia y contención de errores ----------
+
+    def test_podcast_catalog_ordered_by_num_with_season(self):
+        res = self.client.get("/api/podcast")
+        self.assertEqual(res.status_code, 200)
+        payload = res.get_json()
+        self.assertEqual(payload["series"], "BLUMIX · Las Voces del Código")
+        self.assertEqual(payload["season"], 1)
+        self.assertTrue(payload["season_cover"].endswith("seasons/temporada_1.png"))
+        nums = [ep["num"] for ep in payload["episodes"]]
+        self.assertEqual(nums, sorted(nums))
+        # Cada episodio expone su número real, no la posición en la lista.
+        for i, ep in enumerate(payload["episodes"], start=1):
+            self.assertGreaterEqual(int(ep["num"]), 1)
+            self.assertIn("slot", ep)
+            self.assertTrue(ep["file"].startswith("/media/podcast/"))
+        self.assertGreaterEqual(len(payload["episodes"]), 1)
+
+    def test_podcast_evidence_lifecycle(self):
+        self.client.post(
+            "/api/auth/signup",
+            json={"email": "lista@vida.test", "name": "Oidor", "password": "secreto123"},
+        )
+        res = self.client.post(
+            "/api/podcast/evidence",
+            json={"num": "01", "position": 0, "duration": 0, "completed": False},
+        )
+        self.assertEqual(res.status_code, 202)
+        res = self.client.post(
+            "/api/podcast/evidence",
+            json={"num": "00", "position": 1, "duration": 1, "completed": True},
+        )
+        self.assertEqual(res.status_code, 404)
+        res = self.client.post(
+            "/api/podcast/evidence",
+            json={"num": "01", "position": 3200, "duration": 3196, "completed": True},
+        )
+        self.assertEqual(res.status_code, 201)
+        body = res.get_json()
+        self.assertTrue(body["ok"])
+        self.assertIn("EV-", body["evidence_id"])
+        res = self.client.post(
+            "/api/podcast/evidence",
+            json={"num": "01", "position": 3200, "duration": 3196, "completed": True},
+        )
+        self.assertEqual(res.status_code, 200)
+        self.assertTrue(res.get_json()["already"])
+        evidence = self.client.get("/api/evidence").get_json()
+        podcast = next(
+            (g for g in evidence.get("groups", []) if g.get("activity_id") == "podcast"),
+            None,
+        )
+        self.assertIsNotNone(podcast)
+        self.assertEqual(podcast["records"][0]["event_type"], "PODCAST_LISTEN")
+        self.assertEqual(podcast["records"][0]["result"], "VERIFIED_LISTEN")
+
+    def test_podcast_evidence_bad_payload_is_400(self):
+        self.client.post(
+            "/api/auth/signup",
+            json={"email": "mala@vida.test", "name": "Mala", "password": "secreto123"},
+        )
+        res = self.client.post(
+            "/api/podcast/evidence",
+            json={"num": "01", "completed": True, "position": "abc", "duration": []},
+        )
+        self.assertEqual(res.status_code, 400)
+        self.assertFalse(res.get_json()["ok"])
+
+    def test_podcast_feed_is_well_formed_ordered_rss(self):
+        import xml.dom.minidom
+
+        res = self.client.get("/podcast.xml")
+        self.assertEqual(res.status_code, 200)
+        self.assertIn("application/rss+xml", res.content_type)
+        body = res.get_data(as_text=True)
+        xml.dom.minidom.parseString(body)  # lanza si el XML está mal formado
+        for tag in (
+            "itunes:season",
+            "itunes:episode",
+            "itunes:episodeType",
+            "itunes:series",
+        ):
+            self.assertIn("<" + tag, body)
+        # Ordenado por número real del episodio.
+        self.assertIn("itunes:episode>01", body)
+        self.assertIn("itunes:series>BLUMIX · Las Voces del Código", body)
+
+    def test_broken_mp3_does_not_break_catalog_or_feed(self):
+        # Un archivo sin leer (0 bytes) NO debe tumbar ni el catálogo ni el
+        # feed RSS: el radio del error queda contenido al episodio.
+        tmp_pod = self.tmp / "podcast"
+        tmp_pod.mkdir()
+        good = tmp_pod / "podcast_ciberseguridad_1h.mp3"
+        good.write_bytes(b"\xff\xe3\x18\xc4fake-mp3-para-el-catalogo")
+        (tmp_pod / "roto.mp3").write_bytes(b"")
+        import vida
+
+        with mock.patch.object(vida, "PODCAST_DIR", tmp_pod):
+            res = self.client.get("/api/podcast")
+            self.assertEqual(res.status_code, 200)
+            payload = res.get_json()
+            self.assertEqual(payload["skipped_unreadable"], 1)
+            names = {ep["id"] for ep in payload["episodes"]}
+            self.assertIn("podcast_ciberseguridad_1h", names)
+            self.assertNotIn("roto", names)
+            res = self.client.get("/podcast.xml")
+            self.assertEqual(res.status_code, 200)
+            import xml.dom.minidom
+
+            xml.dom.minidom.parseString(res.get_data(as_text=True))
+
 
 class FernetCipherTestCase(unittest.TestCase):
     """Cifrado de datos en reposo: roundtrip y aislamiento de claves."""

@@ -1,4 +1,5 @@
-# 🎙️ PODCAST: CIBERSEGURIDAD Y PROGRAMACIÓN PARA PRINCIPIANTES
+# 🎙️ BLUMIX · LAS VOCES DEL CÓDIGO · TEMPORADA 1 · EP 01
+## Ciberseguridad y Programación para Principiantes
 
 ## Guion completo ampliado — Duración: 60 minutos
 
