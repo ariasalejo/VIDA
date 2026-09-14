@@ -273,6 +273,7 @@
     var seasonBox = $("cyberSeason");
     if (!box) return;
     var eps = (data || {}).episodes || [];
+    eps = eps.filter(function (ep) { return ep.slot !== "evidence"; });
     if (!eps.length) {
       if (seasonBox) seasonBox.innerHTML = "";
       $("podcastState").textContent = "🎙 El pódcast se prepara… VIDA no inventa audio: espera la señal.";

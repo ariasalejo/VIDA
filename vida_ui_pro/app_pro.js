@@ -468,58 +468,6 @@ function paintCertificate() {
     .catch(() => {});
 }
 
-async function renderPodcast() {
-  const box = $("#podcastList");
-  if (!box) return;
-  box.innerHTML = "";
-  let data;
-  try { data = await getJSON("/api/podcast"); } catch (_) { data = { episodes: [] }; }
-  const eps = (data.episodes || []).filter(ep => ep.slot !== "evidence");
-  if (!eps.length) {
-    box.innerHTML = `<div class="ev-empty">🎙 El pódcast se prepara… coloca el MP3 en <code>podcast_audio/</code> para que aparezca aquí.</div>`;
-    return;
-  }
-  const totalMin = eps.reduce((s, e) => s + Math.round(e.minutes || 0), 0);
-  const totalCh = eps.reduce((s, e) => s + (Number(e.chapters) || 0), 0);
-  const season = String(data.season || "1");
-  const wrap = document.createElement("div");
-
-  const seasonEl = document.createElement("div");
-  seasonEl.className = "pod-season";
-  seasonEl.innerHTML =
-    `<div class="pod-season-cover" title="Portada inicial de la temporada">` +
-      `<img src="${esc(data.season_cover || "")}" alt="Portada Temporada ${esc(season)}" loading="lazy" onerror="this.style.display='none'"><i class="pod-season-shine"></i>` +
-    `</div>` +
-    `<div class="pod-season-meta">` +
-      `<b>${esc(data.series || "BLUMIX · Las Voces del Código")}</b>` +
-      `<small>🎙 Temporada ${esc(season)} · ${eps.length} episodio${eps.length === 1 ? "" : "s"} · ~${totalMin} min · ${totalCh} capítulos</small>` +
-      `<p>Estudia mientras caminas, viajas o descansas. Da play y escucha a BLUMIX y las súper IAs.</p>` +
-    `</div>`;
-  wrap.appendChild(seasonEl);
-
-  eps.forEach(ep => {
-    const el = document.createElement("div");
-    el.className = "ep-item";
-    const mini =
-      `<div class="ep-mini" title="Portada EP ${esc(ep.num || "")}">` +
-        `<img src="${esc(ep.cover || "")}" alt="" loading="lazy" onerror="this.closest('.ep-mini').classList.add('no-art')">` +
-        `<i class="pod-season-shine"></i>` +
-      `</div>`;
-    const chips =
-      (ep.num ? `<span class="ep-src">🎙 EP ${esc(ep.num)} · ${esc(ep.speakers || "BLUMIX")}</span>` : "") +
-      (ep.voices ? `<span class="ep-voices">${esc(ep.voices)}</span>` : "") +
-      `<span class="ep-dur">${Math.round(ep.minutes || 0)} min · ${fmtSize(ep.size)} · MP3</span>`;
-    el.innerHTML =
-      mini +
-      `<div class="fm"><b>${esc(ep.title)}</b><small class="ep-chips">${chips}</small>` +
-      (ep.desc ? `<small class="ep-desc">${esc(ep.desc)}</small>` : "") +
-      `</div>` +
-      `<audio class="ep-audio" controls preload="none" src="${esc(ep.file)}"></audio>`;
-    wrap.appendChild(el);
-  });
-  box.appendChild(wrap);
-}
-
 function renderZone() {
   const card = $("#zoneCard");
   const box = $("#zoneList");
@@ -558,7 +506,6 @@ async function load() {
   await renderRoadmap();
   await refresh();
   renderZone();
-  renderPodcast();
   router();
 }
 

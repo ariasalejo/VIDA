@@ -39,6 +39,12 @@ registrado en `git log`; este documento resume el *porqué*.
      `/media/evidence/*` ahora exigen cuenta (401) — datos personales a salvo.
      Material y videos de curso siguen públicos por diseño.
    - Pruebas: 47 → 53.
+6. **Sin repetición de pódcast en el curso:** por decisión del usuario, cada
+   episodio aparece en un único lugar:
+   - la tarjeta genérica «Súper IAs en acción» del dashboard se eliminó
+     (duplicaba el portal); la escucha vive en **VIDA · NEXUS** (`/vida`);
+   - el portal oculta el episodio de evidencia (EP 01) para que no se repita
+     con su tarjeta de evidencia; EP 01 aparece solo en el centro de evidencias.
 5. **Documentación nueva:** `docs/ESTANDARES.md`, `docs/CANAL_PODCAST.md`,
    `docs/ERRORES_Y_CORRECCIONES.txt` y `docs/PRESUPUESTO_DEPLOY.md`.
 6. **README:** sección «Estándares y marco normativo» + `docs/` en la
