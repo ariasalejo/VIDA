@@ -124,7 +124,7 @@ dashboard, con título, voces, duración y reproductor; `/api/podcast` lista tod
 | Episodio | Título en pantalla | Voces | Archivo |
 |---|---|---|---|
 | Cap. 01 | Ciberseguridad y Código · Tu primera zancada | El Aprendiz y Salomé (es-CO) · `slot: evidence` | `podcast_ciberseguridad_1h.mp3` |
-| Cap. 02 | Tu castillo, tu llave y los anzuelos invisibles | Gonzalo (es-CO) · **audio pendiente** | — |
+| Cap. 02 | Tu castillo, tu llave y los anzuelos invisibles | Gonzalo (es-CO) | `podcast_capitulo2_1h.mp3` |
 | Cap. 03 | Secretos de la programación y las IAs | BLUMIX (es-CO) + OpenCode (es-MX) | `podcast_superias_1h.mp3` |
 | Cap. 04 | El camino del principiante | Kimi · súper IA (es-CO) | `podcast_camino_principiante_1h.mp3` |
 

@@ -19,7 +19,7 @@ y programación contadas por BLUMIX y las súper IAs.
 | EP | Key (slug) | Título | Slot | Voz(es) | Duración | Audio |
 |---|---|---|---|---|---|---|
 | 01 | `podcast_ciberseguridad_1h` | Ciberseguridad y Código · Tu primera zancada | `evidence` | Salomé (es-CO) | ~53 min | ✅ publicado |
-| 02 | `podcast_capitulo2_1h` | Tu castillo, tu llave y los anzuelos invisibles | `dashboard` | Gonzalo (es-CO) | — | ⏳ guion listo, audio pendiente |
+| 02 | `podcast_capitulo2_1h` | Tu castillo, tu llave y los anzuelos invisibles | `dashboard` | Gonzalo (es-CO) | `podcast_capitulo2_1h.mp3` | ✅ audio publicado |
 | 03 | `podcast_superias_1h` | Secretos de la programación y las IAs | `dashboard` | BLUMIX (es-CO) · OpenCode (es-MX) | ~52 min | ✅ publicado |
 | 04 | `podcast_camino_principiante_1h` | El camino del principiante | `dashboard` | Kimi (es-CO) | ~28 min | ✅ publicado |
 
