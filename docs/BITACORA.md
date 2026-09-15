@@ -69,3 +69,51 @@ registrado en `git log`; este documento resume el *porqué*.
 ## Gobernanza
 - Tag de rollback: `v0.9-pre-temporada-1` (creado antes de esta entrega).
 - Tag de referencia post-deploy: `v1.0-temporada-1-baseline`.
+
+---
+
+# Sesión · 15/09/2026 · Audio público con Range + curso Linux activo en deploy
+
+## Problemas reportados
+1. **Los audios del pódcast no suenan** («error») en el sitio publicado y en
+   Spotify: los reproductores y el rastreador de Spotify no podían descargar
+   los MP3.
+2. **Curso Linux «trocado» respecto al selector junto al reloj**: en producción
+   el curso activo seguía siendo Ciberseguridad (el cambio a `sena_linux` solo
+   existía en el `data/registry.json` local, sin commit), mientras que el curso
+   Linux aparecía «EN COLECCIÓN» en NEXUS.
+
+## Causa raíz (verificada, no asumida)
+- **Audio:** Vercel Functions limita la respuesta a **4.5 MB**
+  (`FUNCTION_RESPONSE_PAYLOAD_TOO_LARGE`). Los MP3 finales pesan 20–38 MB, así
+  que `GET /media/podcast/*.mp3` fallaba en producción (en local todo funcionaba:
+  `54/54` pruebas y Range 206). Se confirmó con la documentación de Vercel y con
+  smoke local.
+- **Linux:** `data/registry.json` (trackeado) tenía `active: sena_linux` solo en
+  local; cada deploy copia el archivo commiteado → producción seguía con
+  `sena_ciberseguridad`.
+
+## Solución aplicada
+1. **Audio publicado fuera de la lambda**: los MP3 ya estaban en GitHub (repo
+   `ariasalejo/VIDA`). Los `enclosure`/`guid` del feed RSS y el campo `file` del
+   catálogo `/api/podcast` ahora apuntan a URLs públicas estables con Range
+   (verificadas `206` para los 4 episodios); el catálogo conserva `local_file`
+   (`/media/podcast/…`) como respaldo en desarrollo. Nuevo helper
+   `_podcast_audio_url()` y diccionario `PODCAST_AUDIO_URLS` en `vida.py`. Los
+   MP3 siguen viajando en el bundle esta vez como **red de seguridad**; el paso
+   siguiente es excluirlos en `.vercelignore` (ver `PRESUPUESTO_DEPLOY.md`).
+2. **Curso Linux activo en producción**: se versiona `data/registry.json` con
+   `active: sena_linux` y se despliega; el selector junto al reloj y la NEXUS
+   mostrarán Linux como **● ACTIVO**.
+3. **Documentación** (`CANAL_PODCAST.md`, `PRESUPUESTO_DEPLOY.md`, `README.md`)
+   actualizada al nuevo modelo de publicación de audio.
+
+## Verificación
+- `python3 -m pytest tests/ -q` → **54/54** ✅ (incl. contenedor de catálogo/feed,
+  `local_file` de respaldo y el Range local).
+- Smoke local de `/api/podcast` (4 episodios con URL pública) y `/podcast.xml`
+  (enclosure + guid con las URLs públicas) ✅.
+- `curl -H "Range: bytes=0-99"` contra cada URL pública → `206` ✅.
+- Smoke remoto (plan): en el sitio publicado los 4 reproductores (EV EP01 +
+  NEXUS) suenan; en Spotify for Creators > contenido los 4 episodios dejan de
+  marcar error; selector de curso junto al reloj y NEXUS muestran Linux ACTIVO.

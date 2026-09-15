@@ -115,6 +115,39 @@ PODCAST_META = {
         "verificar tu avance, la comunidad y un plan de 30 días.",
     },
 }
+
+# URLs públicas y estables del audio de cada episodio.
+# La lambda de Vercel no puede devolver más de 4.5 MB por respuesta
+# (FUNCTION_RESPONSE_PAYLOAD_TOO_LARGE) y los MP3 pesan 20-38 MB: por eso los
+# reproductores del sitio y el rastreador de Spotify no podían descargarlos.
+# Hoy el audio se publica en URLs públicas con soporte Range (GitHub objects).
+# Un episodio sin URL pública se cae al local (`/media/podcast/`) como red de
+# seguridad; así el radio del error queda contenido al episodio.
+PODCAST_AUDIO_URLS: dict[str, str] = {
+    "podcast_ciberseguridad_1h": (
+        "https://raw.githubusercontent.com/ariasalejo/VIDA/main/podcast_audio/"
+        "podcast_ciberseguridad_1h.mp3"
+    ),
+    "podcast_capitulo2_1h": (
+        "https://raw.githubusercontent.com/ariasalejo/VIDA/main/podcast_audio/"
+        "podcast_capitulo2_1h.mp3"
+    ),
+    "podcast_superias_1h": (
+        "https://raw.githubusercontent.com/ariasalejo/VIDA/main/podcast_audio/"
+        "podcast_superias_1h.mp3"
+    ),
+    "podcast_camino_principiante_1h": (
+        "https://raw.githubusercontent.com/ariasalejo/VIDA/main/podcast_audio/"
+        "podcast_camino_principiante_1h.mp3"
+    ),
+}
+
+
+def _podcast_audio_url(stem: str, base: str = "") -> str:
+    """URL pública del audio (si está publicada) o URL/path local de respaldo."""
+    return PODCAST_AUDIO_URLS.get(stem) or f"{base}/media/podcast/{stem}.mp3"
+
+
 DB = DATA / "vida.db"
 COURSE = DATA / "course.json"
 
@@ -2271,7 +2304,8 @@ def create_app() -> Flask:
                     "chapters": meta.get("chapters"),
                     "slot": meta.get("slot", "dashboard"),
                     "desc": meta.get("desc"),
-                    "file": f"/media/podcast/{path.name}",
+                    "file": _podcast_audio_url(path.stem),
+                    "local_file": f"/media/podcast/{path.name}",
                     "cover": f"/static/covers/{path.stem}.png",
                     "thumb": f"/static/thumbs/{path.stem}_thumb.png",
                     "size": size,
@@ -2373,7 +2407,7 @@ def create_app() -> Flask:
                 "num": ep_num,
                 "series": PODCAST_SERIES,
                 "season": PODCAST_SEASON,
-                "file": f"/media/podcast/{stem}.mp3",
+                "file": _podcast_audio_url(stem),
             },
         )
         return jsonify(
@@ -2389,8 +2423,9 @@ def create_app() -> Flask:
         """Feed RSS 2.0 + iTunes del pódcast de VIDA.
 
         Listo para registrarlo en Spotify for Podcasters, Apple Podcasts,
-        Google/YouTube Podcasts y demás directorios. El audio se sirve con
-        Range (streaming) desde /media/podcast/.
+        Google/YouTube Podcasts y demás directorios. El audio se sirve desde
+        URLs públicas con Range (hoy GitHub objects; la función de Vercel no
+        puede responder más de 4.5 MB por llamada).
         """
         base = _site_url()
         channel_title = "BLUMIX · Las Voces del Código · Pódcast"
@@ -2446,7 +2481,7 @@ def create_app() -> Flask:
                 desc += f" · {meta['chapters']} capítulos · {meta.get('voices', '')}"
             size = entry["size"]
             pub_date = entry["pub_date"]
-            audio_url = base + f"/media/podcast/{path.name}"
+            audio_url = _podcast_audio_url(path.stem, base)
             cover_url = base + f"/static/covers/{path.stem}.png"
             speakers = meta.get("speakers", "Salomé")
             series = meta.get("series", PODCAST_SERIES)
@@ -2459,7 +2494,7 @@ def create_app() -> Flask:
                 "      <content:encoded><![CDATA[" + desc + "]]></content:encoded>",
                 "      <link>" + base + "/vida</link>",
                 "      <guid isPermaLink=\"false\">"
-                + escape(base + f"/media/podcast/{path.name}") + "</guid>",
+                + escape(audio_url) + "</guid>",
                 "      <pubDate>" + pub_date + "</pubDate>",
                 f"      <itunes:duration>{entry['duration_seconds']}</itunes:duration>",
                 f"      <itunes:season>{season}</itunes:season>",

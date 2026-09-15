@@ -237,7 +237,10 @@ class VIDAWebTestCase(unittest.TestCase):
         self.assertIsInstance(episodes, list)
         for ep in episodes:
             self.assertNotIn("chunk_", ep["file"])
-            self.assertTrue(ep["file"].startswith("/media/podcast/"))
+            # El audio sale publicado en una URL pública (Vercel no puede
+            # responder MP3 > 4.5 MB) y conserva la ruta local de respaldo.
+            self.assertTrue(ep["file"].startswith("https://"))
+            self.assertTrue(ep["local_file"].startswith("/media/podcast/"))
             self.assertGreater(ep["size"], 0)
 
     def test_podcast_media_range(self):
@@ -263,7 +266,8 @@ class VIDAWebTestCase(unittest.TestCase):
         for i, ep in enumerate(payload["episodes"], start=1):
             self.assertGreaterEqual(int(ep["num"]), 1)
             self.assertIn("slot", ep)
-            self.assertTrue(ep["file"].startswith("/media/podcast/"))
+            self.assertTrue(ep["file"].startswith("https://"))
+            self.assertTrue(ep["local_file"].startswith("/media/podcast/"))
         self.assertGreaterEqual(len(payload["episodes"]), 1)
 
     def test_podcast_evidence_lifecycle(self):

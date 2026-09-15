@@ -119,7 +119,11 @@ No guarda credenciales de Zajuna. La sesión del dashboard es un clip de ~12 MB.
 Los MP3 finales viven en `podcast_audio/` (los `chunk_*` intermedios y `concat.txt`
 no se versionan ni se despliegan). El catálogo aparece en la tarjeta **Podcast** del
 dashboard, con título, voces, duración y reproductor; `/api/podcast` lista todo
-`*.mp3` de la raíz de `podcast_audio/` y `/media/podcast/<nombre>` sirve con `Range`.
+`*.mp3` de la raíz de `podcast_audio/`. Los episodios se **publican en URLs públicas
+con `Range`** (hoy GitHub raw/objects) porque la lambda de Vercel no puede responder
+más de 4.5 MB por llamada y los MP3 pesan 20–38 MB — los reproductores del sitio y
+el rastreador de Spotify usan esas URLs. `local_file` (`/media/podcast/<nombre>`,
+servido con `Range`) queda como respaldo en desarrollo.
 
 | Episodio | Título en pantalla | Voces | Archivo |
 |---|---|---|---|
@@ -236,6 +240,7 @@ pruebas + smoke local + presupuesto de lambda medido).
 - [x] Sesiones por actividad (AA1–AA4) más video del dashboard
 - [x] Pódcast Temporada 1 (EP01–04) con portadas, numeración real y feed RSS (Spotify/Apple/YouTube)
 - [x] Evidencia verificable de escucha (PODCAST_LISTEN ≥ 95 %) con radio de error acotado
+- [x] Audio publicado en URLs públicas con Range (la lambda no responde > 4.5 MB)
 - [x] Documentación y estándares (`docs/ESTANDARES.md` y compañía)
 - [ ] Material de aprendizaje por actividad
 - [ ] Certificado final emitido

@@ -13,6 +13,11 @@ y programación contadas por BLUMIX y las súper IAs.
   `https://open.spotify.com/show/4v3EzrfLm6nIIJv4DhYLWs`
 - **Catálogo JSON:** `GET /api/podcast` (ordena por **número real**, nunca por
   posición en la lista).
+- **Audio público con Range:** los MP3 (20–38 MB) no pueden servirse desde la
+  función de Vercel (tope de respuesta de **4.5 MB** por llamada), así que el
+  catálogo y el feed anuncian URLs públicas estables (hoy GitHub raw/objects,
+  con `Range`). El catálogo expone además `local_file` (`/media/podcast/…`)
+  como respaldo local en desarrollo.
 
 ## Episodios · Temporada 1
 
@@ -39,12 +44,16 @@ y programación contadas por BLUMIX y las súper IAs.
 4. **Calidad de audio:** MP3 mono 44.1 kHz. Se bajó a **96 kbps** para mantener
    el bundle de despliegue bajo el tope de 250 MB de la lambda (ver
    `PRESUPUESTO_DEPLOY.md`); la pérdida es inaudible para narración.
-5. **Arte:** portada cuadrada 1400×1400 (`tools/make_covers.py`), thumb 1280×720
+5. **Publicación del audio (bloqueante):** cada MP3 final necesita su URL
+   pública en `PODCAST_AUDIO_URLS` (`vida.py`). Confirmar con `curl -I` que
+   responde `200`/`206` antes de promocionar el episodio; un episodio sin URL
+   solo funciona en local, no en el sitio ni en Spotify.
+6. **Arte:** portada cuadrada 1400×1400 (`tools/make_covers.py`), thumb 1280×720
    (`tools/make_thumb.py`) y portada/meta de temporada en
    `covers/seasons/temporada_1.png`.
-6. **Numeración:** el número del episodio vive en `PODCAST_META[slug]["num"]`.
+7. **Numeración:** el número del episodio vive en `PODCAST_META[slug]["num"]`.
    Nunca se deriva del índice de la lista.
-7. **Chunks intermedios:** no se versionan ni se despliegan
+8. **Chunks intermedios:** no se versionan ni se despliegan
    (`.vercelignore` y `.gitignore`).
 
 ## Evidencia verificable de escucha
