@@ -1094,7 +1094,7 @@ def create_app() -> Flask:
             "script-src 'self' 'unsafe-inline'; "
             "style-src 'self' 'unsafe-inline'; "
             "img-src 'self' data:; "
-            "media-src 'self' blob:; "
+            "media-src 'self' blob: https://raw.githubusercontent.com; "
             "font-src 'self' data:; "
             "connect-src 'self'; "
             "object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
