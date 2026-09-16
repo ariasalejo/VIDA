@@ -5,6 +5,10 @@
       "src": "api/index.py",
       "use": "@vercel/python",
       "config": { "maxLambdaSize": "250mb" }
+    },
+    {
+      "src": "podcast_audio/podcast_*.mp3",
+      "use": "@vercel/static"
     }
   ],
   "routes": [

@@ -138,7 +138,10 @@ error aunque el feed y el rango estaban bien.
    - `vercel.json`: nueva ruta **estática** `/media/podcast/*` → archivos de
      `podcast_audio/` (Vercel las sirve desde el CDN con `Range` y
      `Content-Type: audio/mpeg`, **sin pasar por la lambda**, así que el tope de
-     4.5 MB ni se entera).
+     4.5 MB ni se entera). En los builds legacy hace falta **registrar el
+     archivo como estático** con el builder `@vercel/static`
+     (`podcast_audio/podcast_*.mp3`); la primera verificación en producción dio
+     `404` justo por eso (solo la ruta no publica el asset).
    - `vida.py`: se elimina `PODCAST_AUDIO_URLS` (GitHub raw); el helper
      `_podcast_audio_url()` ahora devuelve `{base}/media/podcast/<stem>.mp3`
      absoluta; el catálogo `/api/podcast` y el contexto de evidencia la
