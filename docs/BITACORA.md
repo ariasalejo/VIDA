@@ -156,7 +156,8 @@ error aunque el feed y el rango estaban bien.
 - `python3 -m pytest tests/ -q` → **54/54** ✅ (incluye test de `audio/mpeg`).
 - Smoke local de `/api/podcast` (4 episodios con URL del sitio, `audio/mpeg`) y
   `/podcast.xml` (enclosure + guid en `/media/podcast/…`) ✅.
-- Smoke remoto (plan): `curl -I https://<sitio>/media/podcast/<ep>.mp3` y con
-  `Range: bytes=0-99` → `206` + `Content-Type: audio/mpeg`; reproductores del
-  sitio suenan; en Spotify for Creators los 4 episodios dejan de marcar error
-  (el cambio de `guid`/`enclosure` fuerza la re-ingesta).
+- Smoke remoto: `curl` con `Range: bytes=0-99` sobre los **4**
+  `/media/podcast/<ep>.mp3` del sitio publicado → **`206` +
+  `Content-Type: audio/mpeg`** para todos ✅ (tamaños reales: 38.4 / 20.5 / 37.6 /
+  20.1 MB). /podcast.xml anuncia los 4 enclosures en `/media/podcast/…` ✅.
+  El cambio de `guid`/`enclosure` fuerza la re-ingesta en Spotify for Creators.
