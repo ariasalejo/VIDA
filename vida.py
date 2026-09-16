@@ -116,36 +116,17 @@ PODCAST_META = {
     },
 }
 
-# URLs públicas y estables del audio de cada episodio.
-# La lambda de Vercel no puede devolver más de 4.5 MB por respuesta
-# (FUNCTION_RESPONSE_PAYLOAD_TOO_LARGE) y los MP3 pesan 20-38 MB: por eso los
-# reproductores del sitio y el rastreador de Spotify no podían descargarlos.
-# Hoy el audio se publica en URLs públicas con soporte Range (GitHub objects).
-# Un episodio sin URL pública se cae al local (`/media/podcast/`) como red de
-# seguridad; así el radio del error queda contenido al episodio.
-PODCAST_AUDIO_URLS: dict[str, str] = {
-    "podcast_ciberseguridad_1h": (
-        "https://raw.githubusercontent.com/ariasalejo/VIDA/main/podcast_audio/"
-        "podcast_ciberseguridad_1h.mp3"
-    ),
-    "podcast_capitulo2_1h": (
-        "https://raw.githubusercontent.com/ariasalejo/VIDA/main/podcast_audio/"
-        "podcast_capitulo2_1h.mp3"
-    ),
-    "podcast_superias_1h": (
-        "https://raw.githubusercontent.com/ariasalejo/VIDA/main/podcast_audio/"
-        "podcast_superias_1h.mp3"
-    ),
-    "podcast_camino_principiante_1h": (
-        "https://raw.githubusercontent.com/ariasalejo/VIDA/main/podcast_audio/"
-        "podcast_camino_principiante_1h.mp3"
-    ),
-}
+# Audio del pódcast servido por el **propio sitio** en `/media/podcast/*`:
+# en Vercel los MP3 se sirven como estáticos (ruta de vercel.json) con `Range`
+# y `Content-Type: audio/mpeg`, sin pasar por la lambda (la función de Vercel no
+# puede responder más de 4.5 MB por llamada y Spotify exige `audio/mpeg`, no
+# `application/octet-stream` como devuelve GitHub raw/objects al MP3). Así el
+# reproductor del sitio y el rastreador de Spotify usan la misma URL pública.
 
 
 def _podcast_audio_url(stem: str, base: str = "") -> str:
-    """URL pública del audio (si está publicada) o URL/path local de respaldo."""
-    return PODCAST_AUDIO_URLS.get(stem) or f"{base}/media/podcast/{stem}.mp3"
+    """URL pública absoluta del audio de un episodio (`/media/podcast/<stem>.mp3`)."""
+    return f"{base}/media/podcast/{stem}.mp3"
 
 
 DB = DATA / "vida.db"
@@ -1094,7 +1075,7 @@ def create_app() -> Flask:
             "script-src 'self' 'unsafe-inline'; "
             "style-src 'self' 'unsafe-inline'; "
             "img-src 'self' data:; "
-            "media-src 'self' blob: https://raw.githubusercontent.com; "
+            "media-src 'self' blob:; "
             "font-src 'self' data:; "
             "connect-src 'self'; "
             "object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
@@ -2304,7 +2285,7 @@ def create_app() -> Flask:
                     "chapters": meta.get("chapters"),
                     "slot": meta.get("slot", "dashboard"),
                     "desc": meta.get("desc"),
-                    "file": _podcast_audio_url(path.stem),
+                    "file": _podcast_audio_url(path.stem, _site_url()),
                     "local_file": f"/media/podcast/{path.name}",
                     "cover": f"/static/covers/{path.stem}.png",
                     "thumb": f"/static/thumbs/{path.stem}_thumb.png",
@@ -2407,7 +2388,7 @@ def create_app() -> Flask:
                 "num": ep_num,
                 "series": PODCAST_SERIES,
                 "season": PODCAST_SEASON,
-                "file": _podcast_audio_url(stem),
+                "file": _podcast_audio_url(stem, _site_url()),
             },
         )
         return jsonify(

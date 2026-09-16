@@ -9,6 +9,10 @@
   ],
   "routes": [
     {
+      "src": "/media/podcast/(?<file>.*)",
+      "dest": "/podcast_audio/$file"
+    },
+    {
       "src": "/(.*)",
       "dest": "api/index.py"
     }

@@ -237,9 +237,12 @@ class VIDAWebTestCase(unittest.TestCase):
         self.assertIsInstance(episodes, list)
         for ep in episodes:
             self.assertNotIn("chunk_", ep["file"])
-            # El audio sale publicado en una URL pública (Vercel no puede
-            # responder MP3 > 4.5 MB) y conserva la ruta local de respaldo.
-            self.assertTrue(ep["file"].startswith("https://"))
+            # El audio sale publicado en la URL pública del propio sitio
+            # (Vercel la sirve como estático con Range y `audio/mpeg`, fuera
+            # de la lambda que no responde MP3 > 4.5 MB) y conserva la ruta
+            # local de respaldo.
+            self.assertTrue(ep["file"].startswith(("http://", "https://")))
+            self.assertIn("/media/podcast/", ep["file"])
             self.assertTrue(ep["local_file"].startswith("/media/podcast/"))
             self.assertGreater(ep["size"], 0)
 
@@ -250,6 +253,8 @@ class VIDAWebTestCase(unittest.TestCase):
         )
         self.assertEqual(res.status_code, 206)
         self.assertEqual(len(res.data), 100)
+        # Spotify y los reproductores exigen `audio/mpeg`, no octet-stream.
+        self.assertEqual(res.headers["Content-Type"].split(";")[0], "audio/mpeg")
 
     # ---------- Pódcast: temporada, evidencia y contención de errores ----------
 
@@ -266,7 +271,8 @@ class VIDAWebTestCase(unittest.TestCase):
         for i, ep in enumerate(payload["episodes"], start=1):
             self.assertGreaterEqual(int(ep["num"]), 1)
             self.assertIn("slot", ep)
-            self.assertTrue(ep["file"].startswith("https://"))
+            self.assertTrue(ep["file"].startswith(("http://", "https://")))
+            self.assertIn("/media/podcast/", ep["file"])
             self.assertTrue(ep["local_file"].startswith("/media/podcast/"))
         self.assertGreaterEqual(len(payload["episodes"]), 1)
 
@@ -338,6 +344,10 @@ class VIDAWebTestCase(unittest.TestCase):
         # Ordenado por número real del episodio.
         self.assertIn("itunes:episode>01", body)
         self.assertIn("itunes:series>BLUMIX · Las Voces del Código", body)
+        # El audio del feed se sirve desde el propio sitio (`/media/podcast`),
+        # nunca desde un host externo con `application/octet-stream`.
+        self.assertIn("<enclosure ", body)
+        self.assertIn("/media/podcast/podcast_", body)
 
     def test_feed_duration_reads_real_audio_length(self):
         # La duración del feed debe venir del MP3 real (mutagen), no de una

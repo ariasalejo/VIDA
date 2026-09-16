@@ -117,3 +117,43 @@ registrado en `git log`; este documento resume el *porqué*.
 - Smoke remoto (plan): en el sitio publicado los 4 reproductores (EV EP01 +
   NEXUS) suenan; en Spotify for Creators > contenido los 4 episodios dejan de
   marcar error; selector de curso junto al reloj y NEXUS muestran Linux ACTIVO.
+
+---
+
+# Sesión · 16/09/2026 · Spotify rechazaba el audio por `application/octet-stream`
+
+## Problema reportado
+Los 4 episodios siguen marcando **error** en Spotify («ningún pódcast suena»),
+aunque en el sitio los reproductores y el feed ya usaban URLs públicas con Range.
+
+## Causa raíz (verificada, no asumida)
+GitHub raw/objects sí responde `206` con `Range`, pero sirve el MP3 como
+**`Content-Type: application/octet-stream`** (verificado con `curl -I` sobre
+`raw.githubusercontent.com/ariasalejo/VIDA/main/podcast_audio/<ep>.mp3`).
+**Spotify no reproduce audio con ese tipo MIME**; por eso cada episodio marcaba
+error aunque el feed y el rango estaban bien.
+
+## Solución aplicada
+1. **El audio se sirve desde el propio sitio**, no desde GitHub:
+   - `vercel.json`: nueva ruta **estática** `/media/podcast/*` → archivos de
+     `podcast_audio/` (Vercel las sirve desde el CDN con `Range` y
+     `Content-Type: audio/mpeg`, **sin pasar por la lambda**, así que el tope de
+     4.5 MB ni se entera).
+   - `vida.py`: se elimina `PODCAST_AUDIO_URLS` (GitHub raw); el helper
+     `_podcast_audio_url()` ahora devuelve `{base}/media/podcast/<stem>.mp3`
+     absoluta; el catálogo `/api/podcast` y el contexto de evidencia la
+     construyen con `_site_url()`; CSP `media-src` pasa a `'self' blob:`.
+2. **Tests actualizados (siguen 54/54):** el catálogo/feed deben exponer URLs del
+   propio sitio (`/media/podcast/…`) y `/media/podcast/*` debe responder
+   `Content-Type: audio/mpeg` además del `206` de Range.
+3. **Docs** (`README.md`, `CANAL_PODCAST.md`, `PRESUPUESTO_DEPLOY.md`):
+   el modelo de audio pasa de «URLs públicas externas» a «estáticos del sitio».
+
+## Verificación
+- `python3 -m pytest tests/ -q` → **54/54** ✅ (incluye test de `audio/mpeg`).
+- Smoke local de `/api/podcast` (4 episodios con URL del sitio, `audio/mpeg`) y
+  `/podcast.xml` (enclosure + guid en `/media/podcast/…`) ✅.
+- Smoke remoto (plan): `curl -I https://<sitio>/media/podcast/<ep>.mp3` y con
+  `Range: bytes=0-99` → `206` + `Content-Type: audio/mpeg`; reproductores del
+  sitio suenan; en Spotify for Creators los 4 episodios dejan de marcar error
+  (el cambio de `guid`/`enclosure` fuerza la re-ingesta).

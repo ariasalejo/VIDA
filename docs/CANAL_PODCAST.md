@@ -13,11 +13,13 @@ y programación contadas por BLUMIX y las súper IAs.
   `https://open.spotify.com/show/4v3EzrfLm6nIIJv4DhYLWs`
 - **Catálogo JSON:** `GET /api/podcast` (ordena por **número real**, nunca por
   posición en la lista).
-- **Audio público con Range:** los MP3 (20–38 MB) no pueden servirse desde la
-  función de Vercel (tope de respuesta de **4.5 MB** por llamada), así que el
-  catálogo y el feed anuncian URLs públicas estables (hoy GitHub raw/objects,
-  con `Range`). El catálogo expone además `local_file` (`/media/podcast/…`)
-  como respaldo local en desarrollo.
+- **Audio público con Range y `audio/mpeg`:** los MP3 (20–38 MB) no pueden
+  servirse desde la función de Vercel (tope de respuesta de **4.5 MB** por
+  llamada), así que el catálogo y el feed anuncian URLs del propio sitio
+  (`/media/podcast/…`) que Vercel sirve como **estáticas**: con `Range` y
+  `Content-Type: audio/mpeg`. GitHub raw/objects devuelve
+  `application/octet-stream`, que Spotify rechaza — por eso los episodios
+  marcaban error hasta servirlos desde el propio sitio.
 
 ## Episodios · Temporada 1
 
@@ -44,10 +46,11 @@ y programación contadas por BLUMIX y las súper IAs.
 4. **Calidad de audio:** MP3 mono 44.1 kHz. Se bajó a **96 kbps** para mantener
    el bundle de despliegue bajo el tope de 250 MB de la lambda (ver
    `PRESUPUESTO_DEPLOY.md`); la pérdida es inaudible para narración.
-5. **Publicación del audio (bloqueante):** cada MP3 final necesita su URL
-   pública en `PODCAST_AUDIO_URLS` (`vida.py`). Confirmar con `curl -I` que
-   responde `200`/`206` antes de promocionar el episodio; un episodio sin URL
-   solo funciona en local, no en el sitio ni en Spotify.
+5. **Publicación del audio (bloqueante):** cada MP3 final vive en la raíz de
+   `podcast_audio/` y se sirve en `/media/podcast/<slug>.mp3` (ruta estática de
+   `vercel.json`). Confirmar con `curl -I` sobre el MP3 desplegado que responde
+   `200`/`206` con `Content-Type: audio/mpeg` antes de promocionar el episodio;
+   si el archivo no viaja en el bundle, solo funciona en local.
 6. **Arte:** portada cuadrada 1400×1400 (`tools/make_covers.py`), thumb 1280×720
    (`tools/make_thumb.py`) y portada/meta de temporada en
    `covers/seasons/temporada_1.png`.
